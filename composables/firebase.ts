@@ -4,15 +4,16 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, type User, type Auth } from 'firebase/auth'
 import { getFirestore, type Firestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
-// Firebase config
+// Firebase config - using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDHHTMz2IHf-rcKjzF0nkGtGqwzzMtl3PU",
-  authDomain: "therepvana.firebaseapp.com",
-  projectId: "therepvana",
-  storageBucket: "therepvana.firebasestorage.app",
-  messagingSenderId: "899532370249",
-  appId: "1:899532370249:web:3e77341c8c3d96c2d2aa98"
+  apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDHHTMz2IHf-rcKjzF0nkGtGqwzzMtl3PU",
+  authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "therepvana.firebaseapp.com",
+  projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || "therepvana",
+  storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "therepvana.firebasestorage.app",
+  messagingSenderId: process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "899532370249",
+  appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID || "1:899532370249:web:3e77341c8c3d96c2d2aa98"
 }
 
 // Lazy Firebase initialization - only on client side
@@ -223,3 +224,5 @@ export const useFirestore = () => {
     saveWorkout
   }
 } 
+
+// Remove duplicate useFirebase function since we already have the config above 

@@ -24,6 +24,23 @@ logs
 !.env.example
 
 
-# Firebase credentials
+# Firebase credentials and sensitive files
 *.json
 !public/
+!package.json
+!package-lock.json
+!firebase.json
+!firestore.rules
+!storage.rules
+!firestore.indexes.json
+!tsconfig.json
+!functions/package.json
+!functions/tsconfig.json
+!server/tsconfig.json
+!cors.json
+
+# Service account keys (specific patterns)
+*firebase-adminsdk*.json
+*therepvana*.json
+*service-account*.json
+*admin-sdk*.json
