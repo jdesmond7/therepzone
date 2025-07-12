@@ -15,17 +15,22 @@ exports.deleteUserDocOnAuthDelete = functions.auth.user().onDelete(async (user) 
     const uid = user.uid;
     const email = user.email;
     try {
-        functions.logger.info(`🗑️ Eliminando documento de Firestore para usuario: ${uid} (${email})`);
-        // Eliminar el documento del usuario en Firestore
-        await db.collection('users').doc(uid).delete();
-        functions.logger.info(`✅ Documento eliminado exitosamente de Firestore para usuario: ${uid}`);
-        // También eliminar otros documentos relacionados
-        // Descomenta la siguiente línea si quieres eliminar workouts, progress, etc.
-        // await deleteRelatedUserData(uid)
+        functions.logger.info(`🗑️ Buscando documento de Firestore con authUid: ${uid} (${email})`);
+        // Buscar el documento cuyo campo authUid coincida con el UID eliminado
+        const userQuery = await db.collection('users').where('authUid', '==', uid).get();
+        if (userQuery.empty) {
+            functions.logger.info(`ℹ️ No se encontró documento de usuario con authUid: ${uid}`);
+            return;
+        }
+        // Eliminar todos los documentos encontrados (debería ser solo uno)
+        for (const doc of userQuery.docs) {
+            await doc.ref.delete();
+            functions.logger.info(`✅ Documento eliminado exitosamente de Firestore: ${doc.id}`);
+        }
     }
     catch (error) {
         functions.logger.error(`❌ Error eliminando documento de Firestore para usuario ${uid}:`, error);
-        throw error; // Re-throw para que Firebase registre el error
+        throw error;
     }
 });
 /**
