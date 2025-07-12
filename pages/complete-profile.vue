@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex justify-center px-4 pt-20 pb-20">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex justify-center px-4 pt-20 pb-20 relative">
     <div class="w-full max-w-2xl">
       <!-- User Info Form -->
       <UserInfoForm
@@ -11,6 +11,9 @@
         @submit="handleProfileSubmit"
       />
     </div>
+    <div v-if="isLoading" class="fixed inset-0 z-50 flex items-center justify-center bg-transparent">
+      <span class="animate-spin rounded-full h-16 w-16 border-t-4 border-orange-500 border-solid"></span>
+    </div>
   </div>
 </template>
 
@@ -20,7 +23,7 @@ import { useAuth } from '~/composables/firebase'
 import { useGlobalLoading } from '~/composables/useGlobalLoading'
 
 const { user } = useAuth()
-const { setLoading } = useGlobalLoading()
+const { setLoading, isLoading } = useGlobalLoading()
 
 const pendingRegistration = ref<{ email: string; password: string; userRole: string; consent: any } | null>(null)
 const userInfoFormRef = ref()
@@ -73,11 +76,19 @@ const handleProfileSubmit = async (userData: any) => {
       undefined,
       pendingRegistration.value.userRole as 'client' | 'coach'
     )
-    if (!result.success && !result.partialSuccess) {
+    if (!result.success) {
       setLoading(false)
       // Set error in form instead of alert
       if (userInfoFormRef.value) {
         userInfoFormRef.value.setFieldError('general', 'Error creando usuario: ' + (result.error || ''))
+        userInfoFormRef.value.setLoading(false)
+      }
+      return
+    }
+    if (!result.user) {
+      setLoading(false)
+      if (userInfoFormRef.value) {
+        userInfoFormRef.value.setFieldError('general', 'Error: No se pudo crear el usuario en Firebase Auth')
         userInfoFormRef.value.setLoading(false)
       }
       return
@@ -99,47 +110,28 @@ const handleProfileSubmit = async (userData: any) => {
         profilePhotoUrl = uploadResult.url!
       }
     }
-    const profileData = {
-      fullName: userData.fullName,
+    // Generar UID custom con el nombre real
+    const { generateUniqueCustomUid } = await import('~/utils/custom-uid-generator')
+    const customUid = await generateUniqueCustomUid({
+      role: pendingRegistration.value.userRole === 'coach' ? 'coach' : 'client',
       firstName: userData.firstName,
-      lastName: userData.lastName,
-      nickname: userData.nickname,
-      birthDate: userData.birthDate,
-      age: userData.age,
-      gender: userData.gender,
-      phone: userData.phone,
+      authUid: result.user.uid
+    })
+    // Crear el usuario en Firestore con el UID custom
+    const { profileImageFile, ...profileData } = {
+      ...userData,
       profilePhoto: profilePhotoUrl || userData.profilePhoto || '',
-      country: userData.country,
-      city: userData.city,
-      howDidYouHearAboutUs: userData.howDidYouHearAboutUs,
       startDate: new Date().toISOString(),
       profileCompleted: true,
       email: pendingRegistration.value.email,
-      role: pendingRegistration.value.userRole,
+      role: pendingRegistration.value.userRole === 'coach' ? 'coach' : 'client',
       assignedWorkouts: [],
-      consent: pendingRegistration.value.consent
+      consent: pendingRegistration.value.consent,
+      authUid: result.user.uid
     }
-    if (!result.user) {
-      setLoading(false)
-      // Set error in form instead of alert
-      if (userInfoFormRef.value) {
-        userInfoFormRef.value.setFieldError('general', 'Error: No se pudo crear el usuario en Firebase Auth')
-        userInfoFormRef.value.setLoading(false)
-      }
-      return
-    }
-    // Use the custom UID that was already generated during registration
-    const customUid = result.customUid || result.user.uid
-    
-    // Update the user profile with complete information
-    const updateResult = await updateUser(customUid, {
-      ...profileData,
-      role: pendingRegistration.value.userRole as 'client' | 'coach',
-      authUid: result.user.uid // Store original Auth UID for reference
-    })
-    
-    if (!updateResult.success) {
-      throw new Error('Error updating user profile: ' + updateResult.error)
+    const createResult = await createUser(customUid, profileData)
+    if (!createResult.success) {
+      throw new Error('Error creating user in Firestore: ' + createResult.error)
     }
     
     // 3. Limpiar localStorage
@@ -147,16 +139,17 @@ const handleProfileSubmit = async (userData: any) => {
     
     // 4. Marcar sesión como completada para evitar redirección al login
     sessionStorage.setItem('therepzone_auth_completed', 'true')
-    sessionStorage.setItem('therepzone_current_path', '/dashboard')
-    
+    // Cargar el perfil actualizado para obtener el rol correcto
+    const { useUserRole } = await import('~/composables/useUserRole')
+    const { loadUserProfile, getDashboardRoute } = useUserRole()
+    await loadUserProfile()
+    const dashboardRoute = getDashboardRoute()
+    sessionStorage.setItem('therepzone_current_path', dashboardRoute)
     // 5. Mostrar mensaje de éxito y redirigir
     setLoading(true, '¡Perfil completado! Redirigiendo...')
-    
-    // Keep form button loading during redirect
     setTimeout(async () => {
-      // Clear global loading before navigation to prevent stuck loading
       setLoading(false)
-      await navigateTo('/dashboard')
+      await navigateTo(dashboardRoute)
     }, 1500)
   } catch (error: any) {
     setLoading(false)

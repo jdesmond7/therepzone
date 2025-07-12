@@ -1,10 +1,18 @@
 <template>
   <div class="space-y-6">
     <!-- Controls -->
-    <div class="flex items-center justify-between gap-4">
-      <!-- Filters -->
-      <div class="flex flex-wrap gap-4 flex-1">
-        <div class="min-w-[200px]">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <!-- Mobile: Botón primero, luego filtros -->
+      <button 
+        @click="showCreateModal = true"
+        class="block md:hidden w-full bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer mb-2"
+      >
+        <UIcon name="i-heroicons-plus" class="w-5 h-5" />
+        Crear Ejercicio
+      </button>
+      <!-- Filtros en mobile: cada uno en una fila -->
+      <div class="flex flex-col gap-2 w-full md:flex-row md:items-center md:gap-4 md:flex-1">
+        <div class="w-full md:w-[220px]">
           <CustomSelect
             v-model="selectedCategory"
             :options="categoryOptions"
@@ -12,8 +20,7 @@
             @update:model-value="filterExercises"
           />
         </div>
-
-        <div class="min-w-[200px]">
+        <div class="w-full md:w-[220px]">
           <CustomSelect
             v-model="selectedDifficulty"
             :options="difficultyOptions"
@@ -21,21 +28,19 @@
             @update:model-value="filterExercises"
           />
         </div>
-
         <input 
           v-model="searchTerm" 
           @input="filterExercises"
           type="text" 
           autocomplete="off"
           placeholder="Buscar ejercicios..."
-          class="px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
+          class="w-full md:w-[380px] h-[50px] px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
         />
       </div>
-      
-      <!-- Add Exercise Button -->
+      <!-- Desktop: Botón a la derecha -->
       <button 
         @click="showCreateModal = true"
-        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer"
+        class="hidden md:flex bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors items-center gap-2 whitespace-nowrap cursor-pointer"
       >
         <UIcon name="i-heroicons-plus" class="w-5 h-5" />
         Crear Ejercicio
@@ -139,140 +144,111 @@
     </div>
 
     <!-- Create/Edit Exercise Modal -->
-    <TermsModal
-      :show="showCreateModal || editingExercise"
+    <ExerciseEditModal
+      :show="!!(showCreateModal || editingExercise)"
+      :editing="!!editingExercise"
+      :saving="isSaving"
       @cancel="closeModal"
+      @save="saveExercise"
     >
-      <template #header>
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white">
-            {{ editingExercise ? 'Editar Ejercicio' : 'Crear Nuevo Ejercicio' }}
-          </h3>
-          <button 
-            @click="closeModal"
-            class="text-slate-400 hover:text-white cursor-pointer"
-          >
-            <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
-          </button>
-        </div>
-      </template>
-      <template #terms>
-        <form @submit.prevent="saveExercise" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-white mb-2">Nombre del Ejercicio</label>
-              <input
-                v-model="exerciseForm.title"
-                type="text"
-                autocomplete="off"
-                class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="Ej: Flexiones"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-white mb-2">Categoría</label>
-              <CustomSelect
-                v-model="exerciseForm.category"
-                :options="categoryOptions"
-                placeholder="Seleccionar categoría"
-              />
-            </div>
-          </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-white mb-2">Descripción</label>
-            <textarea
-              v-model="exerciseForm.description"
-              rows="3"
-              class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="Descripción del ejercicio..."
-              required
-            ></textarea>
-          </div>
-          <!-- Imagen del Ejercicio -->
-          <div>
-            <label class="block text-sm font-bold text-white mb-2">
-              IMAGEN DEL EJERCICIO
-            </label>
-            <div class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-orange-600 transition-colors cursor-pointer">
-              <div v-if="!selectedImage">
-                <UIcon name="i-heroicons-photo" class="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                <p class="text-slate-400 mb-2">Subir imagen del ejercicio</p>
-                <p class="text-slate-500 text-xs mb-2">Se convertirá automáticamente a WebP para mejor calidad</p>
-                <input
-                  type="file"
-                  @change="handleImageUpload"
-                  accept="image/*"
-                  class="hidden"
-                  ref="fileInput"
-                />
-                <button
-                  type="button"
-                  @click="fileInput?.click()"
-                  class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
-                >
-                  Seleccionar imagen
-                </button>
-              </div>
-              <div v-else class="relative">
-                <img :src="selectedImage" alt="Preview" class="w-full h-48 rounded-lg mx-auto object-cover mb-3">
-                <button
-                  type="button"
-                  @click="removeImage"
-                  class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-sm transition-colors cursor-pointer"
-                >
-                  Cambiar imagen
-                </button>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-white mb-2">Dificultad</label>
-            <CustomSelect
-              v-model="exerciseForm.difficulty"
-              :options="difficultyOptions"
-              placeholder="Seleccionar dificultad"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-white mb-2">Músculos Trabajados</label>
+            <label class="block text-sm font-medium text-white mb-2">Nombre del Ejercicio</label>
             <input
-              v-model="muscleGroupsInput"
+              v-model="exerciseForm.title"
               type="text"
               autocomplete="off"
               class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="Ej: pectorales, tríceps, deltoides (separados por comas)"
+              placeholder="Ej: Flexiones"
+              required
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-white mb-2">Instrucciones</label>
-            <textarea
-              v-model="instructionsInput"
-              rows="4"
-              class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="Escribe las instrucciones paso a paso (una por línea)"
-            ></textarea>
+            <label class="block text-sm font-medium text-white mb-2">Categoría</label>
+            <CustomSelect
+              v-model="exerciseForm.category"
+              :options="categoryOptions"
+              placeholder="Seleccionar categoría"
+            />
           </div>
-          <div class="flex gap-3 pt-4">
-            <button
-              type="button"
-              @click="closeModal"
-              class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              :disabled="isSaving"
-              class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              <span v-if="isSaving">Guardando...</span>
-              <span v-else>{{ editingExercise ? 'Actualizar' : 'Crear' }} Ejercicio</span>
-            </button>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white mb-2">Descripción</label>
+          <textarea
+            v-model="exerciseForm.description"
+            rows="3"
+            class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
+            placeholder="Descripción del ejercicio..."
+            required
+          ></textarea>
+        </div>
+        <!-- Imagen del Ejercicio -->
+        <div>
+          <label class="block text-sm font-bold text-white mb-2">
+            IMAGEN DEL EJERCICIO
+          </label>
+          <div class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-orange-600 transition-colors cursor-pointer">
+            <div v-if="!selectedImage">
+              <UIcon name="i-heroicons-photo" class="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p class="text-slate-400 mb-2">Subir imagen del ejercicio</p>
+              <p class="text-slate-500 text-xs mb-2">Se convertirá automáticamente a WebP para mejor calidad</p>
+              <input
+                type="file"
+                @change="handleImageUpload"
+                accept="image/*"
+                class="hidden"
+                ref="fileInput"
+              />
+              <button
+                type="button"
+                @click="fileInput?.click()"
+                class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+              >
+                Seleccionar imagen
+              </button>
+            </div>
+            <div v-else class="relative">
+              <img :src="selectedImage" alt="Preview" class="w-full h-48 rounded-lg mx-auto object-cover mb-3">
+              <button
+                type="button"
+                @click="removeImage"
+                class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-sm transition-colors cursor-pointer"
+              >
+                Cambiar imagen
+              </button>
+            </div>
           </div>
-        </form>
-      </template>
-    </TermsModal>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white mb-2">Dificultad</label>
+          <CustomSelect
+            v-model="exerciseForm.difficulty"
+            :options="difficultyOptions"
+            placeholder="Seleccionar dificultad"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white mb-2">Músculos Trabajados</label>
+          <input
+            v-model="muscleGroupsInput"
+            type="text"
+            autocomplete="off"
+            class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
+            placeholder="Ej: pectorales, tríceps, deltoides (separados por comas)"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white mb-2">Instrucciones</label>
+          <textarea
+            v-model="instructionsInput"
+            rows="4"
+            class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
+            placeholder="Escribe las instrucciones paso a paso (una por línea)"
+          ></textarea>
+        </div>
+      </div>
+    </ExerciseEditModal>
 
     <!-- Exercise Details Modal -->
     <div v-if="selectedExercise" @click="handleDetailsModalBackdropClick" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -388,7 +364,7 @@
 <script setup lang="ts">
 import { useExercises, type Exercise } from '~/composables/firestore'
 import { useFirebaseStorage } from '~/composables/firebase-storage'
-import TermsModal from '~/components/TermsModal.vue'
+import ExerciseEditModal from '~/components/ExerciseEditModal.vue'
 
 const { user } = useAuth()
 const exercises = ref<Exercise[]>([])

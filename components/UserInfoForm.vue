@@ -100,6 +100,7 @@
             autocomplete="off"
             @input="formatBirthDate"
             @keydown="handleKeyDown"
+            @keydown.enter.prevent
             @focus="showDatePicker = true"
             @blur="handleDateInputBlur"
             :class="[
@@ -124,45 +125,44 @@
         <div 
           v-if="showDatePicker"
           ref="datePickerRef"
-          class="absolute z-50 mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 w-[420px]"
+          class="absolute z-50 mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 w-full max-w-xs sm:w-[420px] sm:max-w-none"
         >
           <!-- Calendar Header -->
-          <div class="flex items-center justify-between mb-4">
-            <button
-              type="button"
-              @click="changeMonth(-1)"
-              class="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <UIcon name="i-heroicons-chevron-left" class="w-5 h-5 text-white" />
-            </button>
-            
-            <div class="flex gap-2 justify-center">
-              <div class="w-[160px]">
-                <CustomSelect
-                  v-model="selectedMonth"
-                  :options="monthOptions"
-                  placeholder="Mes"
-                  @update:model-value="handleMonthChange"
-                />
+          <div class="flex flex-col items-center gap-2 sm:flex-row sm:justify-between sm:gap-4 mb-4">
+            <div class="flex items-center justify-center gap-2 w-full">
+              <button
+                type="button"
+                @click="changeMonth(-1)"
+                class="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <UIcon name="i-heroicons-chevron-left" class="w-5 h-5 text-white" />
+              </button>
+              <div class="flex flex-col sm:flex-row gap-2 w-full">
+                <div class="w-full sm:w-[160px]">
+                  <CustomSelect
+                    v-model="selectedMonth"
+                    :options="monthOptions"
+                    placeholder="Mes"
+                    @update:model-value="handleMonthChange"
+                  />
+                </div>
+                <div class="w-full sm:w-[120px]">
+                  <CustomSelect
+                    v-model="selectedYear"
+                    :options="yearOptions"
+                    placeholder="Año"
+                    @update:model-value="handleYearChange"
+                  />
+                </div>
               </div>
-              
-              <div class="w-[120px]">
-                <CustomSelect
-                  v-model="selectedYear"
-                  :options="yearOptions"
-                  placeholder="Año"
-                  @update:model-value="handleYearChange"
-                />
-              </div>
+              <button
+                type="button"
+                @click="changeMonth(1)"
+                class="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white" />
+              </button>
             </div>
-            
-            <button
-              type="button"
-              @click="changeMonth(1)"
-              class="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white" />
-            </button>
           </div>
           
           <!-- Calendar Grid -->
@@ -206,12 +206,12 @@
         <label class="block text-sm font-bold text-white mb-2">
           Género *
         </label>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
             @click="formData.gender = 'masculino'"
             :class="[
-              'py-3 px-4 rounded-lg font-medium transition-colors',
+              'w-full sm:flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
               formData.gender === 'masculino' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600',
               fieldErrors.gender ? 'ring-2 ring-red-500' : ''
             ]"
@@ -222,7 +222,7 @@
             type="button"
             @click="formData.gender = 'femenino'"
             :class="[
-              'py-3 px-4 rounded-lg font-medium transition-colors',
+              'w-full sm:flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
               formData.gender === 'femenino' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600',
               fieldErrors.gender ? 'ring-2 ring-red-500' : ''
             ]"
@@ -233,7 +233,7 @@
             type="button"
             @click="formData.gender = 'otro'"
             :class="[
-              'py-3 px-4 rounded-lg font-medium transition-colors',
+              'w-full sm:flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
               formData.gender === 'otro' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600',
               fieldErrors.gender ? 'ring-2 ring-red-500' : ''
             ]"
@@ -254,7 +254,6 @@
           :options="countryOptions"
           placeholder="Selecciona tu país"
           :error="!!fieldErrors.country"
-          @update:model-value="handleCountryChange"
         />
         <p v-if="fieldErrors.country" class="text-red-400 text-xs mt-1">{{ fieldErrors.country }}</p>
       </div>
@@ -371,7 +370,11 @@
       </div>
 
       <!-- Field Error Messages -->
-      <div v-if="hasFieldErrors" class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+      <div
+        v-if="allFieldErrorMessages.length > 0"
+        ref="errorBlock"
+        class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
+      >
         <p class="text-red-400 text-sm font-medium mb-2">Por favor corrige los siguientes errores:</p>
         <ul class="text-red-400 text-sm space-y-1">
           <li v-for="error in allFieldErrorMessages" :key="error" class="flex items-start">
@@ -534,6 +537,7 @@ const fileInput = ref<HTMLInputElement>()
 
 // Field-specific errors
 const fieldErrors = reactive<Record<string, string>>({})
+const errorBlock = ref<HTMLElement | null>(null)
 
 // Date picker state
 const showDatePicker = ref(false)
@@ -828,11 +832,6 @@ const calculateAge = (birthDate: string): number => {
 }
 
 // Manejar cambio de país
-const handleCountryChange = (newCountry: string) => {
-  formData.country = newCountry
-  formData.city = '' // Resetear ciudad cuando cambie el país
-}
-
 const handleImageUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
@@ -897,71 +896,70 @@ const validateBirthDate = (birthDate: string): boolean => {
 const validateForm = (): boolean => {
   errorMessage.value = ''
   clearFieldErrors()
-  
+  let valid = true
+
   if (!formData.firstName.trim()) {
     setFieldError('firstName', 'El nombre es obligatorio')
-    return false
+    valid = false
   }
-  
   if (!formData.lastName.trim()) {
     setFieldError('lastName', 'El apellido es obligatorio')
-    return false
+    valid = false
   }
-  
   if (!formData.birthDate || !validateBirthDate(formData.birthDate)) {
     setFieldError('birthDate', 'La fecha de cumpleaños debe tener formato dd/MM/yyyy y ser una fecha válida (no puede ser en el futuro)')
-    return false
+    valid = false
   }
-  
   if (!formData.gender) {
     setFieldError('gender', 'El género es obligatorio')
-    return false
+    valid = false
   }
-  
   if (!formData.country) {
     setFieldError('country', 'El país es obligatorio')
-    return false
+    valid = false
   }
-  
   if (!formData.city) {
     setFieldError('city', 'La ciudad es obligatoria')
-    return false
+    valid = false
   }
-  
   if (!formData.howDidYouHearAboutUs) {
     setFieldError('howDidYouHearAboutUs', 'Por favor selecciona cómo supiste de THEREPZONE')
-    return false
+    valid = false
   }
-  
   if (props.showEmailField && (!formData.email || !formData.email.includes('@'))) {
     setFieldError('email', 'El correo electrónico es obligatorio y debe ser válido')
-    return false
+    valid = false
   }
-  
-  return !hasFieldErrors.value
+  return valid
 }
 
 const handleSubmit = async () => {
-  if (!validateForm()) return
-  
-  isLoading.value = true
+  console.log('🔎 Intentando enviar formulario', JSON.stringify(formData))
+  clearFieldErrors()
+  const valid = validateForm()
+  if (!valid) {
+    console.log('❌ Errores de validación:', JSON.stringify(fieldErrors))
+    // Scroll automático al bloque de errores
+    await nextTick()
+    if (errorBlock.value) {
+      errorBlock.value.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    return
+  }
   errorMessage.value = ''
-  
   try {
-    // Add current date as start date and calculated fields
     const userData = {
       ...formData,
-      fullName: `${formData.firstName} ${formData.lastName}`, // Para compatibilidad
-      age: calculateAge(formData.birthDate), // Para compatibilidad
+      fullName: `${formData.firstName} ${formData.lastName}`,
+      age: calculateAge(formData.birthDate),
       startDate: new Date().toISOString(),
       profileImageFile: profileImageFile.value || undefined
     }
-    
+    console.log('✅ Enviando datos:', JSON.stringify(userData))
     emit('submit', userData)
   } catch (error) {
     errorMessage.value = 'Error al procesar la información. Inténtalo de nuevo.'
-  } finally {
-    isLoading.value = false
+    console.error('❌ Error en handleSubmit:', error)
   }
 }
 
@@ -1006,39 +1004,37 @@ defineExpose({
   setLoading: (value: boolean) => { isLoading.value = value }
 })
 
-// Watch for form data changes to clear field errors
-
-// Watch for form data changes to clear field errors
-watch(() => formData.firstName, () => {
-  if (fieldErrors.firstName) fieldErrors.firstName = ''
+// Watchers: limpian el error si el campo es válido
+watch(() => formData.firstName, (val) => {
+  if (fieldErrors.firstName && val && val.trim().length > 0) fieldErrors.firstName = ''
 })
 
-watch(() => formData.lastName, () => {
-  if (fieldErrors.lastName) fieldErrors.lastName = ''
+watch(() => formData.lastName, (val) => {
+  if (fieldErrors.lastName && val && val.trim().length > 0) fieldErrors.lastName = ''
 })
 
-watch(() => formData.birthDate, () => {
-  if (fieldErrors.birthDate) fieldErrors.birthDate = ''
+watch(() => formData.birthDate, (val) => {
+  if (fieldErrors.birthDate && val && validateBirthDate(val)) fieldErrors.birthDate = ''
 })
 
-watch(() => formData.gender, () => {
-  if (fieldErrors.gender) fieldErrors.gender = ''
+watch(() => formData.gender, (val) => {
+  if (fieldErrors.gender && val) fieldErrors.gender = ''
 })
 
-watch(() => formData.country, () => {
-  if (fieldErrors.country) fieldErrors.country = ''
+watch(() => formData.country, (val) => {
+  if (fieldErrors.country && val) fieldErrors.country = ''
 })
 
-watch(() => formData.city, () => {
-  if (fieldErrors.city) fieldErrors.city = ''
+watch(() => formData.city, (val) => {
+  if (fieldErrors.city && val) fieldErrors.city = ''
 })
 
-watch(() => formData.email, () => {
-  if (fieldErrors.email) fieldErrors.email = ''
+watch(() => formData.email, (val) => {
+  if (fieldErrors.email && val && val.includes('@')) fieldErrors.email = ''
 })
 
-watch(() => formData.howDidYouHearAboutUs, () => {
-  if (fieldErrors.howDidYouHearAboutUs) fieldErrors.howDidYouHearAboutUs = ''
+watch(() => formData.howDidYouHearAboutUs, (val) => {
+  if (fieldErrors.howDidYouHearAboutUs && val) fieldErrors.howDidYouHearAboutUs = ''
 })
 
 // Note: No manual auth check here - the global middleware handles authentication

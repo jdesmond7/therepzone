@@ -1,7 +1,7 @@
 <template>
-  <transition name="modal-fade">
+  <transition name="modal-fade" @after-leave="emit('closed')">
     <div v-if="showBg" class="fixed inset-0 z-50 flex items-center justify-center">
-      <div class="absolute inset-0 bg-black bg-opacity-0 backdrop-blur-0 transition-all duration-600 modal-bg" />
+      <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur transition-all duration-600 modal-bg" />
       <transition name="modal-slide" @after-leave="showModalContent = false">
         <div v-if="showModalContent" class="relative bg-slate-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col modal-content">
           <div class="p-8 overflow-y-auto flex-1 text-slate-200 text-base leading-relaxed space-y-10">
@@ -25,8 +25,8 @@
                 He leído y acepto los Términos y Condiciones y el Aviso de Privacidad.
               </label>
               <div class="flex justify-end gap-2">
-                <AppButtonSecondary @click="$emit('cancel')">Cancelar</AppButtonSecondary>
-                <AppButtonPrimary :disabled="!accepted" @click="guardar">Guardar</AppButtonPrimary>
+                <AppButtonSecondary @click="closeModal('cancel')">Cancelar</AppButtonSecondary>
+                <AppButtonPrimary :disabled="!accepted" @click="closeModal('save')">Aceptar</AppButtonPrimary>
               </div>
             </slot>
           </div>
@@ -45,7 +45,7 @@ import AppButtonSecondary from '~/components/AppButtonSecondary.vue'
 const props = defineProps({
   show: Boolean
 })
-const emit = defineEmits(['cancel', 'save', 'scrollTo'])
+const emit = defineEmits(['cancel', 'save', 'closed', 'scrollTo'])
 const accepted = ref(false)
 
 // Controla el montaje del modal (contenido)
@@ -86,9 +86,15 @@ onUnmounted(() => {
   if (bgTimeout) clearTimeout(bgTimeout)
 })
 
-function guardar() {
-  emit('save', { accepted: true })
-  // No resetear accepted aquí
+function closeModal(action: 'cancel' | 'save') {
+  // Inicia la animación de salida
+  showModalContent.value = false
+  // Espera a que termine la animación y luego emite el evento correspondiente
+  setTimeout(() => {
+    if (action === 'cancel') emit('cancel')
+    if (action === 'save') emit('save', { accepted: true })
+    // El evento 'closed' se emitirá automáticamente por @after-leave del <transition>
+  }, 500)
 }
 </script>
 
@@ -99,12 +105,12 @@ function guardar() {
 }
 .modal-fade-enter-from .modal-bg,
 .modal-fade-leave-to .modal-bg {
-  background: rgba(0,0,0,0);
+  background: rgba(0,0,0,0.5);
   backdrop-filter: blur(0px);
 }
 .modal-fade-enter-to .modal-bg,
 .modal-fade-leave-from .modal-bg {
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.5);
   backdrop-filter: blur(6px);
 }
 

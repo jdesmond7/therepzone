@@ -72,6 +72,7 @@ export interface User {
   isAvailable?: boolean // Si está disponiendo nuevos clientes
   maxClients?: number // Máximo número de clientes
   currentClients?: number // Número actual de clientes (se calcula automáticamente)
+  uid?: string // UID de Auth para compatibilidad con el store
 }
 
 export interface Exercise {
@@ -195,21 +196,19 @@ export const useUsers = () => {
       if (docSnap.exists()) {
         return { success: true, user: { id: docSnap.id, ...docSnap.data() } as User }
       }
-      
       // If not found by custom UID, try to find by authUid
-      console.log('🔍 Usuario no encontrado por UID custom, buscando por authUid...')
+      console.log('🔍 Usuario no encontrado por UID custom, buscando por authUid...', userId)
       const usersQuery = query(
         collection(getDb(), 'users'),
         where('authUid', '==', userId)
       )
       const querySnapshot = await getDocs(usersQuery)
-      
       if (!querySnapshot.empty) {
         const userDoc = querySnapshot.docs[0]
         return { success: true, user: { id: userDoc.id, ...userDoc.data() } as User }
       }
-      
-      return { success: false, error: 'User not found' }
+      console.error('❌ Usuario no encontrado ni por UID custom ni por authUid:', userId)
+      return { success: false, error: 'User not found by custom UID or authUid' }
     } catch (error) {
       console.error('Error getting user:', error)
       return { success: false, error }

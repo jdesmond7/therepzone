@@ -27,9 +27,15 @@ export const useUserStore = defineStore('user', () => {
     isLoading.value = true
     try {
       const { getUserById } = useUsers()
+      console.log('[Pinia] Llamando getUserById con UID:', uid)
       const result = await getUserById(uid)
+      console.log('[Pinia] Resultado de getUserById:', result)
       if (result.success && result.user) {
-        userProfile.value = result.user
+        userProfile.value = {
+          ...result.user,
+          uid: result.user.uid || result.user.authUid || null
+        }
+        console.log('[Pinia] userProfile.value asignado:', userProfile.value)
       }
     } finally {
       isLoading.value = false

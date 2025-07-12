@@ -1,7 +1,66 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
-    <!-- Sidebar -->
-    <aside class="fixed top-0 left-0 w-64 h-screen flex flex-col z-30 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col md:flex-row">
+    <!-- Mobile Topbar -->
+    <header class="md:hidden fixed top-0 left-0 w-full z-40 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 h-16">
+      <TheLogo />
+      <button @click="showMobileMenu = true" class="w-10 h-10 flex items-center justify-center border border-white text-white bg-transparent rounded-lg transition-colors hover:bg-white/10 focus:outline-none">
+        <UIcon name="i-heroicons-bars-3" class="w-6 h-6" />
+      </button>
+    </header>
+    <!-- Mobile Menu Drawer -->
+    <transition name="fade">
+      <div v-if="showMobileMenu" class="fixed inset-0 z-50 bg-slate-800 flex flex-col">
+        <div class="bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 h-16">
+          <TheLogo />
+          <button @click="showMobileMenu = false" class="text-white focus:outline-none">
+            <UIcon name="i-heroicons-x-mark" class="w-8 h-8" />
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          <!-- Bienvenida -->
+          <div class="mb-4 bg-slate-700/50 rounded-lg p-3 mt-4">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-slate-300 text-sm">👋 Hola,</span>
+              <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-orange-600 text-white rounded-full">
+                Coach
+              </span>
+            </div>
+            <span style="background: yellow; color: black; font-size: 20px; display: block;">
+              {{ JSON.stringify(userProfile?.value) }}
+            </span>
+          </div>
+          <!-- Links -->
+          <nav class="flex flex-col gap-2">
+            <button @click="navigate('overview')" :class="navBtnClass('overview')">
+              <UIcon name="i-heroicons-chart-bar" class="w-5 h-5" />
+              Resumen General
+            </button>
+            <button @click="navigate('clients')" :class="navBtnClass('clients')">
+              <UIcon name="i-heroicons-users" class="w-5 h-5" />
+              Mis Clientes
+            </button>
+            <button @click="navigate('exercises')" :class="navBtnClass('exercises')">
+              <UIcon name="i-heroicons-academic-cap" class="w-5 h-5" />
+              Ejercicios
+            </button>
+            <button @click="navigate('workouts')" :class="navBtnClass('workouts')">
+              <UIcon name="i-heroicons-fire" class="w-5 h-5" />
+              Rutinas
+            </button>
+            <button @click="navigate('profile')" :class="navBtnClass('profile')">
+              <UIcon name="i-heroicons-user" class="w-5 h-5" />
+              Perfil
+            </button>
+          </nav>
+          <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
+            <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </transition>
+    <!-- Sidebar Desktop -->
+    <aside class="hidden md:flex fixed top-0 left-0 w-64 h-screen flex-col z-30 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700">
       <div class="flex-1 flex flex-col">
         <div class="px-4 py-6">
           <TheLogo />
@@ -13,90 +72,55 @@
               </span>
             </div>
             <div>
-              <span class="text-white font-bold text-lg">{{ userProfile?.fullName || 'Coach' }}</span>
+              <span v-if="userProfile?.value" class="text-white font-bold text-lg block max-w-xs break-words">
+                {{ userProfile?.value?.fullName || userProfile?.value?.email || userProfile?.value?.id || 'Coach' }}
+              </span>
             </div>
           </div>
         </div>
-        
         <nav class="px-4 space-y-2">
-          <button 
-            @click="currentView = 'overview'"
-            :class="currentView === 'overview' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
-          >
+          <button @click="currentView = 'overview'" :class="navBtnClass('overview')">
             <UIcon name="i-heroicons-chart-bar" class="w-5 h-5" />
             Resumen General
           </button>
-          
-          <button 
-            @click="currentView = 'clients'"
-            :class="currentView === 'clients' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
-          >
+          <button @click="currentView = 'clients'" :class="navBtnClass('clients')">
             <UIcon name="i-heroicons-users" class="w-5 h-5" />
             Mis Clientes
             <span v-if="clientCount > 0" class="ml-auto bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
               {{ clientCount }}
             </span>
           </button>
-          
-          <button 
-            @click="currentView = 'exercises'"
-            :class="currentView === 'exercises' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
-          >
+          <button @click="currentView = 'exercises'" :class="navBtnClass('exercises')">
             <UIcon name="i-heroicons-academic-cap" class="w-5 h-5" />
             Ejercicios
           </button>
-          
-          <button 
-            @click="currentView = 'workouts'"
-            :class="currentView === 'workouts' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
-          >
+          <button @click="currentView = 'workouts'" :class="navBtnClass('workouts')">
             <UIcon name="i-heroicons-fire" class="w-5 h-5" />
             Rutinas
           </button>
-          
-          <button 
-            @click="currentView = 'profile'"
-            :class="currentView === 'profile' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
-          >
+          <button @click="currentView = 'profile'" :class="navBtnClass('profile')">
             <UIcon name="i-heroicons-user" class="w-5 h-5" />
             Perfil
           </button>
-          
-          <NuxtLink 
-            to="/admin-seed"
-            class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors font-medium"
-          >
-            <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
-            Admin Panel
-          </NuxtLink>
         </nav>
       </div>
       <div class="px-4 mb-6 mt-auto">
-        <button 
-          @click="logout"
-          class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium"
-        >
+        <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
           <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
           Cerrar Sesión
         </button>
       </div>
     </aside>
-
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col ml-64">
+    <main class="flex-1 flex flex-col md:ml-64 pt-16 md:pt-0">
       <!-- Header -->
       <header class="px-4 py-6 border-b border-slate-700">
-        <div class="flex items-center justify-between">
-          <div class="flex-1">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div class="flex flex-col md:flex-row md:items-center md:gap-4 flex-1">
             <h1 class="text-2xl font-black text-white">{{ currentViewTitle }}</h1>
             <p class="text-slate-400">{{ getCurrentDate() }}</p>
           </div>
-          <div class="flex items-end gap-12">
+          <div class="hidden md:flex items-end gap-12">
             <div class="text-right">
               <p class="text-white font-semibold text-2xl italic">{{ motivationalPhrase }}</p>
             </div>
@@ -105,6 +129,9 @@
               <p class="text-orange-600 font-bold text-xl">{{ clientCount }} 👥</p>
             </div>
           </div>
+        </div>
+        <div class="block md:hidden mt-2">
+          <p class="text-white font-semibold text-lg italic">{{ motivationalPhrase }}</p>
         </div>
       </header>
 
@@ -252,10 +279,29 @@
 // Coach Dashboard for THEREPZONE
 import { useUsers, useExercises, useWorkouts } from '~/composables/firestore'
 import type { User } from '~/composables/firestore'
+import { watch, onMounted, ref, isRef } from 'vue'
+import { useUserStore } from '~/stores/user'
+import { useAuth } from '~/composables/firebase'
 
 const currentView = ref('overview')
-const { userProfile } = useUserRole()
-const { user } = useAuth()
+const userStore = useUserStore()
+const userProfile = userStore.userProfile
+
+onMounted(() => {
+  const auth = useAuth()
+  const userRef = auth && auth.user && isRef(auth.user) ? auth.user : null
+  if (userRef) {
+    watch(
+      () => userRef.value ? userRef.value.uid : null,
+      (uid) => {
+        if (uid) {
+          userStore.loadUserProfile(uid)
+        }
+      },
+      { immediate: true }
+    )
+  }
+})
 
 // Stats
 const clientCount = ref(0)
@@ -320,19 +366,20 @@ onMounted(async () => {
 })
 
 const loadStats = async () => {
-  if (!user.value?.uid) return
+  const uid = getUserUid()
+  if (!uid) return
 
   try {
     // Load client count
     const { getClientsByCoach } = useUsers()
-    const clientsResult = await getClientsByCoach(user.value.uid)
+    const clientsResult = await getClientsByCoach(uid)
     if (clientsResult.success) {
       clientCount.value = clientsResult.clients?.length || 0
     }
 
     // Load workout count
     const { getWorkoutsByCoach } = useWorkouts()
-    const workoutsResult = await getWorkoutsByCoach(user.value.uid)
+    const workoutsResult = await getWorkoutsByCoach(uid)
     if (workoutsResult.success) {
       workoutCount.value = workoutsResult.workouts?.length || 0
     }
@@ -351,25 +398,41 @@ const loadStats = async () => {
 const athletes = ref<User[]>([])
 
 const loadAthletes = async () => {
-  if (!user.value?.uid) return
+  const uid = getUserUid()
+  console.log('[DEBUG] UID usado para buscar clientes:', uid)
+  if (!uid) return
   const { getClientsByCoach } = useUsers()
-  const result = await getClientsByCoach(user.value.uid)
+  const result = await getClientsByCoach(uid)
+  console.log('[DEBUG] Resultado de getClientsByCoach:', result)
   if (result.success) {
+    console.log('[DEBUG] Clientes encontrados:', result.clients)
     athletes.value = result.clients ?? []
   } else {
     athletes.value = []
   }
 }
 
-watch(currentView, (val) => {
-  if (val === 'clients') {
-    loadAthletes()
+// Reemplaza el watcher de currentView por uno combinado con userProfile.value.uid
+watch(
+  [currentView, () => (userProfile && typeof userProfile.value === 'object' ? userProfile.value.uid : null)],
+  ([view, uid]) => {
+    if (view === 'clients' && uid) {
+      loadAthletes()
+    }
+  },
+  { immediate: true }
+)
+
+// Safe watcher for userProfile
+watchEffect(() => {
+  if (userProfile?.value) {
+    // console.log('userProfile actualizado:', userProfile.value) // Removed debug log
   }
-}, { immediate: true })
+})
 
 const currentViewTitle = computed(() => {
   const titles: Record<string, string> = {
-    'overview': 'Dashboard Coach',
+    'overview': 'Resumen',
     'clients': 'Mis Clientes',
     'exercises': 'Ejercicios',
     'workouts': 'Rutinas',
@@ -406,4 +469,37 @@ useHead({
     { name: 'description', content: 'Panel de control para coaches' }
   ]
 })
-</script> 
+
+const showMobileMenu = ref(false)
+
+function navBtnClass(view: string) {
+  return [
+    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium',
+    currentView.value === view
+      ? 'bg-orange-600 text-white'
+      : 'text-slate-300 hover:text-white hover:bg-slate-700'
+  ]
+}
+
+function navigate(view: string) {
+  currentView.value = view
+  showMobileMenu.value = false
+}
+
+// Helper seguro para obtener el uid del usuario
+const getUserUid = () => {
+  if (userProfile?.value && typeof userProfile.value === 'object') {
+    return userProfile.value.uid || userProfile.value.id || null
+  }
+  return null
+}
+</script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style> 
