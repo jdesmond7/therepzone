@@ -128,17 +128,19 @@ const handleProfileSubmit = async (userData: any) => {
       }
       return
     }
-    // Generar UID personalizado
-    const authUid = result.user.uid
-    const firstName = (userData.firstName || userData.fullName?.split(' ')[0] || 'user').toLowerCase()
-    const last5 = authUid.slice(-5)
-    const customUid = `${pendingRegistration.value.userRole === 'coach' ? 'coach' : 'client'}_${firstName}${last5}`
+    // Use the custom UID that was already generated during registration
+    const customUid = result.customUid || result.user.uid
     
-    await createUser(customUid, {
+    // Update the user profile with complete information
+    const updateResult = await updateUser(customUid, {
       ...profileData,
       role: pendingRegistration.value.userRole as 'client' | 'coach',
-      authUid // Guarda el UID de Auth para referencia cruzada
+      authUid: result.user.uid // Store original Auth UID for reference
     })
+    
+    if (!updateResult.success) {
+      throw new Error('Error updating user profile: ' + updateResult.error)
+    }
     
     // 3. Limpiar localStorage
     localStorage.removeItem('pending_registration')

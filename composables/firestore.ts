@@ -150,9 +150,9 @@ export interface WorkoutLog {
 export const useUsers = () => {
   const usersCollection = collection(getDb(), 'users')
 
-  const createUser = async (uid: string, userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createUser = async (customUid: string, userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      console.log('🔄 Intentando crear usuario en Firestore con UID:', uid)
+      console.log('🔄 Intentando crear usuario en Firestore con UID custom:', customUid)
       console.log('📝 Datos del usuario:', userData)
       
       const db = getDb()
@@ -160,17 +160,18 @@ export const useUsers = () => {
       
       const docData = {
         ...userData,
+        id: customUid, // Store the custom UID as the document ID
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
       
-      const docRef = doc(db, 'users', uid)
+      const docRef = doc(db, 'users', customUid)
       console.log('📍 Referencia del documento creada:', docRef.path)
       
       await setDoc(docRef, docData)
-      console.log('✅ Documento creado exitosamente en Firestore')
+      console.log('✅ Documento creado exitosamente en Firestore con UID custom:', customUid)
       
-      return { success: true, id: uid }
+      return { success: true, id: customUid }
     } catch (error: any) {
       console.error('❌ Error completo creando usuario en Firestore:', error)
       console.error('❌ Error code:', error.code)
@@ -188,13 +189,27 @@ export const useUsers = () => {
 
   const getUserById = async (userId: string) => {
     try {
+      // First try to get by custom UID (document ID)
       const docRef = doc(getDb(), 'users', userId)
       const docSnap = await getDoc(docRef)
       if (docSnap.exists()) {
         return { success: true, user: { id: docSnap.id, ...docSnap.data() } as User }
-      } else {
-        return { success: false, error: 'User not found' }
       }
+      
+      // If not found by custom UID, try to find by authUid
+      console.log('🔍 Usuario no encontrado por UID custom, buscando por authUid...')
+      const usersQuery = query(
+        collection(getDb(), 'users'),
+        where('authUid', '==', userId)
+      )
+      const querySnapshot = await getDocs(usersQuery)
+      
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0]
+        return { success: true, user: { id: userDoc.id, ...userDoc.data() } as User }
+      }
+      
+      return { success: false, error: 'User not found' }
     } catch (error) {
       console.error('Error getting user:', error)
       return { success: false, error }

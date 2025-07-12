@@ -162,24 +162,38 @@ export const useAuth = () => {
       user.value = userCredential.user
       console.log('✅ Usuario creado en Firebase Auth:', userCredential.user.uid)
       
-      // Create user profile in Firestore
-      console.log('🔄 Creando perfil en Firestore...')
+      // Generate custom UID for Firestore
+      console.log('🆔 Generando UID custom para Firestore...')
+      const { generateUniqueCustomUid } = await import('~/utils/custom-uid-generator')
+      
+      const firstName = fullName?.split(' ')[0] || email.split('@')[0]
+      const customUid = await generateUniqueCustomUid({
+        role,
+        firstName,
+        authUid: userCredential.user.uid
+      })
+      
+      console.log('✅ UID custom generado:', customUid)
+      
+      // Create user profile in Firestore with custom UID
+      console.log('🔄 Creando perfil en Firestore con UID custom...')
       const { useUsers } = await import('./firestore')
       const { createUser } = useUsers()
       
-      const firestoreResult = await createUser(userCredential.user.uid, {
+      const firestoreResult = await createUser(customUid, {
         fullName: fullName || email.split('@')[0], // Nombre temporal basado en email
-        firstName: fullName?.split(' ')[0] || email.split('@')[0], // Primer nombre o email base
+        firstName: firstName, // Primer nombre o email base
         lastName: fullName?.split(' ').slice(1).join(' ') || '', // Resto del nombre o vacío
         email: email,
         role: role,
         assignedWorkouts: [],
-        profileCompleted: false // Por defecto los perfiles no están completados
+        profileCompleted: false, // Por defecto los perfiles no están completados
+        authUid: userCredential.user.uid // Store original Auth UID for reference
       })
       
       if (firestoreResult.success) {
-        console.log('✅ Perfil creado exitosamente en Firestore')
-        return { success: true, user: userCredential.user }
+        console.log('✅ Perfil creado exitosamente en Firestore con UID custom:', customUid)
+        return { success: true, user: userCredential.user, customUid }
       } else {
         console.error('❌ Error creando perfil en Firestore:', firestoreResult.error)
         // User was created in Auth but not in Firestore - this is the problem!
