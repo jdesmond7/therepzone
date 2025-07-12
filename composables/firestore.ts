@@ -48,6 +48,7 @@ export interface User {
   updatedAt: Timestamp
   assignedWorkouts: string[]
   coachId?: string // For clients - who is their assigned coach
+  authUid?: string // UID de Auth para referencia cruzada
   // Campos adicionales del perfil
   nickname?: string
   birthDate?: string // Fecha de cumpleaños en formato /yyyy

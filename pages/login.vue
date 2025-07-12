@@ -127,13 +127,17 @@ if (process.client) {
 }
 
 import { useUserRole } from '~/composables/useUserRole'
+import { useUserStore } from '~/stores/user'
 
 const { login, logout, user } = useAuth()
-const { getDashboardRoute, ensureProfileLoaded } = useUserRole()
+const { getDashboardRoute, ensureProfileLoaded, clearUserProfile: clearUserRoleProfile } = useUserRole()
+const userStore = useUserStore()
 
 const handleLogout = async () => {
   console.log('🚪 Cerrando sesión...')
   await logout()
+  clearUserRoleProfile() // Limpia el composable
+  userStore.clearUserProfile() // Limpia el store Pinia
   console.log('✅ Sesión cerrada')
 }
 

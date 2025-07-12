@@ -128,10 +128,16 @@ const handleProfileSubmit = async (userData: any) => {
       }
       return
     }
+    // Generar UID personalizado
+    const authUid = result.user.uid
+    const firstName = (userData.firstName || userData.fullName?.split(' ')[0] || 'user').toLowerCase()
+    const last5 = authUid.slice(-5)
+    const customUid = `${pendingRegistration.value.userRole === 'coach' ? 'coach' : 'client'}_${firstName}${last5}`
     
-    await createUser(result.user.uid, {
+    await createUser(customUid, {
       ...profileData,
-      role: pendingRegistration.value.userRole as 'client' | 'coach'
+      role: pendingRegistration.value.userRole as 'client' | 'coach',
+      authUid // Guarda el UID de Auth para referencia cruzada
     })
     
     // 3. Limpiar localStorage
