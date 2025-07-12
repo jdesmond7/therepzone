@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for THEREPZONE
+// TEMPORARY: More permissive rules for development testing
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // DEVELOPMENT: Allow all authenticated users to upload/read images
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // TODO: Replace with specific rules after CORS is resolved:
+    // - exercises/{exerciseName}/{fileName} for exercise images
+    // - athletes/{athleteName}/{fileName} for profile images  
+    // - workouts/{workoutName}/{fileName} for workout images
+  }
+} 

@@ -1,0 +1,162 @@
+<template>
+  <div class="relative" ref="selectContainer">
+    <!-- Main select button -->
+    <button
+      type="button"
+      @click="toggleDropdown"
+      :disabled="disabled"
+      :class="[
+        'w-full pl-4 pr-4 py-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-center gap-2',
+        props.error 
+          ? 'border-red-500 focus:ring-red-500' 
+          : 'border-slate-600 focus:ring-orange-600'
+      ]"
+    >
+      <span class="flex-1 truncate" :class="{ 'text-slate-400': !selectedOption }">
+        {{ selectedOption ? selectedOption.label : placeholder }}
+      </span>
+      <UIcon 
+        name="i-heroicons-chevron-down" 
+        class="w-5 h-5 text-slate-400 transition-transform duration-200 flex-shrink-0"
+        :class="{ 'rotate-180': isOpen }"
+      />
+    </button>
+
+    <!-- Dropdown menu -->
+    <Transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div
+        v-if="isOpen"
+        class="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
+      >
+        <div class="py-2">
+          <button
+            v-for="option in options"
+            :key="option.value"
+            type="button"
+            @click="selectOption(option)"
+            class="w-full px-4 py-2 text-left hover:bg-slate-700 focus:bg-slate-700 focus:outline-none transition-colors duration-150 text-white"
+            :class="{ 'bg-orange-600 hover:bg-orange-700': selectedOption?.value === option.value }"
+          >
+            <div class="flex items-center justify-between">
+              <span>{{ option.label }}</span>
+              <UIcon 
+                v-if="selectedOption?.value === option.value"
+                name="i-heroicons-check" 
+                class="w-4 h-4 text-white"
+              />
+            </div>
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<script setup lang="ts">
+interface SelectOption {
+  value: string
+  label: string
+}
+
+interface Props {
+  options: SelectOption[]
+  modelValue: string
+  placeholder?: string
+  disabled?: boolean
+  error?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  placeholder: 'Selecciona una opción',
+  disabled: false,
+  error: false
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>()
+
+const selectContainer = ref<HTMLElement>()
+
+// Use dropdown manager to ensure only one dropdown is open at a time
+const { generateDropdownId, registerDropdown, closeDropdown, isDropdownOpen } = useDropdownManager()
+const dropdownId = generateDropdownId()
+const isOpen = isDropdownOpen(dropdownId)
+
+const selectedOption = computed(() => 
+  props.options.find(option => option.value === props.modelValue)
+)
+
+const toggleDropdown = () => {
+  if (!props.disabled) {
+    registerDropdown(dropdownId)
+  }
+}
+
+const selectOption = (option: SelectOption) => {
+  emit('update:modelValue', option.value)
+  closeDropdown(dropdownId)
+}
+
+// Close dropdown when clicking outside
+onMounted(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (selectContainer.value && !selectContainer.value.contains(event.target as Node)) {
+      closeDropdown(dropdownId)
+    }
+  }
+  
+  document.addEventListener('click', handleClickOutside)
+  
+  onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
+  })
+})
+
+// Close dropdown on Escape key
+onMounted(() => {
+  const handleEscape = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      closeDropdown(dropdownId)
+    }
+  }
+  
+  document.addEventListener('keydown', handleEscape)
+  
+  onUnmounted(() => {
+    document.removeEventListener('keydown', handleEscape)
+  })
+})
+</script>
+
+<style scoped>
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #1e293b;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+</style> 
