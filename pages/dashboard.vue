@@ -11,10 +11,10 @@
               <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-orange-600 text-white rounded-full">
                 {{ userProfile?.role === 'client' ? 'Atleta' : (userProfile?.role || 'Cliente') }}
               </span>
-              <span class="text-white font-bold text-lg block max-w-xs whitespace-pre-line break-words overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                {{ userProfile?.nickname || userProfile?.fullName || 'Cliente' }}
-              </span>
             </div>
+            <span class="text-white font-bold text-lg block max-w-xs whitespace-pre-line break-words overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+              {{ userProfile?.nickname || userProfile?.fullName || 'Cliente' }}
+            </span>
           </div>
         </div>
         

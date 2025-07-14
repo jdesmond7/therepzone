@@ -25,9 +25,11 @@
                 Coach
               </span>
             </div>
-            <span style="background: yellow; color: black; font-size: 20px; display: block;">
-              {{ JSON.stringify(userProfile?.value) }}
-            </span>
+            <div>
+              <span v-if="userStore.userProfile" class="text-white font-bold text-lg block max-w-xs break-words">
+                {{ userStore.userProfile?.nickname || userStore.userProfile?.fullName || userStore.userProfile?.email || userStore.userProfile?.id || 'Coach' }}
+              </span>
+            </div>
           </div>
           <!-- Links -->
           <nav class="flex flex-col gap-2">
@@ -72,8 +74,8 @@
               </span>
             </div>
             <div>
-              <span v-if="userProfile?.value" class="text-white font-bold text-lg block max-w-xs break-words">
-                {{ userProfile?.value?.fullName || userProfile?.value?.email || userProfile?.value?.id || 'Coach' }}
+              <span v-if="userStore.userProfile" class="text-white font-bold text-lg block max-w-xs break-words">
+                {{ userStore.userProfile?.nickname || userStore.userProfile?.fullName || userStore.userProfile?.email || userStore.userProfile?.id || 'Coach' }}
               </span>
             </div>
           </div>
@@ -120,18 +122,9 @@
             <h1 class="text-2xl font-black text-white">{{ currentViewTitle }}</h1>
             <p class="text-slate-400">{{ getCurrentDate() }}</p>
           </div>
-          <div class="hidden md:flex items-end gap-12">
-            <div class="text-right">
-              <p class="text-white font-semibold text-2xl italic">{{ motivationalPhrase }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-slate-400 text-sm">Clientes activos</p>
-              <p class="text-orange-600 font-bold text-xl">{{ clientCount }} 👥</p>
-            </div>
-          </div>
         </div>
-        <div class="block md:hidden mt-2">
-          <p class="text-white font-semibold text-lg italic">{{ motivationalPhrase }}</p>
+        <div class="mt-2">
+          <p class="text-orange-500 font-semibold text-lg italic">{{ motivationalPhrase }}</p>
         </div>
       </header>
 
@@ -279,17 +272,22 @@
 // Coach Dashboard for THEREPZONE
 import { useUsers, useExercises, useWorkouts } from '~/composables/firestore'
 import type { User } from '~/composables/firestore'
-import { watch, onMounted, ref, isRef } from 'vue'
+import { watch, onMounted, ref, isRef, computed, unref } from 'vue'
 import { useUserStore } from '~/stores/user'
 import { useAuth } from '~/composables/firebase'
 
 const currentView = ref('overview')
+// Elimina la copia local userProfile, usa directamente userStore.userProfile
 const userStore = useUserStore()
-const userProfile = userStore.userProfile
+
+// Elimina logs directos de userStore.userProfile.value fuera de watchers o template
 
 onMounted(() => {
   const auth = useAuth()
   const userRef = auth && auth.user && isRef(auth.user) ? auth.user : null
+  if (userRef && userRef.value && !userStore.userProfile) {
+    userStore.loadUserProfile(userRef.value.uid)
+  }
   if (userRef) {
     watch(
       () => userRef.value ? userRef.value.uid : null,
@@ -399,25 +397,51 @@ const athletes = ref<User[]>([])
 
 const loadAthletes = async () => {
   const uid = getUserUid()
-  console.log('[DEBUG] UID usado para buscar clientes:', uid)
   if (!uid) return
   const { getClientsByCoach } = useUsers()
   const result = await getClientsByCoach(uid)
-  console.log('[DEBUG] Resultado de getClientsByCoach:', result)
+  console.log('[CoachDashboard] Resultado getClientsByCoach:', result)
   if (result.success) {
-    console.log('[DEBUG] Clientes encontrados:', result.clients)
     athletes.value = result.clients ?? []
   } else {
     athletes.value = []
   }
 }
 
-// Reemplaza el watcher de currentView por uno combinado con userProfile.value.uid
+// Safe watcher for current view and user profile
 watch(
-  [currentView, () => (userProfile && typeof userProfile.value === 'object' ? userProfile.value.uid : null)],
+  [
+    currentView,
+    () => {
+      try {
+        return userStore.userProfile?.uid || null
+      } catch (e) {
+        return null
+      }
+    }
+  ],
   ([view, uid]) => {
     if (view === 'clients' && uid) {
-      loadAthletes()
+      loadStats();
+      loadAthletes();
+    }
+  },
+  { immediate: true }
+)
+
+// Watch para cargar clientes cuando el perfil esté listo
+watch(
+  () => {
+    try {
+      return userStore.userProfile?.uid || null
+    } catch (e) {
+      return null
+    }
+  },
+  (uid) => {
+    if (uid) {
+      loadStats();
+      loadAthletes();
     }
   },
   { immediate: true }
@@ -425,8 +449,12 @@ watch(
 
 // Safe watcher for userProfile
 watchEffect(() => {
-  if (userProfile?.value) {
-    // console.log('userProfile actualizado:', userProfile.value) // Removed debug log
+  try {
+    if (userStore.userProfile) {
+      // console.log('userProfile actualizado:', userStore.userProfile)
+    }
+  } catch (e) {
+    // Ignore errors during hydration
   }
 })
 
@@ -488,10 +516,11 @@ function navigate(view: string) {
 
 // Helper seguro para obtener el uid del usuario
 const getUserUid = () => {
-  if (userProfile?.value && typeof userProfile.value === 'object') {
-    return userProfile.value.uid || userProfile.value.id || null
+  try {
+    return userStore.userProfile?.uid || userStore.userProfile?.id || null
+  } catch (e) {
+    return null
   }
-  return null
 }
 </script>
 

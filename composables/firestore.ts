@@ -82,7 +82,7 @@ export interface Exercise {
   photo?: string // Main photo field for exercise image
   photoUrl?: string // Deprecated: keeping for backward compatibility
   imagePath?: string // Firebase Storage path for image deletion
-  category: string // 'pecho', 'espalda', 'piernas', etc.
+  category?: string // 'pecho', 'espalda', 'piernas', etc. (opcional, deprecated)
   difficulty: 'principiante' | 'intermedio' | 'avanzado'
   createdAt: Timestamp
   createdBy: string // Coach ID who created this exercise

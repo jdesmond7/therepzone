@@ -152,3 +152,46 @@ body {
     border-color: rgb(75 85 99); /* border-slate-600 */
   }
 } 
+
+/* Forzar estilos de vue-multiselect para que luzca igual que CustomSelect */
+.rz-multiselect .multiselect {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.5rem !important;
+  min-height: 50px !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  transition: border-color 0.2s !important;
+  box-shadow: none !important;
+  outline: none !important;
+  display: block !important;
+  width: 100% !important;
+}
+.rz-multiselect .multiselect__tags,
+.rz-multiselect .multiselect__input,
+.rz-multiselect .multiselect__single {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+.rz-multiselect .multiselect__placeholder {
+  color: #64748b !important;
+  font-size: 1rem !important;
+  padding-left: 0 !important;
+  background: transparent !important;
+}
+.rz-multiselect .multiselect__content-wrapper {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.25) !important;
+  margin-top: 0.25rem !important;
+  padding: 0 !important;
+} 

@@ -85,52 +85,57 @@ const emit = defineEmits<{
 
 const selectContainer = ref<HTMLElement>()
 
-// Use dropdown manager to ensure only one dropdown is open at a time
-const { generateDropdownId, registerDropdown, closeDropdown, isDropdownOpen } = useDropdownManager()
-const dropdownId = generateDropdownId()
-const isOpen = isDropdownOpen(dropdownId)
+const isOpen = ref(false)
 
 const selectedOption = computed(() => 
   props.options.find(option => option.value === props.modelValue)
 )
 
+const selectId = Math.random().toString(36).slice(2)
+
 const toggleDropdown = () => {
   if (!props.disabled) {
-    registerDropdown(dropdownId)
+    if (!isOpen.value) {
+      window.dispatchEvent(new CustomEvent('custom-select-or-multiselect-open', { detail: selectId }))
+    }
+    isOpen.value = !isOpen.value
+  }
+}
+
+function closeDropdown() {
+  isOpen.value = false
+}
+
+function handleGlobalOpen(e: CustomEvent) {
+  if (e.detail !== selectId) {
+    closeDropdown()
   }
 }
 
 const selectOption = (option: SelectOption) => {
   emit('update:modelValue', option.value)
-  closeDropdown(dropdownId)
+  closeDropdown()
 }
 
-// Close dropdown when clicking outside
 onMounted(() => {
   const handleClickOutside = (event: MouseEvent) => {
     if (selectContainer.value && !selectContainer.value.contains(event.target as Node)) {
-      closeDropdown(dropdownId)
+      closeDropdown()
     }
   }
-  
-  document.addEventListener('click', handleClickOutside)
-  
-  onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside)
-  })
-})
+  document.addEventListener('click', handleClickOutside, true) // use capture phase
+  window.addEventListener('custom-select-or-multiselect-open', handleGlobalOpen as EventListener)
 
-// Close dropdown on Escape key
-onMounted(() => {
   const handleEscape = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
-      closeDropdown(dropdownId)
+      closeDropdown()
     }
   }
-  
   document.addEventListener('keydown', handleEscape)
-  
+
   onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside, true)
+    window.removeEventListener('custom-select-or-multiselect-open', handleGlobalOpen as EventListener)
     document.removeEventListener('keydown', handleEscape)
   })
 })
