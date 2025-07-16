@@ -1,26 +1,84 @@
 <template>
   <div class="space-y-6">
-    <!-- Create Workout Button -->
-    <div class="flex justify-end">
-      <button 
-        @click="showCreateModal = true"
-        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
-      >
-        <UIcon name="i-heroicons-plus" class="w-5 h-5" />
-        Crear Rutina
-      </button>
-    </div>
+    <!-- Data Table -->
+    <DataTable
+      :data="workouts"
+      :columns="tableColumns"
+      :items-per-page="10"
+      @view="viewWorkout"
+    >
+      <!-- Additional Actions -->
+      <template #actions>
+        <AppButtonPrimary
+          @click="showCreateModal = true"
+          icon="i-heroicons-plus"
+        >
+          Crear Rutina
+        </AppButtonPrimary>
+      </template>
+      <!-- Custom cell templates -->
+      <template #cell-title="{ item, value }">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+            <UIcon name="i-heroicons-fire" class="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div class="font-medium text-white">{{ value }}</div>
+            <div class="text-xs text-slate-400 line-clamp-1">{{ item.description }}</div>
+          </div>
+        </div>
+      </template>
 
-    <!-- Workouts Grid -->
-    <div v-if="workouts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div 
-        v-for="workout in workouts" 
-        :key="workout.id"
-        class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-orange-500/50 transition-colors"
-      >
-        <div class="mb-4">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-lg font-bold text-white">{{ workout.title }}</h3>
+      <template #cell-difficulty="{ value }">
+        <span 
+          :class="{
+            'bg-green-500/20 text-green-400': value === 'principiante',
+            'bg-yellow-500/20 text-yellow-400': value === 'intermedio',
+            'bg-red-500/20 text-red-400': value === 'avanzado'
+          }"
+          class="px-2 py-1 rounded-full text-xs font-medium"
+        >
+          {{ value.charAt(0).toUpperCase() + value.slice(1) }}
+        </span>
+      </template>
+
+      <template #cell-regionWorking="{ value }">
+        <div class="flex flex-wrap gap-1">
+          <span 
+            v-for="region in value" 
+            :key="region"
+            class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium"
+          >
+            {{ region.charAt(0).toUpperCase() + region.slice(1) }}
+          </span>
+        </div>
+      </template>
+
+      <template #cell-exercises="{ value }">
+        <span class="text-white font-medium">{{ value.length }} ejercicios</span>
+      </template>
+
+      <template #cell-duration="{ value }">
+        <span class="text-slate-300">{{ value }} min</span>
+      </template>
+
+      <!-- Grid view template -->
+      <template #grid-item="{ items }">
+        <div 
+          v-for="workout in items" 
+          :key="workout.id"
+          class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-orange-500/50 transition-colors"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                <UIcon name="i-heroicons-fire" class="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">{{ workout.title }}</h3>
+                <p class="text-slate-400 text-sm">{{ workout.regionWorking.join(', ') }}</p>
+              </div>
+            </div>
             <span 
               :class="{
                 'bg-green-500/20 text-green-400': workout.difficulty === 'principiante',
@@ -32,74 +90,64 @@
               {{ workout.difficulty }}
             </span>
           </div>
-          
-          <div class="flex items-center gap-2 mb-3">
-            <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium">
-              {{ workout.category }}
-            </span>
-            <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full text-xs font-medium">
-              {{ workout.estimatedDuration }} min
-            </span>
+
+          <p class="text-slate-400 text-sm mb-4 line-clamp-2">{{ workout.description }}</p>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400 text-sm">Ejercicios:</span>
+              <span class="text-white font-medium">{{ workout.exercises.length }} ejercicios</span>
+            </div>
+            
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400 text-sm">Duración estimada:</span>
+              <span class="text-white font-medium">{{ workout.estimatedDuration }} min</span>
+            </div>
           </div>
 
-          <p class="text-slate-400 text-sm mb-3 line-clamp-2">{{ workout.description }}</p>
-          
-          <div class="mb-3">
-            <p class="text-slate-400 text-xs mb-1">Ejercicios:</p>
-            <p class="text-white font-medium">{{ workout.exercises.length }} ejercicios</p>
+          <div class="flex gap-2 mt-4">
+            <AppButtonSecondary
+              @click="viewWorkout(workout)"
+              class="flex-1"
+            >
+              Ver Detalles
+            </AppButtonSecondary>
+            <AppButtonPrimary
+              @click="editWorkout(workout)"
+            >
+              Editar
+            </AppButtonPrimary>
           </div>
         </div>
-
-        <div class="flex gap-2">
-          <button 
-            @click="viewWorkout(workout)"
-            class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-3 rounded-lg transition-colors text-sm cursor-pointer"
-          >
-            Ver Detalles
-          </button>
-          <button 
-            @click="editWorkout(workout)"
-            class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-3 rounded-lg transition-colors text-sm cursor-pointer"
-          >
-            Editar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="!isLoading" class="text-center py-12">
-      <div class="text-6xl mb-4">💪</div>
-      <h3 class="text-xl font-bold text-white mb-2">No tienes rutinas creadas</h3>
-      <p class="text-slate-400 mb-6">Crea tu primera rutina de ejercicios para tus clientes</p>
-      <button 
-        @click="showCreateModal = true"
-        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors cursor-pointer"
-      >
-        Crear Primera Rutina
-      </button>
-    </div>
+      </template>
+    </DataTable>
 
     <!-- Loading State -->
-    <div v-else class="flex items-center justify-center py-12">
+    <div v-if="isLoading" class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
     </div>
 
     <!-- Create Modal (Simplified) -->
     <div v-if="showCreateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl">
-        <h3 class="text-xl font-bold text-white mb-6">Crear Nueva Rutina</h3>
-        
-        <form @submit.prevent="saveWorkout" class="space-y-4">
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-white">Crear Nueva Rutina</h3>
+          <button 
+            @click="showCreateModal = false"
+            class="text-slate-400 hover:text-white"
+          >
+            <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+
+        <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-white mb-2">Nombre de la Rutina</label>
             <input
               v-model="workoutForm.title"
               type="text"
-              autocomplete="off"
-              class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
+              class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
               placeholder="Ej: Rutina de Pecho y Tríceps"
-              required
             />
           </div>
 
@@ -108,31 +156,31 @@
             <textarea
               v-model="workoutForm.description"
               rows="3"
-              class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="Descripción de la rutina..."
-              required
+              class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 resize-none"
+              placeholder="Describe la rutina..."
             ></textarea>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-white mb-2">Categoría</label>
-              <input
-                v-model="workoutForm.category"
-                type="text"
-                autocomplete="off"
-                class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="Ej: Tren superior"
-                required
-              />
+              <label class="block text-sm font-medium text-white mb-2">Región Trabajada</label>
+              <select
+                v-model="workoutForm.regionWorking"
+                multiple
+                class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
+              >
+                <option value="tren superior">Tren Superior</option>
+                <option value="tren inferior">Tren Inferior</option>
+                <option value="core">Core</option>
+                <option value="full body">Full Body</option>
+              </select>
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-white mb-2">Dificultad</label>
               <select
                 v-model="workoutForm.difficulty"
-                class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
-                required
+                class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
               >
                 <option value="">Seleccionar dificultad</option>
                 <option value="principiante">Principiante</option>
@@ -140,39 +188,36 @@
                 <option value="avanzado">Avanzado</option>
               </select>
             </div>
+
+            <div>
+              <label class="block text-sm font-medium text-white mb-2">Duración (min)</label>
+              <input
+                v-model.number="workoutForm.estimatedDuration"
+                type="number"
+                min="10"
+                max="180"
+                class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
+                placeholder="30"
+              />
+            </div>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-white mb-2">Duración Estimada (minutos)</label>
-            <input
-              v-model.number="workoutForm.estimatedDuration"
-              type="number"
-              min="5"
-              max="180"
-              class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="30"
-              required
-            />
-          </div>
-
-          <div class="flex gap-3 pt-4">
-            <button
-              type="button"
-              @click="closeModal"
-              class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
+          <div class="flex gap-4 pt-4">
+            <button 
+              @click="saveWorkout"
               :disabled="isSaving"
-              class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              class="flex-1 h-12 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold px-4 rounded-lg transition-colors"
             >
-              <span v-if="isSaving">Guardando...</span>
-              <span v-else>Crear Rutina</span>
+              {{ isSaving ? 'Guardando...' : 'Crear Rutina' }}
             </button>
+                          <button 
+                @click="showCreateModal = false"
+                class="flex-1 h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-4 rounded-lg transition-colors bg-transparent"
+              >
+                Cancelar
+              </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
 
@@ -189,7 +234,7 @@
           </button>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
           <div class="flex items-center gap-4">
             <span 
               :class="{
@@ -201,9 +246,15 @@
             >
               {{ selectedWorkout.difficulty }}
             </span>
-            <span class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium">
-              {{ selectedWorkout.category }}
-            </span>
+            <div class="flex flex-wrap gap-1">
+              <span 
+                v-for="region in selectedWorkout.regionWorking" 
+                :key="region"
+                class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium"
+              >
+                {{ region }}
+              </span>
+            </div>
             <span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
               {{ selectedWorkout.estimatedDuration }} min
             </span>
@@ -220,6 +271,21 @@
               Funcionalidad completa de ejercicios próximamente...
             </p>
           </div>
+
+          <div class="flex gap-4">
+            <button 
+              @click="editWorkout(selectedWorkout)"
+                                class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 h-12 rounded-lg transition-colors"
+            >
+              Editar Rutina
+            </button>
+            <button 
+              @click="deleteWorkout(selectedWorkout)"
+                                class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 h-12 rounded-lg transition-colors"
+            >
+              Eliminar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -228,6 +294,7 @@
 
 <script setup lang="ts">
 import { useWorkouts, type Workout } from '~/composables/firestore'
+import DataTable from '~/components/DataTable.vue'
 
 const { user } = useAuth()
 const workouts = ref<Workout[]>([])
@@ -236,11 +303,51 @@ const showCreateModal = ref(false)
 const selectedWorkout = ref<Workout | null>(null)
 const isSaving = ref(false)
 
+// Table columns configuration
+const tableColumns = [
+  {
+    key: 'title',
+    label: 'Rutina',
+    sortable: true
+  },
+  {
+    key: 'regionWorking',
+    label: 'Región Trabajada',
+    sortable: true,
+    type: 'badge' as const
+  },
+  {
+    key: 'difficulty',
+    label: 'Dificultad',
+    sortable: true,
+    type: 'badge' as const
+  },
+  {
+    key: 'exercises',
+    label: 'Ejercicios',
+    sortable: true,
+    type: 'number' as const
+  },
+  {
+    key: 'estimatedDuration',
+    label: 'Duración',
+    sortable: true,
+    type: 'number' as const
+  },
+  {
+    key: 'createdAt',
+    label: 'Creada',
+    sortable: true,
+    type: 'date' as const,
+    format: (value: any) => value ? new Date(value).toLocaleDateString('es-ES') : '-'
+  }
+]
+
 // Form data
 const workoutForm = reactive({
   title: '',
   description: '',
-  category: '',
+  regionWorking: [] as string[],
   difficulty: '',
   estimatedDuration: 30,
   exercises: []
@@ -274,41 +381,46 @@ const loadWorkouts = async () => {
     const allWorkouts = []
     if (userResult.success && userResult.workouts) {
       allWorkouts.push(...userResult.workouts)
-      console.log(`✅ Rutinas del usuario: ${userResult.workouts.length}`)
+      console.log('[RUTINAS USUARIO RAW]', userResult.workouts)
     } else {
       console.warn('⚠️ No se pudieron cargar las rutinas del usuario:', userResult.error)
     }
     
     if (demoResult.success && demoResult.workouts) {
       allWorkouts.push(...demoResult.workouts)
-      console.log(`✅ Rutinas demo: ${demoResult.workouts.length}`)
+      console.log('[RUTINAS DEMO RAW]', demoResult.workouts)
     } else {
       console.warn('⚠️ No se pudieron cargar las rutinas demo:', demoResult.error)
     }
     
     workouts.value = allWorkouts
-    
-    console.log(`✅ Total rutinas cargadas: ${allWorkouts.length}`)
+    console.log('[RUTINAS TABLA]', workouts.value)
     
   } catch (error) {
-    console.error('❌ Error crítico cargando rutinas:', error)
+    console.error('❌ Error cargando rutinas:', error)
   } finally {
-    console.log('🏁 Terminando carga de rutinas...')
     isLoading.value = false
   }
 }
 
-const resetForm = () => {
-  workoutForm.title = ''
-  workoutForm.description = ''
-  workoutForm.category = ''
-  workoutForm.difficulty = ''
-  workoutForm.estimatedDuration = 30
-  workoutForm.exercises = []
-}
-
 const saveWorkout = async () => {
   if (!user.value?.uid) return
+
+  // Validate required fields
+  if (!workoutForm.title.trim()) {
+    alert('El nombre de la rutina es obligatorio')
+    return
+  }
+
+  if (!workoutForm.regionWorking.length) {
+    alert('La región trabajada es obligatoria')
+    return
+  }
+
+  if (!workoutForm.difficulty) {
+    alert('La dificultad es obligatoria')
+    return
+  }
 
   isSaving.value = true
   try {
@@ -317,14 +429,29 @@ const saveWorkout = async () => {
     const workoutData = {
       ...workoutForm,
       difficulty: workoutForm.difficulty as 'principiante' | 'intermedio' | 'avanzado',
-      createdBy: user.value.uid
+      createdBy: user.value.uid,
+      coachId: user.value.uid
     }
 
     const result = await createWorkout(workoutData)
     
     if (result.success) {
-      closeModal()
+      showCreateModal.value = false
+      
+      // Reset form
+      workoutForm.title = ''
+      workoutForm.description = ''
+      workoutForm.regionWorking = []
+      workoutForm.difficulty = ''
+      workoutForm.estimatedDuration = 30
+      workoutForm.exercises = []
+      
+      // Reload workouts
       await loadWorkouts()
+      
+      console.log('✅ Rutina creada exitosamente:', workoutForm.title)
+    } else {
+      console.error('Error creating workout:', result.error)
     }
   } catch (error) {
     console.error('Error saving workout:', error)
@@ -333,21 +460,46 @@ const saveWorkout = async () => {
   }
 }
 
-const closeModal = () => {
-  showCreateModal.value = false
-  resetForm()
-}
-
 const viewWorkout = (workout: Workout) => {
   selectedWorkout.value = workout
 }
 
 const editWorkout = (workout: Workout) => {
-  // TODO: Implement edit functionality
+  // TODO: Implement edit workout functionality
   console.log('Edit workout:', workout.title)
+}
+
+const deleteWorkout = async (workout: Workout) => {
+  if (!confirm(`¿Estás seguro de que quieres eliminar la rutina "${workout.title}"?`)) {
+    return
+  }
+
+  try {
+    // TODO: Implement delete workout functionality
+    console.log('Delete workout:', workout.title)
+    // const { deleteWorkout: deleteWorkoutFn } = useWorkouts()
+    // const result = await deleteWorkoutFn(workout.id!)
+    
+    // if (result.success) {
+    //   selectedWorkout.value = null
+    //   await loadWorkouts()
+    //   console.log('✅ Rutina eliminada exitosamente')
+    // }
+  } catch (error) {
+    console.error('Error deleting workout:', error)
+  }
 }
 
 onMounted(() => {
   loadWorkouts()
 })
+
+// Nuevo: watcher para cargar rutinas cuando el usuario esté listo
+watch(
+  () => user.value?.uid,
+  (uid) => {
+    if (uid) loadWorkouts()
+  },
+  { immediate: true }
+)
 </script> 

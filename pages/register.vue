@@ -1,79 +1,33 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
     <div class="w-full max-w-md">
-      <!-- Logo -->
-      <div class="text-center mb-8">
-        <NuxtLink to="/">
-          <TheLogo />
-        </NuxtLink>
-      </div>
       <!-- Register Form -->
       <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8">
-        <!-- Tabs -->
-        <div class="mb-6">
-          <div class="flex w-full rounded-lg bg-slate-900 border border-slate-600 p-1">
-            <button
-              type="button"
-              @click="selectedTab = 0"
-              :class="[
-                'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors',
-                selectedTab === 0 
-                  ? 'text-white bg-orange-600 border border-orange-600' 
-                  : 'text-slate-400 hover:text-slate-200'
-              ]"
-            >
-              ATLETA
-            </button>
-            <button
-              type="button"
-              @click="selectedTab = 1"
-              :class="[
-                'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors',
-                selectedTab === 1 
-                  ? 'text-white bg-orange-600 border border-orange-600' 
-                  : 'text-slate-400 hover:text-slate-200'
-              ]"
-            >
-              COACH
-            </button>
-          </div>
-        </div>
-
-        <!-- Dynamic Title and Description -->
+        <!-- Logo -->
         <div class="text-center mb-8">
-          <h1 class="text-3xl font-black text-white text-center mb-2">
-            {{ selectedTab === 0 ? 'ÚNETE A THEREPZONE' : 'ÚNETE COMO COACH A THEREPZONE' }}
-          </h1>
-          <p class="text-slate-400 text-center">
-            {{ selectedTab === 0 
-              ? 'Crea tu cuenta y comienza tu transformación'
-              : 'Comparte tu experiencia, guía a otros y ayuda a formar atletas de alto rendimiento.'
-            }}
-          </p>
+          <TheLogo :vertical="true" />
         </div>
+        
+        <h1 class="text-3xl font-black text-white text-center mb-2">CREA TU CUENTA</h1>
+        <p class="text-slate-400 text-center mb-8">¡Únete a THEREPZONE y lleva tu entrenamiento al siguiente nivel!</p>
 
-        <form @submit.prevent="onPreRegister" class="space-y-6">
+        <form @submit.prevent="handleRegister" class="space-y-6">
           <!-- Error message -->
           <div v-if="errorMessage" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p class="text-red-400 text-sm">{{ errorMessage }}</p>
-          </div>
-
-          <!-- Success message -->
-          <div v-if="successMessage" class="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <p class="text-green-400 text-sm">{{ successMessage }}</p>
           </div>
 
           <div>
             <label for="email" class="block text-sm font-bold text-white mb-2">
               CORREO ELECTRÓNICO
             </label>
-            <input
+            <AppInput
               id="email"
               v-model="email"
               type="email"
-              class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent email-input"
               placeholder="tu@email.com"
-              required
+              autocomplete="email"
+              :disabled="isLoading"
             />
           </div>
 
@@ -84,13 +38,11 @@
             <PasswordInput
               id="password"
               v-model="password"
-              autocomplete="off"
-              class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent"
               placeholder="••••••••"
-              required
-              minlength="6"
+              autocomplete="off"
+              :disabled="isLoading"
             />
-            <p class="text-xs text-slate-400 mt-1">Mínimo 6 caracteres</p>
+            <span class="text-xs text-slate-400 mt-1 block">Mínimo 6 caracteres</span>
           </div>
 
           <div>
@@ -100,33 +52,32 @@
             <PasswordInput
               id="confirmPassword"
               v-model="confirmPassword"
-              autocomplete="off"
-              class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent"
               placeholder="••••••••"
-              required
+              autocomplete="off"
+              :disabled="isLoading"
             />
           </div>
 
-          <button
+          <AppButtonPrimary
             type="submit"
             :disabled="isLoading"
-            class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
-            :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
+            fullWidth
+            class="h-12"
           >
             <UIcon 
               v-if="isLoading" 
               name="i-heroicons-arrow-path" 
               class="w-6 h-6 animate-spin" 
             />
-            <span v-else>CREAR CUENTA</span>
-          </button>
+            <span v-else>Regístrate</span>
+          </AppButtonPrimary>
         </form>
 
         <div class="mt-6 text-center space-y-3">
           <p class="text-slate-400">
             ¿Ya tienes cuenta? 
             <NuxtLink to="/login" class="text-orange-600 hover:text-orange-500 font-bold">
-              Inicia sesión
+              Inicia Sesión Aquí
             </NuxtLink>
           </p>
           <NuxtLink to="/" class="text-slate-400 hover:text-white transition-colors block">
@@ -226,9 +177,9 @@ import TermsModal from '~/components/TermsModal.vue'
 import { Timestamp } from 'firebase/firestore'
 
 const showTermsModal = ref(false)
-let pendingRegisterData = null
+let pendingRegisterData: { email: string; password: string; userRole: string } | null = null
 
-function onPreRegister() {
+function handleRegister() {
   // Validaciones previas
   if (!email.value || !password.value || !confirmPassword.value) {
     errorMessage.value = 'Por favor completa todos los campos'

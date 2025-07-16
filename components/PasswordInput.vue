@@ -1,10 +1,14 @@
 <template>
-  <div class="relative" :class="[$attrs.class, 'focus-within:ring-2 focus-within:ring-orange-600']">
+  <div class="w-full relative">
     <input
       :type="show ? 'text' : 'password'"
       v-bind="filteredAttrs"
       v-model="inputValue"
-      class="w-full bg-transparent outline-none ring-0 border-0 shadow-none transition"
+      class="w-full h-12 px-4 bg-slate-900 border rounded-lg text-white placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+      :class="[
+        error ? 'border-red-500 focus:ring-red-500' : 'border-slate-600',
+      ]"
+      autocomplete="off"
     />
     <button
       type="button"
@@ -31,7 +35,9 @@ const props = defineProps({
   modelValue: {
     type: String,
     default: ''
-  }
+  },
+  error: { type: Boolean, default: false },
+  errorMessage: { type: String, default: '' }
 })
 const emit = defineEmits(['update:modelValue'])
 

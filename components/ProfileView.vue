@@ -1,490 +1,569 @@
 <template>
-    <div class="min-h-screen flex items-start justify-center px-4 mt-12">
-      <div class="w-full max-w-2xl flex justify-center">
-        <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8 w-full min-h-[700px] flex flex-col justify-start">
-          <h2 class="text-3xl font-black text-white mb-2 text-center">Mi información</h2>
-          <p class="text-slate-400 text-center mb-8">Aquí puedes editar tu información</p>
-          <!-- Tabs de navegación de secciones -->
-          <Tabs v-model="activeTab" :options="[
-            { value: 'personales', label: 'Información Personal' },
-            { value: 'metricas', label: 'Métricas Corporales' },
-            { value: 'ajustes', label: 'Ajustes Generales' }
-          ]" />
-          <form v-if="activeTab === 'personales'" @submit.prevent="guardarPerfil" class="space-y-6 mt-12">
-            <!-- Nombre -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Nombre(s)</label>
-              <input v-model="form.nombres" type="text" class="w-full pl-4 pr-8 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent" placeholder="Tu nombre" />
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div class="w-full space-y-6">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-white">Mi Perfil</h1>
+        <button 
+          @click="toggleEditMode"
+          class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center gap-2"
+        >
+          <UIcon name="i-heroicons-pencil" class="w-4 h-4" />
+          {{ isEditing ? 'Guardar' : 'Editar Perfil' }}
+        </button>
+      </div>
+
+      <!-- Profile Summary Card -->
+      <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
+        <div class="flex items-start gap-6">
+          <!-- Profile Picture -->
+          <div class="relative">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center overflow-hidden">
+              <img 
+                v-if="profileData.profileImageUrl" 
+                :src="profileData.profileImageUrl" 
+                alt="Profile" 
+                class="w-full h-full object-cover"
+              />
+              <UIcon v-else name="i-heroicons-user" class="w-12 h-12 text-white" />
             </div>
-            <!-- Apellido -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Apellido(s)</label>
-              <input v-model="form.apellidos" type="text" class="w-full pl-4 pr-8 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent" placeholder="Tus apellidos" />
-            </div>
-            <!-- Apodo -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Apodo</label>
-              <input v-model="form.apodo" type="text" class="w-full pl-4 pr-8 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent" placeholder="¿Cómo te gusta que te llamen?" />
-            </div>
-            <!-- Fecha de nacimiento -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Fecha de nacimiento</label>
-              <DatePickerInput v-model="form.cumple" />
-            </div>
-            <!-- País -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">País</label>
-              <CustomSelect v-model="form.pais" :options="countryOptions" placeholder="Selecciona tu país" @update:model-value="onCountryChange" />
-            </div>
-            <!-- Ciudad -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Ciudad</label>
-              <CustomSelect v-model="form.ciudad" :options="cityOptions" placeholder="Primero selecciona un país" :disabled="!form.pais" />
-            </div>
-            <!-- Número de teléfono -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Número de teléfono</label>
-              <input v-model="form.telefono" type="number" class="w-full pl-4 pr-8 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent" placeholder="Tu número" />
-            </div>
-            <!-- Género -->
-            <div>
-              <label class="block text-sm font-bold text-white mb-2">Género</label>
-              <div class="grid grid-cols-3 gap-3">
-                <button type="button" @click="form.genero = 'masculino'" :class="form.genero === 'masculino' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'" class="h-[52px] w-full rounded-lg font-medium transition-colors">Masculino</button>
-                <button type="button" @click="form.genero = 'femenino'" :class="form.genero === 'femenino' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'" class="h-[52px] w-full rounded-lg font-medium transition-colors">Femenino</button>
-                <button type="button" @click="form.genero = 'otro'" :class="form.genero === 'otro' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'" class="h-[52px] w-full rounded-lg font-medium transition-colors">Otro</button>
-              </div>
-            </div>
-            <!-- Guardar -->
-            <div class="mt-10">
-              <button type="submit" :disabled="!formChanged() || isSaving" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px]">
-                <UIcon v-if="isSaving" name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin" />
-                Guardar Cambios
-              </button>
-            </div>
-          </form>
-          <!-- En Métricas Corporales -->
-          <div v-if="activeTab === 'metricas'" class="py-6 mt-6">
-            <div class="grid grid-cols-1 gap-2">
-              <!-- Peso -->
-              <div class="mb-4">
-                <label class="block text-sm font-bold text-white mb-2">Peso</label>
-                <div class="relative">
-                  <input v-model.number="form.peso" type="number" min="0" class="w-full pl-4 pr-14 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent" placeholder="Peso" />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold pointer-events-none">Kg</span>
-                </div>
-              </div>
-              <!-- Estatura -->
-              <div class="mb-4">
-                <label class="block text-sm font-bold text-white mb-2">Estatura</label>
-                <div class="relative">
-                  <input v-model="estaturaDisplay" type="number" min="0" class="w-full pl-4 pr-14 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent" placeholder="Estatura" />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold pointer-events-none">cm</span>
-                </div>
-              </div>
-              <!-- Resto de métricas -->
-              <div v-for="m in metricas" :key="m.key" class="mb-4">
-                <label class="block text-sm font-bold text-white mb-2">{{ m.label }}</label>
-                <div class="relative">
-                  <input
-                    v-model.number="form.medidas[m.key]"
-                    type="number"
-                    min="0"
-                    class="w-full px-4 pr-14 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
-                  />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold pointer-events-none">
-                    cm
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="flex justify-end mt-10">
-              <button type="button" @click="guardarMetricas" :disabled="!metricasChanged" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50">
-                Guardar Cambios
-              </button>
-            </div>
+            <button 
+              v-if="isEditing"
+              @click="triggerImageUpload"
+              class="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-600 hover:bg-orange-700 rounded-full flex items-center justify-center transition-colors"
+            >
+              <UIcon name="i-heroicons-camera" class="w-4 h-4 text-white" />
+            </button>
+            <input 
+              ref="imageInput"
+              type="file"
+              accept="image/*"
+              @change="handleImageUpload"
+              class="hidden"
+            />
           </div>
 
-          <!-- En Ajustes Generales -->
-          <div v-if="activeTab === 'ajustes'" class="py-6 mt-6">
-            <div class="grid grid-cols-1 gap-6">
-              <!-- Contraseña -->
+          <!-- Profile Info -->
+          <div class="flex-1">
+            <div class="flex items-start justify-between">
               <div>
-                <label class="block text-mb font-bold text-white mb-6">Contraseña</label>
-                <button type="button" v-if="!showPasswordFields" @click="showPasswordFields = true" class="w-full border border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition rounded-lg px-4 py-2 mb-2 bg-transparent">
-                  Cambiar Contraseña
-                </button>
-                <div v-if="showPasswordFields" class="space-y-3 mt-2">
-                  <label class="block text-sm font-bold text-white mb-2">Contraseña actual</label>
-                  <PasswordInput v-model="passwordForm.current" placeholder="Contraseña actual" class="w-full bg-slate-900 text-white rounded-lg px-4 py-2 border border-slate-700 focus:outline-none h-[50px]" />
-                  <label class="block text-sm font-bold text-white mb-2">Nueva contraseña</label>
-                  <PasswordInput v-model="passwordForm.new" placeholder="Nueva contraseña" class="w-full bg-slate-900 text-white rounded-lg px-4 py-2 border border-slate-700 focus:outline-none h-[50px]" />
-                  <label class="block text-sm font-bold text-white mb-2">Confirmar nueva contraseña</label>
-                  <PasswordInput v-model="passwordForm.confirm" placeholder="Confirmar nueva contraseña" class="w-full bg-slate-900 text-white rounded-lg px-4 py-2 border border-slate-700 focus:outline-none h-[50px]" />
-                  <div v-if="passwordError" class="text-red-500 text-xs">{{ passwordError }}</div>
-                </div>
-              </div>
-              <!-- Correo electrónico -->
-              <div>
-                <label class="block text-sm font-bold text-white mb-2">Correo electrónico</label>
-                <div class="relative flex items-center">
-                  <input v-model="editableEmail" :disabled="!isEditingEmail" type="email" class="w-full pl-4 pr-24 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white min-h-[48px]" />
-                  <button v-if="!isEditingEmail" @click="enableEmailEdit" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 border border-orange-500 text-orange-500 bg-transparent hover:bg-orange-500 hover:text-white font-bold py-1 px-4 rounded-lg transition-colors">Editar</button>
-                </div>
-              </div>
-              <!-- Unidades -->
-              <div>
-                <label class="block text-sm font-bold text-white mb-2">Unidad de peso</label>
-                <Tabs v-model="userStore.unidadPesoGlobal" :options="[{ value: 'kg', label: 'kg' }, { value: 'lbs', label: 'lbs' }]" />
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-white mb-2">Unidad de distancia</label>
-                <Tabs v-model="userStore.unidadDistanciaGlobal" :options="[{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }]" />
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-white mb-2">Unidad de altura</label>
-                <Tabs v-model="userStore.unidadEstaturaGlobal" :options="[{ value: 'cm', label: 'cm' }, { value: 'in', label: 'in' }]" />
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-white mb-2">Primer día de la semana</label>
-                <CustomSelect v-model="primerDiaSemana" :options="[ { value: 'domingo', label: 'Domingo' }, { value: 'lunes', label: 'Lunes' } ]" placeholder="Selecciona el día" />
+                <h2 class="text-2xl font-bold text-white mb-1">
+                  <span v-if="!isEditing">{{ profileData.fullName || 'Coach' }}</span>
+                  <AppInput 
+                    v-else
+                    v-model="profileData.fullName"
+                    placeholder="Nombre completo"
+                    class="text-2xl font-bold bg-transparent border-none p-0 text-white"
+                  />
+                </h2>
+                <p class="text-slate-400 mb-4">
+                  <span v-if="!isEditing">{{ profileData.presentationTitle || 'Fitness Coach' }}</span>
+                  <AppInput 
+                    v-else
+                    v-model="profileData.presentationTitle"
+                    placeholder="Título de presentación"
+                    class="bg-transparent border-slate-600 text-slate-400"
+                  />
+                </p>
               </div>
             </div>
-            <div class="flex justify-end mt-10">
-              <button type="button"
-                @click="guardarAjustes"
-                :disabled="!ajustesChanged && !passwordFieldsFilled"
-                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                Guardar Cambios
-              </button>
+
+            <!-- Contact Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-phone" class="w-4 h-4 text-slate-400" />
+                <span v-if="!isEditing" class="text-slate-300">{{ profileData.phone || 'N/A' }}</span>
+                <AppInput 
+                  v-else
+                  v-model="profileData.phone"
+                  placeholder="Teléfono"
+                  class="bg-transparent border-slate-600 text-slate-300"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-envelope" class="w-4 h-4 text-slate-400" />
+                <span v-if="!isEditing" class="text-slate-300">{{ profileData.email || 'N/A' }}</span>
+                <AppInput 
+                  v-else
+                  v-model="profileData.email"
+                  placeholder="Email"
+                  class="bg-transparent border-slate-600 text-slate-300"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Personal Information and Education Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Personal Information Card -->
+        <AppCard className="lg:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Información Personal</h3>
+            <UIcon name="i-heroicons-pencil" class="w-5 h-5 text-slate-400" />
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-400 mb-1">Género</label>
+              <span v-if="!isEditing" class="text-white">{{ profileData.gender || 'No especificado' }}</span>
+              <CustomSelect 
+                v-else
+                v-model="profileData.gender"
+                :options="genderOptions"
+                placeholder="Seleccionar género"
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-400 mb-1">Fecha de nacimiento</label>
+              <span v-if="!isEditing" class="text-white">{{ profileData.birthDate || 'No especificada' }}</span>
+              <AppInput 
+                v-else
+                v-model="profileData.birthDate"
+                type="date"
+                class="bg-transparent border-slate-600 text-white"
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-400 mb-1">Ciudad natal</label>
+              <span v-if="!isEditing" class="text-white">{{ profileData.hometown || 'No especificada' }}</span>
+              <AppInput 
+                v-else
+                v-model="profileData.hometown"
+                placeholder="Ciudad natal"
+                class="bg-transparent border-slate-600 text-white"
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-400 mb-1">Nacionalidad</label>
+              <span v-if="!isEditing" class="text-white">{{ profileData.nationality || 'No especificada' }}</span>
+              <AppInput 
+                v-else
+                v-model="profileData.nationality"
+                placeholder="Nacionalidad"
+                class="bg-transparent border-slate-600 text-white"
+              />
+            </div>
+            
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-slate-400 mb-1">Dirección actual</label>
+              <span v-if="!isEditing" class="text-white">{{ profileData.currentAddress || 'No especificada' }}</span>
+              <AppTextarea 
+                v-else
+                v-model="profileData.currentAddress"
+                placeholder="Dirección actual"
+                :rows="2"
+                class="bg-transparent border-slate-600 text-white"
+              />
+            </div>
+            
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-slate-400 mb-1">Biografía</label>
+              <span v-if="!isEditing" class="text-white">{{ profileData.biography || 'No especificada' }}</span>
+              <AppTextarea 
+                v-else
+                v-model="profileData.biography"
+                placeholder="Cuéntanos sobre ti, tu experiencia, especialidades..."
+                :rows="4"
+                class="bg-transparent border-slate-600 text-white"
+              />
+            </div>
+          </div>
+        </AppCard>
+
+        <!-- Education Information Card -->
+        <AppCard>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Información Educativa</h3>
+            <button 
+              v-if="isEditing"
+              @click="addEducation"
+              class="text-orange-400 hover:text-orange-300"
+            >
+              <UIcon name="i-heroicons-plus" class="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div class="space-y-4">
+            <div 
+              v-for="(education, index) in profileData.education" 
+              :key="index"
+              class="p-3 bg-slate-600/50 rounded-lg"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div v-if="!isEditing" class="font-medium text-white">{{ education.degree }}</div>
+                  <AppInput 
+                    v-else
+                    v-model="education.degree"
+                    placeholder="Título o certificado"
+                    class="bg-transparent border-slate-600 text-white font-medium"
+                  />
+                  
+                  <div v-if="!isEditing" class="text-slate-400 text-sm">{{ education.institution }}</div>
+                  <AppInput 
+                    v-else
+                    v-model="education.institution"
+                    placeholder="Institución"
+                    class="bg-transparent border-slate-600 text-slate-400 text-sm"
+                  />
+                  
+                  <div v-if="!isEditing" class="text-slate-400 text-sm">{{ education.period }}</div>
+                  <div v-else class="flex gap-2">
+                    <AppInput 
+                      v-model="education.period"
+                      placeholder="Período (ej: 2018-2022)"
+                      class="bg-transparent border-slate-600 text-slate-400 text-sm"
+                    />
+                  </div>
+                </div>
+                <button 
+                  v-if="isEditing"
+                  @click="removeEducation(index)"
+                  class="text-red-400 hover:text-red-300 ml-2"
+                >
+                  <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            <div v-if="profileData.education.length === 0" class="text-slate-400 text-center py-4">
+              No hay información educativa
+            </div>
+          </div>
+        </AppCard>
+      </div>
+
+      <!-- Credentials Section -->
+      <AppCard>
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Credenciales y Certificaciones</h3>
+          <button 
+            v-if="isEditing"
+            @click="addCredential"
+            class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center gap-2"
+          >
+            <UIcon name="i-heroicons-plus" class="w-4 h-4" />
+            Agregar Credencial
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div 
+            v-for="(credential, index) in profileData.credentials" 
+            :key="index"
+            class="bg-slate-600/50 rounded-lg p-4 border border-slate-500"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <div v-if="!isEditing" class="font-medium text-white mb-1">{{ credential.name }}</div>
+                <AppInput 
+                  v-else
+                  v-model="credential.name"
+                  placeholder="Nombre de la credencial"
+                  class="bg-transparent border-slate-600 text-white font-medium mb-1"
+                />
+                
+                <div v-if="!isEditing" class="text-slate-400 text-sm mb-2">{{ credential.issuer }}</div>
+                <AppInput 
+                  v-else
+                  v-model="credential.issuer"
+                  placeholder="Institución emisora"
+                  class="bg-transparent border-slate-600 text-slate-400 text-sm mb-2"
+                />
+                
+                <div v-if="!isEditing" class="text-slate-400 text-xs">{{ credential.date }}</div>
+                <AppInput 
+                  v-else
+                  v-model="credential.date"
+                  type="date"
+                  class="bg-transparent border-slate-600 text-slate-400 text-xs"
+                />
+              </div>
+              
+              <div class="flex gap-2">
+                <button 
+                  v-if="isEditing"
+                  @click="uploadCredentialFileHandler(index)"
+                  class="text-blue-400 hover:text-blue-300"
+                  title="Subir archivo"
+                >
+                  <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
+                </button>
+                <button 
+                  v-if="isEditing"
+                  @click="removeCredential(index)"
+                  class="text-red-400 hover:text-red-300"
+                  title="Eliminar"
+                >
+                  <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            <!-- File preview -->
+            <div v-if="credential.fileUrl" class="mt-3">
+              <div class="flex items-center gap-2 p-2 bg-slate-500/50 rounded">
+                <UIcon name="i-heroicons-document" class="w-4 h-4 text-slate-400" />
+                <span class="text-slate-300 text-sm flex-1 truncate">{{ credential.fileName || 'Documento' }}</span>
+                <a 
+                  :href="credential.fileUrl" 
+                  target="_blank"
+                  class="text-orange-400 hover:text-orange-300"
+                >
+                  <UIcon name="i-heroicons-eye" class="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="profileData.credentials.length === 0" class="md:col-span-2 lg:col-span-3 text-slate-400 text-center py-8">
+            No hay credenciales agregadas
+          </div>
+        </div>
+      </AppCard>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { useAuth } from '~/composables/firebase'
-import { useUsers } from '~/composables/firestore'
 import { useFirebaseStorage } from '~/composables/firebase-storage'
-import UIcon from '~/components/GlobalLoading.vue'
+import AppCard from '~/components/AppCard.vue'
 import CustomSelect from '~/components/CustomSelect.vue'
-import DatePickerInput from '~/components/DatePickerInput.vue'
-import { useCountryCitySelect } from '~/composables/useCountryCitySelect'
-import { isEqual } from 'lodash-es'
-import { useUserStore } from '~/stores/user'
-import { toast } from 'vue3-toastify'
-import Tabs from '~/components/Tabs.vue'
+import AppInput from '~/components/AppInput.vue'
+import AppTextarea from '~/components/AppTextarea.vue'
 
-const userStore = useUserStore()
-const showPasswordFields = ref(false)
-const passwordForm = ref({ current: '', new: '', confirm: '' })
-const passwordError = ref('')
-const defaultAvatar = '/images/default-avatar.png'
 const { user } = useAuth()
-const { getUserById, updateUser, saveUserMetricHistory } = useUsers()
-const { uploadProfileImage } = useFirebaseStorage()
+const { uploadProfileImage, uploadCredentialFile } = useFirebaseStorage()
+const { getCoachById, getCoachByAuthUID, updateCoach } = useCoaches()
 
-const activeTab = ref<'personales' | 'metricas' | 'ajustes'>('personales')
-const isSaving = ref(false)
-const fileInput = ref<HTMLInputElement>()
+// Reactive state
+const isEditing = ref(false)
+const imageInput = ref<HTMLInputElement>()
 
-// Unidades globales desde Pinia
-const unidadPesoGlobal = computed(() => userStore.unidadPesoGlobal)
-const unidadEstaturaGlobal = computed(() => userStore.unidadEstaturaGlobal)
-
-// Conversión automática de valores
-watch(unidadPesoGlobal, (newUnidad, oldUnidad) => {
-  if (oldUnidad && newUnidad && newUnidad !== oldUnidad) {
-    if (newUnidad === 'kg' && oldUnidad === 'lbs' && form.peso != null) {
-      form.peso = +(form.peso / 2.20462).toFixed(2)
-    } else if (newUnidad === 'lbs' && oldUnidad === 'kg' && form.peso != null) {
-      form.peso = +(form.peso * 2.20462).toFixed(2)
-    }
-  }
+// Profile data
+const profileData = reactive({
+  fullName: '',
+  presentationTitle: 'Fitness Coach',
+  phone: '',
+  email: '',
+  profileImageUrl: '',
+  
+  // Personal info
+  gender: '',
+  birthDate: '',
+  hometown: '',
+  nationality: '',
+  currentAddress: '',
+  biography: '',
+  
+  // Education
+  education: [] as Array<{
+    degree: string
+    institution: string
+    period: string
+  }>,
+  
+  // Credentials
+  credentials: [] as Array<{
+    name: string
+    issuer: string
+    date: string
+    fileUrl?: string
+    fileName?: string
+  }>
 })
-watch(unidadEstaturaGlobal, (newUnidad, oldUnidad) => {
-  if (oldUnidad && newUnidad && newUnidad !== oldUnidad) {
-    if (newUnidad === 'cm' && oldUnidad === 'in' && form.estatura != null) {
-      form.estatura = +(form.estatura * 2.54).toFixed(2)
-    } else if (newUnidad === 'in' && oldUnidad === 'cm' && form.estatura != null) {
-      form.estatura = +(form.estatura / 2.54).toFixed(2)
-    }
-  }
-})
 
-// Para cambio de contraseña
-const isSendingReset = ref(false)
-const resetSent = ref(false)
-const sendPasswordReset = async () => {
-  if (!form.email) return
-  isSendingReset.value = true
-  resetSent.value = false
-  try {
-    const { sendPasswordResetEmail } = await import('firebase/auth')
-    const { auth } = await import('~/composables/firebase')
-    await sendPasswordResetEmail(auth, form.email)
-    resetSent.value = true
-  } catch (e) {
-    resetSent.value = false
-    // Puedes mostrar un toast o mensaje de error
-  } finally {
-    isSendingReset.value = false
-  }
-}
-
-// Métricas/circunferencias
-const metricas = [
-  { key: 'pesoCorporal', label: 'Peso Corporal' },
-  { key: 'cintura', label: 'Cintura' },
-  { key: 'grasaCorporal', label: 'Grasa Corporal (%)' },
-  { key: 'cuello', label: 'Cuello' },
-  { key: 'hombro', label: 'Hombro' },
-  { key: 'pecho', label: 'Pecho' },
-  { key: 'bicepsIzq', label: 'Bíceps Izquierdo' },
-  { key: 'bicepsDer', label: 'Bíceps Derecho' },
-  { key: 'antebrazoIzq', label: 'Antebrazo Izquierdo' },
-  { key: 'antebrazoDer', label: 'Antebrazo Derecho' },
-  { key: 'abdomen', label: 'Abdomen' },
-  { key: 'caderas', label: 'Caderas' },
-  { key: 'musloIzq', label: 'Muslo Izquierdo' },
-  { key: 'musloDer', label: 'Muslo Derecho' },
-  { key: 'gemeloIzq', label: 'Gemelo Izquierda' },
-  { key: 'gemeloDer', label: 'Gemelo Derecha' }
+// Options for selects
+const genderOptions = [
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'femenino', label: 'Femenino' },
+  { value: 'otro', label: 'Otro' }
 ]
 
-const form = reactive({
-  foto: '',
-  nombres: '',
-  apellidos: '',
-  apodo: '',
-  email: '',
-  telefono: '',
-  cumple: '',
-  pais: '',
-  ciudad: '',
-  genero: '',
-  peso: null,
-  estatura: null,
-  medidas: {} as Record<string, number|null>
-})
 
-let originalPhotoUrl = ''
 
-// País y ciudad reactivos y lógica dependiente
-const selectedCountry = ref('')
-const selectedCity = ref('')
-const { countryOptions, cityOptions, onCountryChange } = useCountryCitySelect(selectedCountry, selectedCity)
-
-watch(() => form.pais, (val) => { selectedCountry.value = val })
-watch(() => form.ciudad, (val) => { selectedCity.value = val })
-watch(selectedCountry, (val) => { form.pais = val })
-watch(selectedCity, (val) => { form.ciudad = val })
-
-const initialForm = ref({ ...form })
-
-function formChanged() {
-  // Compara el form actual con el inicial, ignorando unidades de peso/estatura
-  const clean = (obj: any) => {
-    const { unidadPeso, unidadEstatura, ...rest } = obj
-    return rest
+// Methods
+const toggleEditMode = async () => {
+  if (isEditing.value) {
+    // Save changes
+    await saveProfile()
   }
-  return !isEqual(clean(form), clean(initialForm.value))
+  isEditing.value = !isEditing.value
 }
 
-watch(form, () => {}, { deep: true }) // Para reactividad
-
-const cargarPerfil = async () => {
-  console.log('UID actual:', user.value?.uid)
-  if (!user.value?.uid) {
-    console.log('No UID de usuario');
-    return;
+const saveProfile = async () => {
+  if (!user.value?.uid) return
+  
+  try {
+    // First get the coach to find the correct document ID
+    const coachResult = await getCoachByAuthUID(user.value.uid)
+    if (!coachResult.success || !coachResult.coach) {
+      console.error('❌ No se pudo encontrar el coach para guardar')
+      return
+    }
+    
+    // Save to coaches collection using the coach's document ID
+    await updateCoach(coachResult.coach.uid, {
+      firstName: profileData.fullName.split(' ')[0] || '',
+      lastName: profileData.fullName.split(' ').slice(1).join(' ') || '',
+      fullName: profileData.fullName,
+      phone: profileData.phone,
+      profileImageUrl: profileData.profileImageUrl,
+      presentationTitle: profileData.presentationTitle,
+      gender: profileData.gender as 'masculino' | 'femenino' | 'otro',
+      birthDate: profileData.birthDate,
+      hometown: profileData.hometown,
+      nationality: profileData.nationality,
+      currentAddress: profileData.currentAddress,
+      biography: profileData.biography,
+      education: profileData.education,
+      credentials: profileData.credentials
+    })
+    
+    console.log('✅ Perfil guardado exitosamente')
+  } catch (error) {
+    console.error('Error saving profile:', error)
   }
-  const result = await getUserById(user.value.uid);
-  console.log('Resultado getUserById:', result);
-  if (result.success && result.user) {
-    console.log('Usuario recibido:', result.user);
-    const u: any = result.user;
-    const f: any = form;
-    const fieldMap = {
-      nombres: 'firstName',
-      apellidos: 'lastName',
-      apodo: 'nickname',
-      email: 'email',
-      telefono: 'phone',
-      cumple: 'birthDate',
-      pais: 'country',
-      ciudad: 'city',
-      genero: 'gender',
-      peso: 'peso',
-      estatura: 'estatura',
-      foto: ['profilePhoto', 'profileImageUrl'],
-      medidas: 'medidas'
-    };
-    for (const [formKey, firestoreKey] of Object.entries(fieldMap)) {
-      if (Array.isArray(firestoreKey)) {
-        f[formKey] = firestoreKey.map(k => u[k]).find((v: any) => !!v) || '';
-      } else if (formKey === 'medidas') {
-        f.medidas = u.medidas ? { ...u.medidas } : {};
-      } else {
-        f[formKey] = u[firestoreKey] ?? (typeof f[formKey] === 'number' ? null : '');
+}
+
+const triggerImageUpload = () => {
+  imageInput.value?.click()
+}
+
+const handleImageUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    
+    try {
+      const result = await uploadProfileImage(file, user.value?.uid || 'profile', profileData.fullName || 'Coach')
+      if (result.success) {
+        profileData.profileImageUrl = result.url!
+        console.log('✅ Imagen de perfil subida exitosamente')
+      }
+    } catch (error) {
+      console.error('Error uploading profile image:', error)
+    }
+  }
+}
+
+const addEducation = () => {
+  profileData.education.push({
+    degree: '',
+    institution: '',
+    period: ''
+  })
+}
+
+const removeEducation = (index: number) => {
+  profileData.education.splice(index, 1)
+}
+
+const addCredential = () => {
+  profileData.credentials.push({
+    name: '',
+    issuer: '',
+    date: '',
+    fileUrl: undefined,
+    fileName: undefined
+  })
+}
+
+const removeCredential = (index: number) => {
+  profileData.credentials.splice(index, 1)
+}
+
+const uploadCredentialFileHandler = async (index: number) => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx'
+  
+  input.onchange = async (event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+      const file = target.files[0]
+      
+      try {
+        const result = await uploadCredentialFile(file, `credentials/${user.value?.uid}/${Date.now()}`)
+        if (result.success) {
+          profileData.credentials[index].fileUrl = result.url!
+          profileData.credentials[index].fileName = file.name
+          console.log('✅ Archivo de credencial subido exitosamente')
+        }
+      } catch (error) {
+        console.error('Error uploading credential file:', error)
       }
     }
-    originalPhotoUrl = form.foto || '';
-    // Sincronizar selects dependientes
-    selectedCountry.value = form.pais
-    selectedCity.value = form.ciudad
-    initialForm.value = { ...form }
-    console.log('Datos asignados a form:', JSON.parse(JSON.stringify(form)));
-  } else {
-    console.log('No se encontró usuario o error:', result.error);
   }
+  
+  input.click()
 }
 
-onMounted(cargarPerfil)
-watch(() => user.value?.uid, (newUid) => {
-  if (newUid) cargarPerfil()
-})
-
-const onImageChange = async (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file || !user.value?.uid) return
-  // Subir imagen a Firebase Storage
-  const upload = await uploadProfileImage(file, user.value.uid, form.nombres || 'usuario')
-  if (upload.success) {
-    form.foto = upload.url
+// Load profile data
+const loadProfile = async () => {
+  console.log('🔄 Cargando perfil del coach...')
+  console.log('👤 User UID:', user.value?.uid)
+  
+  if (!user.value?.uid) {
+    console.log('❌ No hay usuario autenticado')
+    return
   }
-}
-
-const guardarPerfil = async () => {
-  if (!user.value?.uid) return
-  isSaving.value = true
+  
   try {
-    // Construir objeto de actualización
-    const updates: any = {
-      firstName: form.nombres,
-      lastName: form.apellidos,
-      fullName: `${form.nombres} ${form.apellidos}`.trim(),
-      nickname: form.apodo,
-      email: form.email,
-      phone: form.telefono,
-      birthDate: form.cumple,
-      country: form.pais,
-      city: form.ciudad,
-      gender: form.genero,
-      peso: form.peso,
-      estatura: form.estatura,
-      medidas: form.medidas,
-      profilePhoto: form.foto || originalPhotoUrl
-    }
-    await userStore.updateUserProfile(user.value.uid, updates)
-    toast.success('Cambios guardados correctamente')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const primerDiaSemana = ref('domingo')
-
-// Mostrar estatura en pies/pulgadas si la unidad es in
-const estaturaDisplay = computed({
-  get() {
-    if (unidadEstaturaGlobal.value === 'in' && form.estatura != null) {
-      const totalInches = form.estatura
-      const feet = Math.floor(totalInches / 12)
-      const inches = Math.round(totalInches % 12)
-      return `${feet}' ${inches}\"`
-    }
-    return form.estatura
-  },
-  set(val) {
-    if (unidadEstaturaGlobal.value === 'in') {
-      // Permitir entrada directa en pulgadas
-      form.estatura = Number(val)
+    console.log('🔍 Buscando coach por auth UID:', user.value.uid)
+    const result = await getCoachByAuthUID(user.value.uid)
+    
+    console.log('📊 Resultado de búsqueda:', result)
+    
+    if (result.success && result.coach) {
+      console.log('✅ Coach encontrado:', result.coach)
+      
+      // Merge coach data with profile data
+      const updatedData = {
+        fullName: result.coach.fullName || `${result.coach.firstName} ${result.coach.lastName}`.trim(),
+        presentationTitle: result.coach.presentationTitle || 'Fitness Coach',
+        email: result.coach.email,
+        phone: result.coach.phone || '',
+        profileImageUrl: result.coach.profileImageUrl || '',
+        gender: result.coach.gender || '',
+        birthDate: result.coach.birthDate || '',
+        hometown: result.coach.hometown || '',
+        nationality: result.coach.nationality || '',
+        currentAddress: result.coach.currentAddress || '',
+        biography: result.coach.biography || '',
+        education: result.coach.education || [],
+        credentials: result.coach.credentials || []
+      }
+      
+      console.log('📝 Datos a asignar:', updatedData)
+      Object.assign(profileData, updatedData)
+      console.log('✅ Perfil cargado exitosamente')
     } else {
-      form.estatura = Number(val)
+      console.log('❌ No se pudo cargar el coach:', result.error)
     }
+  } catch (error) {
+    console.error('❌ Error loading profile:', error)
   }
-})
-
-// Lógica para detectar cambios en ajustes generales
-const ajustesOriginales = ref({
-  unidadPeso: userStore.unidadPesoGlobal,
-  unidadDistancia: userStore.unidadDistanciaGlobal,
-  unidadEstatura: userStore.unidadEstaturaGlobal,
-  primerDiaSemana: 'domingo',
-})
-const isEditingEmail = ref(false)
-const editableEmail = ref(form.email)
-watch(() => form.email, val => { if (!isEditingEmail.value) editableEmail.value = val })
-const enableEmailEdit = () => { isEditingEmail.value = true }
-const ajustesChanged = computed(() => {
-  return (
-    userStore.unidadPesoGlobal !== ajustesOriginales.value.unidadPeso ||
-    userStore.unidadDistanciaGlobal !== ajustesOriginales.value.unidadDistancia ||
-    userStore.unidadEstaturaGlobal !== ajustesOriginales.value.unidadEstatura ||
-    primerDiaSemana.value !== ajustesOriginales.value.primerDiaSemana ||
-    (isEditingEmail.value && editableEmail.value !== form.email)
-  )
-})
-
-// Lógica para detectar cambios en métricas
-const metricasOriginales = ref({ ...form.medidas })
-const metricasChanged = computed(() => {
-  return !isEqual(form.medidas, metricasOriginales.value)
-})
-
-const passwordFieldsFilled = computed(() => {
-  return (
-    showPasswordFields.value &&
-    !!passwordForm.value.current &&
-    !!passwordForm.value.new &&
-    !!passwordForm.value.confirm
-  )
-})
-
-const guardarAjustes = async () => {
-  passwordError.value = ''
-  // Validar y actualizar contraseña si corresponde
-  if (showPasswordFields.value) {
-    if (!passwordForm.value.current || !passwordForm.value.new || !passwordForm.value.confirm) {
-      passwordError.value = 'Completa todos los campos de contraseña.'
-      return
-    }
-    if (passwordForm.value.new !== passwordForm.value.confirm) {
-      passwordError.value = 'Las contraseñas no coinciden.'
-      return
-    }
-    // Aquí va la lógica para actualizar la contraseña en Firebase
-    try {
-      await userStore.updatePassword(passwordForm.value.current, passwordForm.value.new)
-      showPasswordFields.value = false
-      passwordForm.value = { current: '', new: '', confirm: '' }
-      toast.success('Cambios guardados correctamente')
-    } catch (e: any) {
-      passwordError.value = e.message || 'Error al actualizar la contraseña.'
-      return
-    }
-  }
-  // Guardar preferencias de unidades localmente (en el store)
-  userStore.userProfile.unidadPeso = userStore.unidadPesoGlobal
-  userStore.userProfile.unidadEstatura = userStore.unidadEstaturaGlobal
-  userStore.userProfile.unidadDistancia = userStore.unidadDistanciaGlobal
-  // Si quieres persistir en Firestore, puedes hacerlo aquí
-  if (isEditingEmail.value && editableEmail.value !== form.email) {
-    form.email = editableEmail.value
-    isEditingEmail.value = false
-  }
-  toast.success('Cambios guardados correctamente')
 }
-const guardarMetricas = async () => {
-  if (!user.value?.uid) return
-  // Guardar métricas actuales (si es necesario)
-  // Guardar histórico en subcolección
-  await saveUserMetricHistory(user.value.uid, form.medidas)
-  metricasOriginales.value = { ...form.medidas }
-  toast.success('Cambios guardados correctamente')
-}
+
+// Watch for user authentication
+watch(() => user.value?.uid, (newUid) => {
+  if (newUid) {
+    console.log('👤 Usuario autenticado, cargando perfil...')
+    loadProfile()
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  console.log('🚀 Componente montado')
+  if (user.value?.uid) {
+    console.log('👤 Usuario ya autenticado en onMounted')
+    loadProfile()
+  }
+})
 </script> 

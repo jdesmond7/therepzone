@@ -7,7 +7,7 @@
         @click="toggleDropdown"
         :disabled="disabled"
         :class="[
-          'w-full pl-4 pr-4 py-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-transparent transition-all duration-200 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-center gap-2 min-h-[50px]',
+          'w-full h-12 pl-4 pr-4 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-transparent transition-all duration-200 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-center gap-2',
           error
             ? (isOpen ? 'border-transparent' : 'border-red-500')
             : (isOpen ? 'border-transparent' : 'border-slate-600')
@@ -20,34 +20,25 @@
         <div class="flex flex-nowrap gap-1 items-center flex-1 min-h-[24px] overflow-hidden" ref="badgeContainer">
           <template v-if="selectedOptions.length">
             <span
-              v-for="(option, i) in selectedOptions.slice(0, visibleCount)"
+              v-for="(option, i) in visibleBadges"
               :key="option.value"
-              class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+              class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 flex-shrink-0"
               ref="el => badgeRefs.value[i] = el"
             >
               {{ option.label }}
               <button type="button" @click.stop="removeOption(option.value)" class="focus:outline-none hover:cursor-pointer">
-                <svg class="w-3 h-3 text-slate-400 hover:text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M6 14L14 6"/></svg>
+                <svg class="w-3 h-3 text-slate-400 hover:text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M6 14L6"/></svg>
               </button>
             </span>
-            <!-- Badge '+N' invisible para medir su ancho real (siempre el máximo posible) -->
             <span
-              v-if="selectedOptions.length > 1"
-              ref="plusBadgeRef"
-              class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
-              style="visibility: hidden; position: absolute; left: -9999px;"
-            >
-              +{{ selectedOptions.length - 1 }}
-            </span>
-            <span
-              v-if="selectedOptions.length > visibleCount"
-              class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 relative"
+              v-if="hiddenBadges.length > 0"
+              class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs font-medium flex items-center gap-1 flex-shrink-0 cursor-help"
               @mouseenter="showOverflowTooltip = true"
               @mouseleave="showOverflowTooltip = false"
             >
-              +{{ selectedOptions.length - visibleCount }}
-              <div v-if="showOverflowTooltip" class="absolute left-0 top-full mt-2 z-50 bg-slate-900 text-slate-200 rounded shadow-lg px-3 py-2 text-xs whitespace-pre-line min-w-[120px]">
-                {{ overflowedLabels.join(', ') }}
+              +{{ hiddenBadges.length }}
+              <div v-if="showOverflowTooltip" class="absolute left-0 top-full mt-2 z-50 bg-slate-900 border border-slate-700 text-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs whitespace-nowrap">
+                {{ hiddenBadges.map(b => b.label).join(', ') }}
               </div>
             </span>
           </template>
@@ -96,7 +87,7 @@
             @click="toggleOption(option.value)"
             class="w-full px-4 py-2 text-left hover:bg-slate-700 focus:bg-slate-700 focus:outline-none transition-colors duration-150 text-white flex items-center justify-between"
             :class="{
-              'bg-orange-600 hover:bg-orange-700': (modelValue as string[]).includes(option.value),
+              'bg-slate-700': (modelValue as string[]).includes(option.value),
               'opacity-50 cursor-not-allowed': option.disabled
             }"
             :disabled="option.disabled"
@@ -146,70 +137,63 @@ const selectedOptions = computed(() => {
 })
 // Badge overflow logic
 const badgeRefs = ref<HTMLElement[]>([])
-const visibleCount = ref<number>(0)
-const overflowedLabels = ref<string[]>([])
 const showOverflowTooltip = ref(false)
 const badgeContainer = ref<HTMLElement>()
-const plusBadgeRef = ref<HTMLElement>()
 
-function updateVisibleBadges() {
-  nextTick(() => {
-    nextTick(() => { // Un tick extra para asegurar que todo esté en el DOM
-      if (!selectedOptions || !selectedOptions.value) return;
-      if (!badgeContainer.value || !selectedOptions.value.length) {
-        visibleCount.value = selectedOptions.value.length
-        overflowedLabels.value = []
-        return
-      }
-      const containerWidth = badgeContainer.value.clientWidth - 40 // 40px para el chevron y padding
-      let used = 0
-      let count = 0
-      badgeRefs.value = badgeRefs.value.slice(0, selectedOptions.value.length)
-      // Medir el ancho real del badge '+N' invisible (siempre el máximo posible)
-      let plusWidth = 0
-      if (selectedOptions.value.length > 1 && plusBadgeRef.value) {
-        plusWidth = plusBadgeRef.value.getBoundingClientRect().width + 4
-      }
-      for (let i = 0; i < selectedOptions.value.length; i++) {
-        const el = badgeRefs.value[i]
-        if (!el) break
-        const badgeWidth = el.getBoundingClientRect().width + 4 // gap
-        // Si hay overflow, reserva espacio para el badge '+N'
-        if (selectedOptions.value.length > 1 && i < selectedOptions.value.length - 1) {
-          if (used + badgeWidth + plusWidth > containerWidth) {
-            if (count === 0) count = 1
-            break
-          }
-        } else {
-          if (used + badgeWidth > containerWidth) {
-            if (count === 0) count = 1
-            break
-          }
-        }
-        used += badgeWidth
-        count++
-      }
-      if (selectedOptions.value.length === 1) {
-        visibleCount.value = 1
-        overflowedLabels.value = []
-      } else {
-        visibleCount.value = count
-        overflowedLabels.value = selectedOptions.value.slice(count).map(o => o.label)
-      }
-    })
-  })
-}
+// Computed properties for dynamic badges
+const visibleBadges = computed(() => {
+  if (!selectedOptions.value || selectedOptions.value.length === 0) return []
+  
+  const containerWidth = badgeContainer.value?.clientWidth || 200
+  const availableWidth = containerWidth - 80 // Space for chevron, padding, and potential +N badge
+  let currentWidth = 0
+  let visibleCount = 0
+  
+  for (let i = 0; i < selectedOptions.value.length; i++) {
+    const option = selectedOptions.value[i]
+    // Estimate badge width based on text length
+    const estimatedWidth = Math.max(60, option.label.length * 8 + 40) // Minimum 60px, 8px per character + padding
+    
+    // Check if adding this badge would exceed available space
+    if (currentWidth + estimatedWidth > availableWidth) {
+      break
+    }
+    
+    currentWidth += estimatedWidth + 4 // 4px gap
+    visibleCount = i + 1
+  }
+  
+  // Always show at least one badge if there are selected options
+  if (selectedOptions.value.length > 0 && visibleCount === 0) {
+    visibleCount = 1
+  }
+  
+  return selectedOptions.value.slice(0, visibleCount)
+})
 
-watch(() => selectedOptions.value.length, updateVisibleBadges)
-watch(() => badgeContainer.value && badgeContainer.value.clientWidth, updateVisibleBadges)
+const hiddenBadges = computed(() => {
+  if (!selectedOptions.value) return []
+  return selectedOptions.value.slice(visibleBadges.value.length)
+})
+
+// Watch for container size changes to recalculate badges
+let resizeObserver: ResizeObserver | null = null
+
 onMounted(() => {
-  window.addEventListener('resize', updateVisibleBadges)
-  updateVisibleBadges()
+  // Set up ResizeObserver for dynamic badge calculation
+  if (typeof ResizeObserver !== 'undefined' && badgeContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      // Force reactivity update when container size changes
+    })
+    resizeObserver.observe(badgeContainer.value)
+  }
 })
+
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateVisibleBadges)
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+  }
 })
-watch(isOpen, (open) => { if (open) nextTick(updateVisibleBadges) })
 
 const filteredOptions = computed(() => {
   if (!search.value) return props.options as Option[]

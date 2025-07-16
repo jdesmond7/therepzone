@@ -6,7 +6,7 @@
       @click="toggleDropdown"
       :disabled="disabled"
       :class="[
-        'w-full pl-4 pr-4 py-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-center gap-2',
+        'w-full h-12 pl-4 pr-4 bg-slate-900 border rounded-lg text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-center gap-2',
         props.error 
           ? 'border-red-500 focus:ring-red-500' 
           : 'border-slate-600 focus:ring-orange-600'

@@ -30,21 +30,22 @@
 
         <!-- Actions -->
         <div class="space-y-4 mb-8">
-          <button
+          <AppButtonPrimary
             @click="checkCurrentStatus"
             :disabled="isLoading"
-            class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+            fullWidth
+            class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50"
           >
             {{ isLoading ? 'Verificando...' : '🔍 Verificar Estado Actual' }}
-          </button>
+          </AppButtonPrimary>
 
-          <button
+          <AppButtonDestructive
             @click="executeCleanup"
             :disabled="isProcessing || !canCleanup"
-            class="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+            fullWidth
           >
             {{ isProcessing ? 'Procesando...' : '🧹 Limpiar y Crear Pull-ups' }}
-          </button>
+          </AppButtonDestructive>
 
           <p v-if="!canCleanup" class="text-amber-400 text-sm text-center">
             ⚠️ Verifica el estado actual antes de ejecutar la limpieza

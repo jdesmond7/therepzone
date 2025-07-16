@@ -1,32 +1,54 @@
 <template>
-  <button
+  <NuxtLink
+    v-if="to"
+    :to="to"
     :class="[
-      'border border-white text-white font-bold rounded-lg transition flex items-center justify-center gap-2 px-4 py-2 bg-transparent',
-      fullWidth ? 'w-full' : '',
-      disabled ? 'opacity-50 cursor-not-allowed' : '',
-      !disabled && !loading ? 'hover:bg-white hover:text-orange-600' : ''
+      'h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-6 rounded-lg transition-colors bg-transparent flex items-center justify-center gap-2 cursor-pointer no-underline',
+      disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+      fullWidth && 'w-full',
+      className
     ]"
-    :disabled="disabled || loading"
+  >
+    <UIcon v-if="icon" :name="icon" class="w-5 h-5" />
+    <slot />
+  </NuxtLink>
+  <button
+    v-else
+    :type="type"
+    :disabled="disabled"
+    :class="[
+      'h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-6 rounded-lg transition-colors bg-transparent flex items-center justify-center gap-2 cursor-pointer',
+      disabled && 'opacity-50 cursor-not-allowed',
+      fullWidth && 'w-full',
+      className
+    ]"
     @click="$emit('click', $event)"
   >
-    <slot name="icon" />
-    <span v-if="!loading"><slot /></span>
-    <span v-else class="flex items-center gap-2">
-      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-      </svg>
-      Cargando...
-    </span>
+    <UIcon v-if="icon" :name="icon" class="w-5 h-5" />
+    <slot />
   </button>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
-const props = defineProps({
-  disabled: Boolean,
-  loading: Boolean,
-  fullWidth: Boolean
+interface Props {
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
+  fullWidth?: boolean
+  icon?: string
+  className?: string
+  to?: string
+}
+
+withDefaults(defineProps<Props>(), {
+  type: 'button',
+  disabled: false,
+  fullWidth: false,
+  icon: '',
+  className: '',
+  to: ''
 })
-const emit = defineEmits(['click'])
+
+defineEmits<{
+  click: [event: MouseEvent]
+}>()
 </script> 

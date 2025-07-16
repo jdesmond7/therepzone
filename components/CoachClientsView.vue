@@ -1,81 +1,118 @@
 <template>
   <div class="space-y-6">
-    <!-- Add Client Button -->
-    <div class="flex justify-end">
-      <button 
-        @click="showAddClientModal = true"
-        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
-      >
-        <UIcon name="i-heroicons-plus" class="w-5 h-5" />
-        Agregar Cliente
-      </button>
-    </div>
-
-    <!-- Clients Grid -->
-    <div v-if="clients.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div 
-        v-for="client in clients" 
-        :key="client.id"
-        class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-orange-500/50 transition-colors"
-      >
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
-            <span class="text-white font-bold text-lg">
-              {{ getClientDisplayName(client).charAt(0).toUpperCase() }}
+    <!-- Data Table -->
+    <DataTable
+      :data="clients"
+      :columns="tableColumns"
+      :items-per-page="10"
+      @view="viewClientDetails"
+    >
+      <!-- Additional Actions -->
+      <template #actions>
+        <AppButtonPrimary
+          @click="showAddClientModal = true"
+          icon="i-heroicons-plus"
+        >
+          Agregar Cliente
+        </AppButtonPrimary>
+      </template>
+      <!-- Custom cell templates -->
+      <template #cell-name="{ item, value }">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
+            <span v-if="item.profilePhoto">
+              <img :src="item.profilePhoto" class="w-10 h-10 rounded-full object-cover" />
+            </span>
+            <span v-else class="text-white font-bold text-sm">
+              {{ getClientDisplayName(item).charAt(0).toUpperCase() }}
             </span>
           </div>
-          <div class="flex-1">
-            <h3 class="text-lg font-bold text-white">{{ getClientDisplayName(client) }}</h3>
-            <p class="text-slate-400 text-sm">{{ client.email }}</p>
+          <div>
+            <div class="font-medium text-white">{{ value }}</div>
+            <div class="text-xs text-slate-400">{{ item.email }}</div>
           </div>
         </div>
+      </template>
 
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-slate-400 text-sm">Rutinas asignadas:</span>
-            <span class="text-white font-medium">{{ client.assignedWorkouts.length }}</span>
+      <template #cell-status="{ value }">
+        <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+          {{ value }}
+        </span>
+      </template>
+
+      <template #cell-assignedWorkouts="{ value }">
+        <span class="text-white font-medium">{{ value.length }}</span>
+      </template>
+
+      <template #cell-location="{ item }">
+        <div class="text-sm text-slate-300">
+          <div v-if="item.city" class="flex items-center gap-1">
+            <UIcon name="i-heroicons-building-office-2" class="w-3 h-3 text-slate-400" />
+            {{ item.city }}
           </div>
-          
-          <div class="flex items-center justify-between">
-            <span class="text-slate-400 text-sm">Estado:</span>
-            <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
-              Activo
-            </span>
+          <div v-if="item.country" class="flex items-center gap-1">
+            <UIcon name="i-heroicons-globe-alt" class="w-3 h-3 text-slate-400" />
+            {{ item.country }}
           </div>
         </div>
+      </template>
 
-        <div class="flex gap-2 mt-4">
-          <button 
-            @click="viewClientDetails(client)"
-            class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-3 rounded-lg transition-colors text-sm"
-          >
-            Ver Detalles
-          </button>
-          <button 
-            @click="assignWorkout(client)"
-            class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-3 rounded-lg transition-colors text-sm"
-          >
-            Asignar Rutina
-          </button>
+      <!-- Grid view template -->
+      <template #grid-item="{ items }">
+        <div 
+          v-for="client in items" 
+          :key="client.id"
+          class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-orange-500/50 transition-colors"
+        >
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+              <span v-if="client.profilePhoto">
+                <img :src="client.profilePhoto" class="w-12 h-12 rounded-full object-cover" />
+              </span>
+              <span v-else class="text-white font-bold text-lg">
+                {{ getClientDisplayName(client).charAt(0).toUpperCase() }}
+              </span>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-bold text-white">{{ getClientDisplayName(client) }}</h3>
+              <p class="text-slate-400 text-sm">{{ client.email }}</p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400 text-sm">Rutinas asignadas:</span>
+              <span class="text-white font-medium">{{ client.assignedWorkouts.length }}</span>
+            </div>
+            
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400 text-sm">Estado:</span>
+              <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+                Activo
+              </span>
+            </div>
+          </div>
+
+          <div class="flex gap-2 mt-4">
+            <AppButtonSecondary
+              @click="viewClientDetails(client)"
+              class="flex-1"
+            >
+              Ver Detalles
+            </AppButtonSecondary>
+            <AppButtonPrimary
+              @click="assignWorkout(client)"
+              class="flex-1"
+            >
+              Asignar Rutina
+            </AppButtonPrimary>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="!isLoading" class="text-center py-12">
-      <div class="text-6xl mb-4">👥</div>
-      <h3 class="text-xl font-bold text-white mb-2">No tienes clientes aún</h3>
-      <p class="text-slate-400 mb-6">Agrega tu primer cliente para comenzar a gestionar entrenamientos</p>
-      <button 
-        @click="showAddClientModal = true"
-        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors"
-      >
-        Agregar Primer Cliente
-      </button>
-    </div>
+      </template>
+    </DataTable>
 
     <!-- Loading State -->
-    <div v-else class="flex items-center justify-center py-12">
+    <div v-if="isLoading" class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
     </div>
 
@@ -94,86 +131,124 @@
       </div>
     </div>
 
-    <!-- Client Details Modal -->
-    <div v-if="selectedClient" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white">Detalles del Cliente</h3>
-          <button 
-            @click="selectedClient = null"
-            class="text-slate-400 hover:text-white"
-          >
-            <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
-          </button>
-        </div>
-
-        <div class="space-y-6">
-          <!-- Client Info -->
-          <div class="bg-slate-700/50 rounded-lg p-4">
-            <h4 class="font-bold text-white mb-3">Información Personal</h4>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <p class="text-slate-400 text-sm">Nombre</p>
-                <p class="text-white font-medium">{{ getClientDisplayName(selectedClient) }}</p>
-              </div>
-              <div>
-                <p class="text-slate-400 text-sm">Email</p>
-                <p class="text-white font-medium">{{ selectedClient.email }}</p>
-              </div>
-              <div v-if="selectedClient.nickname">
-                <p class="text-slate-400 text-sm">Apodo</p>
-                <p class="text-white font-medium">{{ selectedClient.nickname }}</p>
-              </div>
-              <div v-if="selectedClient.age">
-                <p class="text-slate-400 text-sm">Edad</p>
-                <p class="text-white font-medium">{{ selectedClient.age }} años</p>
-              </div>
-              <div v-if="selectedClient.gender">
-                <p class="text-slate-400 text-sm">Género</p>
-                <p class="text-white font-medium capitalize">{{ selectedClient.gender }}</p>
-              </div>
-              <div v-if="selectedClient.phone">
-                <p class="text-slate-400 text-sm">Teléfono</p>
-                <p class="text-white font-medium">{{ selectedClient.phone }}</p>
-              </div>
-              <div v-if="selectedClient.country">
-                <p class="text-slate-400 text-sm">País</p>
-                <p class="text-white font-medium">{{ selectedClient.country }}</p>
-              </div>
-              <div v-if="selectedClient.city">
-                <p class="text-slate-400 text-sm">Ciudad</p>
-                <p class="text-white font-medium">{{ selectedClient.city }}</p>
-              </div>
-              <div v-if="selectedClient.howDidYouHearAboutUs">
-                <p class="text-slate-400 text-sm">¿Cómo nos conoció?</p>
-                <p class="text-white font-medium">{{ formatHowDidYouHear(selectedClient.howDidYouHearAboutUs) }}</p>
-              </div>
-            </div>
+    <!-- Client Details Modal con animación -->
+    <transition name="modal-fade">
+      <div v-if="selectedClient" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-white">Detalles del Cliente</h3>
+            <button 
+              @click="selectedClient = null"
+              class="text-slate-400 hover:text-white"
+            >
+              <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+            </button>
           </div>
 
-          <!-- Assigned Workouts -->
-          <div class="bg-slate-700/50 rounded-lg p-4">
-            <h4 class="font-bold text-white mb-3">Rutinas Asignadas</h4>
-            <div v-if="selectedClient.assignedWorkouts.length > 0" class="space-y-2">
-              <div 
-                v-for="workoutId in selectedClient.assignedWorkouts" 
-                :key="workoutId"
-                class="bg-slate-600/50 rounded-lg p-3"
-              >
-                <p class="text-white font-medium">Rutina ID: {{ workoutId }}</p>
-                <p class="text-slate-400 text-sm">Estado: Pendiente</p>
+          <div class="space-y-6">
+            <!-- Client Info -->
+            <div class="bg-slate-700/50 rounded-lg p-4">
+              <h4 class="font-bold text-white mb-3">Información Personal</h4>
+              <div class="flex items-center gap-6">
+                <div class="flex-shrink-0">
+                  <img v-if="selectedClient.profilePhoto" :src="selectedClient.profilePhoto" class="w-20 h-20 rounded-full object-cover border-2 border-slate-600" />
+                  <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-3xl font-bold">
+                    {{ getClientDisplayName(selectedClient).charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="flex flex-col gap-1">
+                    <span class="text-xl font-bold text-white">{{ getClientDisplayName(selectedClient) }}</span>
+                    <span v-if="selectedClient.nickname" class="text-orange-400 font-medium">{{ selectedClient.nickname }}</span>
+                  </div>
+                  <div class="flex items-center gap-4 mt-2">
+                    <span class="text-slate-300 text-sm flex items-center gap-1">
+                      <UIcon name="i-heroicons-envelope" class="w-4 h-4" />
+                      {{ selectedClient.email }}
+                    </span>
+                    <span v-if="selectedClient.phone" class="text-slate-300 text-sm flex items-center gap-1">
+                      <UIcon name="i-heroicons-phone" class="w-4 h-4" />
+                      {{ selectedClient.phone }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Ver Perfil Completo Button -->
+              <div class="mt-4">
+                <AppButtonSecondary
+                  @click="viewFullProfile(selectedClient)"
+                  fullWidth
+                >
+                  Ver Perfil Completo
+                </AppButtonSecondary>
               </div>
             </div>
-            <p v-else class="text-slate-400">No tiene rutinas asignadas</p>
+
+            <!-- Assigned Workouts -->
+            <div class="bg-slate-700/50 rounded-lg p-4">
+              <h4 class="font-bold text-white mb-3">Rutinas Asignadas</h4>
+              
+              <!-- Current Day Container -->
+              <div class="bg-slate-600/15 rounded-lg p-4 mb-4 border border-slate-600">
+                <div class="flex items-center justify-between mb-3">
+                  <h5 class="font-semibold text-orange-400">{{ getCurrentDayName() }}</h5>
+                  <span class="text-slate-400 text-sm">Día Actual</span>
+                </div>
+                
+                <div v-if="getCurrentDayWorkout(selectedClient)" class="mb-3">
+                  <div class="bg-slate-700/50 rounded-lg p-3">
+                    <p class="text-white font-medium">{{ getCurrentDayWorkout(selectedClient).title }}</p>
+                    <p class="text-slate-400 text-sm">{{ getCurrentDayWorkout(selectedClient).description }}</p>
+                  </div>
+                </div>
+                <p v-else class="text-slate-400 mb-3">No hay rutina asignada para hoy</p>
+                
+                <AppButtonSecondary
+                  v-if="selectedClient"
+                  @click="goToAssignRoutine(selectedClient)"
+                  fullWidth
+                >
+                  Asignar Rutina
+                </AppButtonSecondary>
+              </div>
+              
+              <!-- Other Assigned Workouts -->
+              <div v-if="selectedClient.assignedWorkouts.length > 0" class="space-y-2">
+                <div 
+                  v-for="workoutId in selectedClient.assignedWorkouts" 
+                  :key="workoutId"
+                  class="bg-slate-600/50 rounded-lg p-3"
+                >
+                  <p class="text-white font-medium">Rutina ID: {{ workoutId }}</p>
+                  <p class="text-slate-400 text-sm">Estado: Pendiente</p>
+                </div>
+              </div>
+              
+              <!-- Programming Button -->
+              <div class="mt-4">
+                <AppButtonPrimary
+                  v-if="selectedClient"
+                  @click="goToProgramming(selectedClient)"
+                  fullWidth
+                >
+                  {{ hasWeeklyProgramming(selectedClient) ? 'Editar Programación' : 'Crear Programación' }}
+                </AppButtonPrimary>
+              </div>
+            </div>
+
+
           </div>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useUsers, type User } from '~/composables/firestore'
+import DataTable from '~/components/DataTable.vue'
+import { useRouter } from 'vue-router'
 
 const { user } = useAuth()
 const clients = ref<User[]>([])
@@ -182,10 +257,38 @@ const showAddClientModal = ref(false)
 const isCreatingClient = ref(false)
 const selectedClient = ref<User | null>(null)
 
-const newClient = reactive({
-  fullName: '',
-  email: ''
-})
+// Table columns configuration
+const tableColumns = [
+  {
+    key: 'name',
+    label: 'Cliente',
+    sortable: true
+  },
+  {
+    key: 'status',
+    label: 'Estado',
+    sortable: true,
+    type: 'badge' as const
+  },
+  {
+    key: 'assignedWorkouts',
+    label: 'Rutinas Asignadas',
+    sortable: true,
+    type: 'number' as const
+  },
+  {
+    key: 'location',
+    label: 'Ubicación',
+    sortable: false
+  },
+  {
+    key: 'createdAt',
+    label: 'Fecha de Registro',
+    sortable: true,
+    type: 'date' as const,
+    format: (value: any) => value ? new Date(value).toLocaleDateString('es-ES') : '-'
+  }
+]
 
 // Helper function to get client display name
 const getClientDisplayName = (client: User): string => {
@@ -222,10 +325,35 @@ const loadClients = async () => {
     const result = await getClientsByCoach(user.value.uid)
     
     if (result.success && result.clients) {
-      clients.value = result.clients
+      console.log('[CLIENTES RAW]', result.clients)
+      // Forzar array plano
+      let rawClients = Array.isArray(result.clients)
+        ? result.clients
+        : Object.values(result.clients)
+      console.log('[CLIENTES ARRAY PLANO]', rawClients)
+      // Add computed fields for table display
+      const mappedClients = rawClients.map((client: any) => {
+        const name = client.nickname || client.fullName || (client.firstName && client.lastName ? client.firstName + ' ' + client.lastName : client.email || 'Sin nombre')
+        return {
+          ...client,
+          id: client.id || client.uid || client.email || name,
+          name,
+          status: 'Activo',
+          assignedWorkouts: Array.isArray(client.assignedWorkouts) ? client.assignedWorkouts : [],
+          location: [client.city, client.country].filter(Boolean).join(', ') || 'No especificada',
+          createdAt: client.createdAt || client.updatedAt || new Date()
+        }
+      })
+      console.log('[CLIENTES TABLA]', mappedClients)
+      clients.value = []
+      await nextTick()
+      clients.value = mappedClients
+    } else {
+      clients.value = []
     }
   } catch (error) {
     console.error('Error loading clients:', error)
+    clients.value = []
   } finally {
     isLoading.value = false
   }
@@ -304,12 +432,80 @@ const viewClientDetails = (client: User) => {
   selectedClient.value = client
 }
 
+const editClient = (client: User) => {
+  // TODO: Implement edit client functionality
+  console.log('Edit client:', client.fullName)
+}
+
+const deleteClient = async (client: User) => {
+  if (!confirm(`¿Estás seguro de que quieres eliminar al cliente "${getClientDisplayName(client)}"?`)) {
+    return
+  }
+
+  try {
+    // TODO: Implement delete client functionality
+    console.log('Delete client:', client.fullName)
+    // const { deleteUser } = useUsers()
+    // const result = await deleteUser(client.id!)
+    
+    // if (result.success) {
+    //   selectedClient.value = null
+    //   await loadClients()
+    //   console.log('✅ Cliente eliminado exitosamente')
+    // }
+  } catch (error) {
+    console.error('Error deleting client:', error)
+  }
+}
+
 const assignWorkout = (client: User) => {
   // TODO: Implement workout assignment modal
   console.log('Assign workout to:', client.fullName)
 }
 
+const router = useRouter()
+
+function goToAssignRoutine(client: any) {
+  router.push(`/clientes/${client.id}/programacion`)
+}
+
+function goToProgramming(client: any) {
+  // TODO: Navigate to programming view in coach dashboard
+  console.log('Navigate to programming for client:', client.id)
+}
+
+function getCurrentDayName(): string {
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
+  return days[new Date().getDay()]
+}
+
+function getCurrentDayWorkout(client: any): any {
+  // TODO: Get current day workout from client programming
+  // For now, return null to show "No hay rutina asignada para hoy"
+  return null
+}
+
+function hasWeeklyProgramming(client: any): boolean {
+  // TODO: Check if client has weekly programming
+  // For now, return false to show "Crear Programación"
+  return false
+}
+
+function viewFullProfile(client: any) {
+  // TODO: Navigate to full client profile view
+  console.log('View full profile for client:', client.id)
+}
+
 onMounted(() => {
   loadClients()
 })
+
+// Nuevo: watcher para cargar clientes cuando el usuario esté listo
+watch(
+  () => user.value?.uid,
+  (uid) => {
+    if (uid) loadClients()
+  },
+  { immediate: true }
+)
 </script> 

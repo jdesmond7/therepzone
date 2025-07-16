@@ -217,10 +217,33 @@ export const useFirebaseStorage = () => {
     }
   }
 
+  const uploadCredentialFile = async (file: File, path: string) => {
+    try {
+      const storage = getFirebaseStorage()
+      
+      // Create structured path for credentials
+      const fileExtension = file.name.split('.').pop() || 'pdf'
+      const fileName = `${Date.now()}.${fileExtension}`
+      const filePath = `${path}/${fileName}`
+      const fileRef = storageRef(storage, filePath)
+      
+      console.log(`📁 Subiendo archivo de credencial a: ${filePath}`)
+      
+      const snapshot = await uploadBytes(fileRef, file)
+      const downloadURL = await getDownloadURL(snapshot.ref)
+      
+      return { success: true, url: downloadURL, path: snapshot.ref.fullPath }
+    } catch (error) {
+      console.error('Error uploading credential file:', error)
+      return { success: false, error }
+    }
+  }
+
   return {
     uploadExerciseImage,
     uploadWorkoutImage,
     uploadProfileImage,
+    uploadCredentialFile,
     deleteImage,
     deleteExerciseImage // For backward compatibility
   }

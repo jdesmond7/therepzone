@@ -44,7 +44,7 @@
           <button 
             @click="testCleanupOrphans"
             :disabled="!!loading"
-            class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white py-2 px-4 rounded font-medium"
+            class="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-4 rounded font-bold"
           >
             {{ loading === 'cleanup' ? 'Ejecutando...' : 'Ejecutar Limpieza' }}
           </button>
@@ -59,7 +59,7 @@
           <button 
             @click="createOrphanDocument"
             :disabled="!!loading"
-            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white py-2 px-4 rounded font-medium"
+            class="w-full h-12 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white px-4 rounded font-bold"
           >
             {{ loading === 'orphan' ? 'Creando...' : 'Crear Documento Huérfano' }}
           </button>
@@ -74,7 +74,7 @@
           <button 
             @click="testAuthToFirestore"
             :disabled="!!loading"
-            class="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-slate-600 text-white py-2 px-4 rounded font-medium"
+            class="w-full h-12 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-600 text-white px-4 rounded font-bold"
           >
             {{ loading === 'auth2firestore' ? 'Probando...' : 'Probar Sincronización' }}
           </button>
@@ -89,7 +89,7 @@
           <button 
             @click="testFirestoreToAuth"
             :disabled="!!loading"
-            class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white py-2 px-4 rounded font-medium"
+            class="w-full h-12 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white px-4 rounded font-bold"
           >
             {{ loading === 'firestore2auth' ? 'Probando...' : 'Probar Sincronización' }}
           </button>

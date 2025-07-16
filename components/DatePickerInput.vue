@@ -11,7 +11,7 @@
         @input="formatBirthDate"
         @keydown="handleKeyDown"
         @focus="showDatePicker = true"
-        class="w-full pl-4 pr-12 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent"
+        class="w-full h-12 pl-4 pr-12 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent"
         maxlength="10"
       />
       <button

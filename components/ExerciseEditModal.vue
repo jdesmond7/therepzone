@@ -14,21 +14,20 @@
           <form @submit.prevent="$emit('save')" class="space-y-4 flex-1 flex flex-col">
             <slot />
             <div class="flex flex-col sm:flex-row gap-3 pt-4 w-full">
-              <button
-                type="button"
+              <AppButtonSecondary
                 @click="$emit('cancel')"
-                class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-lg transition-colors cursor-pointer w-full"
+                class="flex-1"
               >
                 Cancelar
-              </button>
-              <button
+              </AppButtonSecondary>
+              <AppButtonPrimary
                 type="submit"
                 :disabled="saving"
-                class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 cursor-pointer w-full"
+                class="flex-1"
               >
                 <span v-if="saving">Guardando...</span>
                 <span v-else>{{ editing ? 'Actualizar' : 'Crear' }} Ejercicio</span>
-              </button>
+              </AppButtonPrimary>
             </div>
           </form>
         </div>

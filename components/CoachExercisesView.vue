@@ -1,26 +1,23 @@
 <template>
   <div class="space-y-6">
-    <!-- Controls -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <!-- Mobile: Botón primero, luego filtros -->
-      <button 
-        @click="showCreateModal = true"
-        class="block md:hidden w-full bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer mb-2"
-      >
-        <UIcon name="i-heroicons-plus" class="w-5 h-5" />
-        Crear Ejercicio
-      </button>
-      <!-- Filtros en mobile: cada uno en una fila -->
-      <div class="flex flex-col gap-2 w-full md:flex-row md:items-center md:gap-4 md:flex-1">
-        <div class="w-full md:w-[260px]">
+    <!-- Data Table -->
+    <DataTable
+      :data="filteredExercises"
+      :columns="tableColumns"
+      :items-per-page="12"
+      @view="viewExercise"
+    >
+      <!-- Filters -->
+      <template #filters>
+        <div class="w-full sm:w-[260px]">
           <CustomMultiSelect
-            v-model="selectedMuscleGroups"
-            :options="muscleGroupOptions"
-            placeholder="Filtrar por grupo muscular"
+            v-model="selectedRegions"
+            :options="regionOptions"
+            placeholder="Filtrar por región trabajada"
             @update:model-value="filterExercises"
           />
         </div>
-        <div class="w-full md:w-[260px]">
+        <div class="w-full sm:w-[260px]">
           <CustomSelect
             v-model="selectedDifficulty"
             :options="difficultyOptions"
@@ -28,116 +25,132 @@
             @update:model-value="filterExercises"
           />
         </div>
-        <AppInput
-          v-model="searchTerm"
-          placeholder="Buscar ejercicios..."
-          @input="filterExercises"
-          class="w-full md:w-[340px]"
-        />
-      </div>
-      <!-- Desktop: Botón a la derecha -->
-      <button 
-        @click="showCreateModal = true"
-        class="hidden md:flex bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors items-center gap-2 whitespace-nowrap cursor-pointer"
-      >
-        <UIcon name="i-heroicons-plus" class="w-5 h-5" />
-        Crear Ejercicio
-      </button>
-    </div>
-
-    <!-- Exercises Grid -->
-    <div v-if="filteredExercises.length > 0" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 justify-items-start">
-      <div 
-        v-for="exercise in filteredExercises" 
-        :key="exercise.id"
-        @click="viewExercise(exercise)"
-        class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden hover:border-orange-500/50 hover:scale-[1.02] transition-all duration-200 cursor-pointer w-full max-w-full md:max-w-[320px] group"
-      >
-        <!-- Exercise Image -->
-        <div 
-          v-if="exercise.photo || exercise.photoUrl" 
-          class="h-48 bg-cover bg-center relative group-hover:scale-105 transition-transform duration-300"
-          :style="{ backgroundImage: `url(${exercise.photo || exercise.photoUrl})` }"
+      </template>
+      
+      <!-- Additional Actions -->
+      <template #actions>
+        <AppButtonPrimary
+          @click="showCreateModal = true"
+          icon="i-heroicons-plus"
         >
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
-          <span 
-            :class="{
-              'bg-green-500/90 text-green-100': exercise.difficulty === 'principiante',
-              'bg-yellow-500/90 text-yellow-100': exercise.difficulty === 'intermedio',
-              'bg-red-500/90 text-red-100': exercise.difficulty === 'avanzado'
-            }"
-            class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm"
-          >
-            {{ exercise.difficulty }}
-          </span>
+          Crear Ejercicio
+        </AppButtonPrimary>
+      </template>
+      <!-- Custom cell templates -->
+      <template #cell-title="{ item, value }">
+        <div class="flex items-center gap-3">
+          <div 
+            v-if="item.photo || item.photoUrl"
+            class="w-10 h-10 rounded-lg bg-cover bg-center flex-shrink-0"
+            :style="{ backgroundImage: `url(${item.photo || item.photoUrl})` }"
+          ></div>
+          <div v-else class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
+            <UIcon name="i-heroicons-academic-cap" class="w-5 h-5 text-slate-400" />
+          </div>
+          <div>
+            <div class="font-medium text-white">{{ value }}</div>
+            <div class="text-xs text-slate-400 line-clamp-1">{{ item.description }}</div>
+          </div>
         </div>
-        
-        <!-- Content -->
-        <div class="p-6">
-          <div class="mb-4">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="text-lg font-bold text-white group-hover:text-orange-400 transition-colors">{{ exercise.title }}</h3>
-              <span 
-                v-if="!exercise.photo && !exercise.photoUrl"
-                :class="{
-                  'bg-green-500/20 text-green-400': exercise.difficulty === 'principiante',
-                  'bg-yellow-500/20 text-yellow-400': exercise.difficulty === 'intermedio',
-                  'bg-red-500/20 text-red-400': exercise.difficulty === 'avanzado'
-                }"
-                class="px-2 py-1 rounded-full text-xs font-medium"
-              >
-                {{ exercise.difficulty }}
-              </span>
-            </div>
-            
-            <div class="flex items-center gap-2 mb-3">
-              <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium">
-                {{ exercise.category }}
-              </span>
-            </div>
+      </template>
 
-            <p class="text-slate-400 text-sm mb-3 line-clamp-2">{{ exercise.description }}</p>
-            
-            <div class="mb-3">
-              <p class="text-slate-400 text-xs mb-1">Músculos trabajados:</p>
-              <div class="flex flex-wrap gap-1">
+      <template #cell-difficulty="{ value }">
+        <span 
+          :class="{
+            'bg-green-500/20 text-green-400': value === 'principiante',
+            'bg-yellow-500/20 text-yellow-400': value === 'intermedio',
+            'bg-red-500/20 text-red-400': value === 'avanzado'
+          }"
+          class="px-2 py-1 rounded-full text-xs font-medium"
+        >
+          {{ value.charAt(0).toUpperCase() + value.slice(1) }}
+        </span>
+      </template>
+
+      <template #cell-regionWorking="{ value }">
+        <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium">
+          {{ value.charAt(0).toUpperCase() + value.slice(1) }}
+        </span>
+      </template>
+
+      <template #cell-primaryMuscleWorking="{ value }">
+        <DynamicBadges :items="value" />
+      </template>
+
+      <template #cell-secondaryMuscleWorking="{ value }">
+        <DynamicBadges :items="value" variant="secondary" />
+      </template>
+
+      <!-- Grid view template -->
+      <template #grid-item="{ items }">
+        <div 
+          v-for="exercise in items" 
+          :key="exercise.id"
+          @click="viewExercise(exercise)"
+          class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden hover:border-orange-500/50 hover:scale-[1.02] transition-all duration-200 cursor-pointer w-full group"
+        >
+          <!-- Exercise Image -->
+          <div 
+            v-if="exercise.photo || exercise.photoUrl" 
+            class="h-48 bg-cover bg-center relative group-hover:scale-105 transition-transform duration-300"
+            :style="{ backgroundImage: `url(${exercise.photo || exercise.photoUrl})` }"
+          >
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+            <span 
+              :class="{
+                'bg-green-500/90 text-green-100': exercise.difficulty === 'principiante',
+                'bg-yellow-500/90 text-yellow-100': exercise.difficulty === 'intermedio',
+                'bg-red-500/90 text-red-100': exercise.difficulty === 'avanzado'
+              }"
+              class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm"
+            >
+              {{ exercise.difficulty }}
+            </span>
+          </div>
+          
+          <!-- Content -->
+          <div class="p-6">
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-bold text-white group-hover:text-orange-400 transition-colors">{{ exercise.title }}</h3>
                 <span 
-                  v-for="muscle in exercise.muscleGroups.slice(0, 3)" 
-                  :key="muscle"
-                  class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs"
+                  v-if="!exercise.photo && !exercise.photoUrl"
+                  :class="{
+                    'bg-green-500/20 text-green-400': exercise.difficulty === 'principiante',
+                    'bg-yellow-500/20 text-yellow-400': exercise.difficulty === 'intermedio',
+                    'bg-red-500/20 text-red-400': exercise.difficulty === 'avanzado'
+                  }"
+                  class="px-2 py-1 rounded-full text-xs font-medium"
                 >
-                  {{ muscle }}
+                  {{ exercise.difficulty }}
                 </span>
-                <span 
-                  v-if="exercise.muscleGroups.length > 3"
-                  class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs"
-                >
-                  +{{ exercise.muscleGroups.length - 3 }}
+              </div>
+              
+              <div class="flex items-center gap-2 mb-3">
+                <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium">
+                  {{ exercise.regionWorking.charAt(0).toUpperCase() + exercise.regionWorking.slice(1) }}
                 </span>
+              </div>
+
+              <p class="text-slate-400 text-sm mb-3 line-clamp-2">{{ exercise.description }}</p>
+              
+              <div class="mb-3">
+                <p class="text-slate-400 text-xs mb-1">Músculos primarios:</p>
+                <DynamicBadges :items="exercise.primaryMuscleWorking" />
+              </div>
+              
+              <div class="mb-3" v-if="exercise.secondaryMuscleWorking.length > 0">
+                <p class="text-slate-400 text-xs mb-1">Músculos secundarios:</p>
+                <DynamicBadges :items="exercise.secondaryMuscleWorking" variant="secondary" />
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="!isLoading" class="text-center py-12">
-      <div class="text-6xl mb-4">🏋️</div>
-      <h3 class="text-xl font-bold text-white mb-2">No se encontraron ejercicios</h3>
-      <p class="text-slate-400 mb-6">
-        {{ searchTerm || selectedDifficulty ? 'Prueba ajustando los filtros' : 'Crea tu primer ejercicio personalizado' }}
-      </p>
-      <button 
-        @click="showCreateModal = true"
-        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors cursor-pointer"
-      >
-        Crear Ejercicio
-      </button>
-    </div>
+      </template>
+    </DataTable>
 
     <!-- Loading State -->
-    <div v-else class="flex items-center justify-center py-12">
+    <div v-if="isLoading" class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
     </div>
 
@@ -156,115 +169,145 @@
             >
               <!-- slot content -->
               <div class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-white mb-2">Nombre del Ejercicio</label>
-                    <AppInput
-                      v-model="exerciseForm.title"
-                      placeholder="Ej: Flexiones"
-                      required
-                    />
-                  </div>
-                  <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-white mb-2">Grupo Muscular</label>
-                    <CustomMultiSelect
-                      v-model="exerciseForm.muscleGroups"
-                      :options="muscleGroupOptions"
-                      placeholder="Selecciona uno o más grupos musculares"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-white mb-2">Descripción</label>
-                  <textarea
-                    v-model="exerciseForm.description"
-                    rows="3"
-                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                    placeholder="Descripción del ejercicio..."
-                    required
-                  ></textarea>
-                </div>
-                <!-- Imagen del Ejercicio -->
-                <div>
-                  <label class="block text-sm font-bold text-white mb-2">
-                    IMAGEN DEL EJERCICIO
-                  </label>
-                  <div class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-orange-600 transition-colors cursor-pointer">
-                    <div v-if="!selectedImage">
-                      <UIcon name="i-heroicons-photo" class="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                      <p class="text-slate-400 mb-2">Subir imagen del ejercicio</p>
-                      <p class="text-slate-500 text-xs mb-2">Se convertirá automáticamente a WebP para mejor calidad</p>
-                      <input
-                        type="file"
-                        @change="handleImageUpload"
-                        accept="image/*"
-                        class="hidden"
-                        ref="fileInput"
-                      />
-                      <button
-                        type="button"
-                        @click="fileInput?.click()"
-                        class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Seleccionar imagen
-                      </button>
-                    </div>
-                    <div v-else class="relative">
-                      <img :src="selectedImage" alt="Preview" class="w-full h-48 rounded-lg mx-auto object-cover mb-3">
-                      <button
-                        type="button"
-                        @click="removeImage"
-                        class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-sm transition-colors cursor-pointer"
-                      >
-                        Cambiar imagen
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <!-- Dificultad -->
                 <div>
                   <label class="block text-sm font-medium text-white mb-2">Dificultad</label>
                   <CustomSelect
                     v-model="exerciseForm.difficulty"
                     :options="difficultyOptions"
-                    placeholder="Seleccionar dificultad"
+                    placeholder="Selecciona la dificultad"
                   />
                 </div>
+                <!-- Nombre del Ejercicio -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Músculos Trabajados</label>
-                  <input
-                    v-model="muscleGroupsInput"
-                    type="text"
-                    autocomplete="off"
-                    class="w-full h-[50px] px-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                    placeholder="Ej: pectorales, tríceps, deltoides (separados por comas)"
+                  <label class="block text-sm font-medium text-white mb-2">Nombre del Ejercicio</label>
+                  <AppInput
+                    v-model="exerciseForm.title"
+                    placeholder="Ej: Flexiones"
+                    required
                   />
                 </div>
+                <!-- Región Trabajada -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Regresiones</label>
+                  <label class="block text-sm font-medium text-white mb-2">Región Trabajada</label>
+                  <CustomSelect
+                    v-model="exerciseForm.regionWorking"
+                    :options="regionOptions"
+                    placeholder="Selecciona la región trabajada"
+                  />
+                </div>
+                <!-- Músculo Primario -->
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Músculo Primario Trabajado</label>
                   <CustomMultiSelect
-                    v-model="regressionsInput"
-                    :options="relatedExercisesOptions"
-                    placeholder="Selecciona regresiones"
-                    class="rz-multiselect"
+                    v-model="exerciseForm.primaryMuscleWorking"
+                    :options="primaryMuscleOptions"
+                    placeholder="Selecciona uno o más músculos primarios"
                   />
                 </div>
+                <!-- Músculo Secundario -->
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Músculo Secundario Trabajado</label>
+                  <CustomMultiSelect
+                    v-model="exerciseForm.secondaryMuscleWorking"
+                    :options="secondaryMuscleOptions"
+                    placeholder="Selecciona uno o más músculos secundarios"
+                  />
+                </div>
+                <!-- Descripción -->
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Descripción</label>
+                  <AppTextarea
+                    v-model="exerciseForm.description"
+                    :rows="3"
+                    placeholder="Describe el ejercicio..."
+                  />
+                </div>
+                <!-- Instrucciones como pasos dinámicos -->
+                <div>
+                  <label class="block text-sm font-medium text-white mb-2">Instrucciones</label>
+                  <div class="space-y-3">
+                    <template v-for="(step, idx) in exerciseForm.instructions" :key="idx">
+                      <div class="flex items-start gap-2">
+                        <AppTextarea
+                          v-model="exerciseForm.instructions[idx]"
+                          :placeholder="`Paso ${idx + 1}`"
+                          :rows="2"
+                          class="flex-1"
+                        />
+                        <button
+                          type="button"
+                          @click="removeInstructionStep(idx)"
+                          class="mt-1 w-[42px] h-[42px] min-w-[42px] min-h-[42px] max-w-[42px] max-h-[42px] flex items-center justify-center border border-slate-600 text-slate-400 hover:text-red-400 hover:border-red-400 rounded-lg transition-colors"
+                          title="Eliminar paso"
+                        >
+                          <UIcon name="i-heroicons-trash" class="w-5 h-5" />
+                        </button>
+                      </div>
+                    </template>
+                    <button
+                      v-if="exerciseForm.instructions.length === 0"
+                      type="button"
+                      @click="addInstructionStep()"
+                      class="w-full h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 rounded-lg transition-colors"
+                    >
+                      Agregar Paso 1
+                    </button>
+                    <button
+                      v-else
+                      type="button"
+                      @click="addInstructionStep()"
+                      class="w-full h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 rounded-lg transition-colors"
+                    >
+                      Agregar Paso {{ exerciseForm.instructions.length + 1 }}
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label class="block text-sm font-medium text-white mb-2">Progresiones</label>
                   <CustomMultiSelect
                     v-model="progressionsInput"
                     :options="relatedExercisesOptions"
-                    placeholder="Selecciona progresiones"
-                    class="rz-multiselect"
+                    placeholder="Selecciona ejercicios de progresión"
                   />
                 </div>
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-white mb-2">Regresiones</label>
+                  <CustomMultiSelect
+                    v-model="regressionsInput"
+                    :options="relatedExercisesOptions"
+                    placeholder="Selecciona ejercicios de regresión"
+                  />
+                </div>
+
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Instrucciones</label>
-                  <textarea
-                    v-model="instructionsInput"
-                    rows="4"
-                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                    placeholder="Escribe las instrucciones paso a paso (una por línea)"
-                  ></textarea>
+                  <label class="block text-sm font-medium text-white mb-2">Imagen del Ejercicio</label>
+                  <div class="flex items-center gap-4">
+                    <input
+                      ref="fileInput"
+                      type="file"
+                      accept="image/*"
+                      @change="handleImageSelect"
+                      class="hidden"
+                    />
+                    <button
+                      @click="fileInput?.click()"
+                      type="button"
+                      class="h-12 px-4 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 rounded-lg transition-colors bg-transparent"
+                    >
+                      Seleccionar Imagen
+                    </button>
+                    <span v-if="imageFile" class="text-green-400 text-sm">
+                      ✓ Imagen seleccionada
+                    </span>
+                  </div>
+                  <div v-if="selectedImage" class="mt-3 relative group w-[80px] h-[80px]">
+                    <img :src="selectedImage" alt="Preview" class="w-[80px] h-[80px] object-cover rounded-lg" />
+                    <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer" @click="removeSelectedImage">
+                      <UIcon name="i-heroicons-trash" class="w-6 h-6 text-white" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </ExerciseEditModal>
@@ -276,92 +319,104 @@
     <!-- Exercise Details Modal -->
     <transition name="modal-fade">
       <div v-if="showDetailsModalBg" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/50" @click="handleDetailsModalBackdropClick"></div>
+        <div class="absolute inset-0 bg-black/50" @click="closeDetailsModal"></div>
         <transition name="modal-slide">
-          <div v-if="showDetailsModalContent && selectedExercise" @click.stop class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative z-10">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-xl font-bold text-white">{{ selectedExercise.title }}</h3>
-              <button 
-                @click="closeDetailsModal"
-                class="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
-              </button>
-            </div>
-
-            <!-- Exercise Image -->
-            <div 
-              v-if="selectedExercise.photo || selectedExercise.photoUrl" 
-              @click="showImageFullscreen(selectedExercise.photo || selectedExercise.photoUrl)"
-              class="mb-6 h-64 bg-cover bg-center rounded-lg relative cursor-pointer hover:opacity-90 transition-opacity"
-              :style="{ backgroundImage: `url(${selectedExercise.photo || selectedExercise.photoUrl})` }"
-            >
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent rounded-lg"></div>
-              <div class="absolute bottom-3 left-3 text-white text-sm bg-black/50 backdrop-blur-sm px-2 py-1 rounded">
-                🔍 Click para ver en tamaño completo
-              </div>
-            </div>
-
-            <div class="space-y-6">
-              <div class="flex items-center gap-4">
-                <span 
-                  :class="{
-                    'bg-green-500/20 text-green-400': selectedExercise.difficulty === 'principiante',
-                    'bg-yellow-500/20 text-yellow-400': selectedExercise.difficulty === 'intermedio',
-                    'bg-red-500/20 text-red-400': selectedExercise.difficulty === 'avanzado'
-                  }"
-                  class="px-3 py-1 rounded-full text-sm font-medium"
+          <div v-if="showDetailsModalContent && selectedExercise" @click.stop class="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+              <div class="flex items-start justify-between mb-6">
+                <div class="flex-1">
+                  <div class="flex items-center gap-4 mb-3">
+                    <h3 class="text-3xl font-bold text-white">{{ selectedExercise.title }}</h3>
+                    <span 
+                      :class="{
+                        'bg-green-500/20 text-green-400': selectedExercise.difficulty === 'principiante',
+                        'bg-yellow-500/20 text-yellow-400': selectedExercise.difficulty === 'intermedio',
+                        'bg-red-500/20 text-red-400': selectedExercise.difficulty === 'avanzado'
+                      }"
+                      class="px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {{ selectedExercise.difficulty.charAt(0).toUpperCase() + selectedExercise.difficulty.slice(1) }}
+                    </span>
+                    <span class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium">
+                      {{ selectedExercise.regionWorking.charAt(0).toUpperCase() + selectedExercise.regionWorking.slice(1) }}
+                    </span>
+                  </div>
+                  <p class="text-white text-base leading-relaxed">{{ selectedExercise.description }}</p>
+                </div>
+                <button 
+                  @click="closeDetailsModal"
+                  class="text-slate-400 hover:text-white cursor-pointer ml-4"
                 >
-                  {{ selectedExercise.difficulty }}
-                </span>
-                <span class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium">
-                  {{ selectedExercise.category }}
-                </span>
+                  <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+                </button>
               </div>
 
-              <div>
-                <p class="text-slate-400 mb-2">Descripción:</p>
-                <p class="text-white">{{ selectedExercise.description }}</p>
-              </div>
-
-              <div>
-                <p class="text-slate-400 mb-2">Músculos trabajados:</p>
-                <div class="flex flex-wrap gap-2">
-                  <span 
-                    v-for="muscle in selectedExercise.muscleGroups" 
-                    :key="muscle"
-                    class="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-sm"
-                  >
-                    {{ muscle }}
-                  </span>
+              <!-- Exercise Image -->
+              <div 
+                v-if="selectedExercise.photo || selectedExercise.photoUrl" 
+                @click="showImageFullscreen(selectedExercise.photo || selectedExercise.photoUrl)"
+                class="mb-6 h-64 bg-cover bg-center rounded-lg relative cursor-pointer hover:opacity-90 transition-opacity"
+                :style="{ backgroundImage: `url(${selectedExercise.photo || selectedExercise.photoUrl})` }"
+              >
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent rounded-lg"></div>
+                <div class="absolute bottom-3 left-3 text-white text-sm bg-black/50 backdrop-blur-sm px-2 py-1 rounded">
+                  🔍 Click para ver en tamaño completo
                 </div>
               </div>
 
-              <div v-if="selectedExercise.instructions.length > 0">
-                <p class="text-slate-400 mb-2">Instrucciones:</p>
-                <ol class="space-y-2">
-                  <li 
-                    v-for="(instruction, index) in selectedExercise.instructions" 
-                    :key="index"
-                    class="flex gap-3"
-                  >
-                    <span class="bg-orange-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
-                      {{ index + 1 }}
-                    </span>
-                    <span class="text-slate-300">{{ instruction }}</span>
-                  </li>
-                </ol>
-              </div>
+              <!-- Exercise Info -->
+              <div class="space-y-6">
 
-              <!-- Botón de Editar al final -->
-              <div class="pt-4 border-t border-slate-700">
-                <button 
-                  @click="editExercise(selectedExercise)"
-                  class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <UIcon name="i-heroicons-pencil" class="w-5 h-5" />
-                  Editar Ejercicio
-                </button>
+                <div>
+                  <p class="text-slate-400 mb-2">Músculos primarios:</p>
+                  <div class="flex flex-wrap gap-2">
+                    <span 
+                      v-for="muscle in selectedExercise.primaryMuscleWorking" 
+                      :key="muscle"
+                      class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs"
+                    >
+                      {{ muscle }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="selectedExercise.secondaryMuscleWorking.length > 0">
+                  <p class="text-slate-400 mb-2">Músculos secundarios:</p>
+                  <div class="flex flex-wrap gap-2">
+                    <span 
+                      v-for="muscle in selectedExercise.secondaryMuscleWorking" 
+                      :key="muscle"
+                      class="bg-slate-600 text-slate-300 px-2 py-1 rounded text-xs"
+                    >
+                      {{ muscle }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="selectedExercise.instructions && selectedExercise.instructions.length > 0">
+                  <p class="text-slate-400 mb-2">Instrucciones:</p>
+                  <div class="space-y-3">
+                    <div 
+                      v-for="(instruction, index) in selectedExercise.instructions" 
+                      :key="index"
+                      class="flex gap-3"
+                    >
+                      <div class="w-6 h-6 bg-slate-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
+                        {{ index + 1 }}
+                      </div>
+                      <span class="text-slate-300">{{ instruction }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex gap-4">
+                  <AppButtonPrimary
+                    @click="editExercise(selectedExercise)"
+                    class="w-full"
+                  >
+                    Editar Ejercicio
+                  </AppButtonPrimary>
+                </div>
               </div>
             </div>
           </div>
@@ -369,7 +424,7 @@
       </div>
     </transition>
 
-    <!-- Modal para ver imagen en tamaño completo -->
+    <!-- Fullscreen Image Modal -->
     <div v-if="fullscreenImage" @click="fullscreenImage = null" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4">
       <div class="relative max-w-full max-h-full">
         <button 
@@ -393,10 +448,14 @@
 import { useExercises, type Exercise } from '~/composables/firestore'
 import { useFirebaseStorage } from '~/composables/firebase-storage'
 import ExerciseEditModal from '~/components/ExerciseEditModal.vue'
+import DataTable from '~/components/DataTable.vue'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.css'
 import AppInput from '~/components/AppInput.vue'
 import CustomMultiSelect from '~/components/CustomMultiSelect.vue'
+import AppTextarea from './AppTextarea.vue'
+import CustomTooltip from '~/components/CustomTooltip.vue'
+import DynamicBadges from '~/components/DynamicBadges.vue'
 
 const { user } = useAuth()
 const exercises = ref<Exercise[]>([])
@@ -414,7 +473,7 @@ const selectedImage = ref<string>('')
 const fileInput = ref<HTMLInputElement>()
 
 // Filters
-const selectedMuscleGroups = ref<string[]>([])
+const selectedRegions = ref<string[]>([])
 const selectedDifficulty = ref('')
 const searchTerm = ref('')
 
@@ -422,8 +481,11 @@ const searchTerm = ref('')
 const exerciseForm = reactive({
   title: '',
   description: '',
-  muscleGroups: [],
+  regionWorking: '',
   difficulty: '',
+  primaryMuscleWorking: [] as string[],
+  secondaryMuscleWorking: [] as string[],
+  instructions: [] as string[]
 })
 
 const muscleGroupsInput = ref('')
@@ -433,13 +495,51 @@ const instructionsInput = ref('')
 const progressionsInput = ref<string[]>([])
 const regressionsInput = ref<string[]>([])
 
+// Table columns configuration
+const tableColumns = [
+  {
+    key: 'title',
+    label: 'Ejercicio',
+    sortable: true
+  },
+  {
+    key: 'difficulty',
+    label: 'Dificultad',
+    sortable: true,
+    type: 'badge' as const
+  },
+  {
+    key: 'regionWorking',
+    label: 'Región Trabajada',
+    sortable: true,
+    type: 'badge' as const
+  },
+  {
+    key: 'primaryMuscleWorking',
+    label: 'Músculos Primarios',
+    sortable: false
+  },
+  {
+    key: 'secondaryMuscleWorking',
+    label: 'Músculos Secundarios',
+    sortable: false
+  },
+  {
+    key: 'createdAt',
+    label: 'Creado',
+    sortable: true,
+    type: 'date' as const,
+    format: (value: any) => value ? new Date(value).toLocaleDateString('es-ES') : '-'
+  }
+]
+
 // Computed para ejercicios del mismo grupo muscular (excepto el actual)
 const relatedExercises = computed(() => {
   if (!muscleGroupsInput.value) return exercises.value.filter(e => !editingExercise.value || e.id !== editingExercise.value.id)
   const currentMuscles = muscleGroupsInput.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
   return exercises.value.filter(e => {
     if (editingExercise.value && e.id === editingExercise.value.id) return false
-    return e.muscleGroups.some(m => currentMuscles.includes(m.toLowerCase()))
+    return e.primaryMuscleWorking.some(m => currentMuscles.includes(m.toLowerCase()))
   })
 })
 
@@ -448,13 +548,40 @@ const relatedExercisesOptions = computed(() => {
 })
 
 // Options for CustomSelect components
-const muscleGroupOptions = [
-  { value: 'pecho', label: 'Pecho' },
-  { value: 'espalda', label: 'Espalda' },
-  { value: 'piernas', label: 'Piernas' },
-  { value: 'core', label: 'Core' },
-  { value: 'brazos', label: 'Brazos' },
-  { value: 'hombros', label: 'Hombros' }
+const regionOptions = [
+  { value: 'Tren Superior', label: 'Tren Superior' },
+  { value: 'Tren Inferior', label: 'Tren Inferior' },
+  { value: 'Core', label: 'Core' }
+]
+
+const primaryMuscleOptions = [
+  { value: 'pectorales', label: 'Pectorales' },
+  { value: 'dorsales', label: 'Dorsales' },
+  { value: 'cuádriceps', label: 'Cuádriceps' },
+  { value: 'glúteos', label: 'Glúteos' },
+  { value: 'bíceps', label: 'Bíceps' },
+  { value: 'tríceps', label: 'Tríceps' },
+  { value: 'deltoides', label: 'Deltoides' },
+  { value: 'abdominales', label: 'Abdominales' },
+  { value: 'lumbares', label: 'Lumbares' },
+  { value: 'gemelos', label: 'Gemelos' },
+  { value: 'isquiotibiales', label: 'Isquiotibiales' },
+  { value: 'trapecios', label: 'Trapecios' }
+]
+
+const secondaryMuscleOptions = [
+  { value: 'pectorales', label: 'Pectorales' },
+  { value: 'dorsales', label: 'Dorsales' },
+  { value: 'cuádriceps', label: 'Cuádriceps' },
+  { value: 'glúteos', label: 'Glúteos' },
+  { value: 'bíceps', label: 'Bíceps' },
+  { value: 'tríceps', label: 'Tríceps' },
+  { value: 'deltoides', label: 'Deltoides' },
+  { value: 'abdominales', label: 'Abdominales' },
+  { value: 'lumbares', label: 'Lumbares' },
+  { value: 'gemelos', label: 'Gemelos' },
+  { value: 'isquiotibiales', label: 'Isquiotibiales' },
+  { value: 'trapecios', label: 'Trapecios' }
 ]
 
 const difficultyOptions = [
@@ -483,13 +610,14 @@ const loadExercises = async () => {
 const filterExercises = () => {
   let filtered = [...exercises.value]
 
-  if (selectedMuscleGroups.value.length > 0) {
+  // Filter by muscular group
+  if (selectedRegions.value.length > 0) {
     filtered = filtered.filter(ex => {
-      // Coincide si category (string) está en los seleccionados
-      const matchCategory = ex.category && selectedMuscleGroups.value.includes(ex.category)
-      // Coincide si muscleGroups (array) tiene alguno de los seleccionados
-      const matchMuscleGroups = Array.isArray(ex.muscleGroups) && ex.muscleGroups.some(mg => selectedMuscleGroups.value.includes(mg))
-      return matchCategory || matchMuscleGroups
+      // Coincide si regionWorking (string) está en los seleccionados
+      const matchRegion = ex.regionWorking && selectedRegions.value.includes(ex.regionWorking)
+      // También coinciden los músculos primarios que estén en los grupos seleccionados
+      const matchPrimaryMuscles = Array.isArray(ex.primaryMuscleWorking) && ex.primaryMuscleWorking.some(mg => selectedRegions.value.includes(mg))
+      return matchRegion || matchPrimaryMuscles
     })
   }
 
@@ -502,7 +630,7 @@ const filterExercises = () => {
     filtered = filtered.filter(ex => 
       ex.title.toLowerCase().includes(search) ||
       ex.description.toLowerCase().includes(search) ||
-      ex.muscleGroups.some(muscle => muscle.toLowerCase().includes(search))
+      ex.primaryMuscleWorking.some(muscle => muscle.toLowerCase().includes(search))
     )
   }
 
@@ -512,7 +640,7 @@ const filterExercises = () => {
 // Modal backdrop click handlers
 const handleModalBackdropClick = (event: MouseEvent) => {
   if (event.target === event.currentTarget) {
-    closeModal()
+    closeEditModal()
   }
 }
 
@@ -547,163 +675,97 @@ const handleDetailsModalBackdropClick = (event: MouseEvent) => {
 }
 
 // Image handling functions
-const handleImageUpload = async (event: Event) => {
+const handleImageSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  
-  if (file) {
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('El archivo es demasiado grande. Tamaño máximo: 5MB')
-      return
-    }
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido')
-      return
-    }
-
-    try {
-      // Convert image to WebP format
-      const { convertImageToWebP, createWebPFile } = await import('~/utils/image-converter')
-      const { blob, dataUrl } = await convertImageToWebP(file, 0.8, 1200, 1200) // Exercise images can be a bit larger
-      
-      // Create a new File object with WebP format
-      const webpFile = createWebPFile(blob, file.name)
-      imageFile.value = webpFile
-      selectedImage.value = dataUrl
-      
-      console.log(`🏋️ Imagen de ejercicio convertida a WebP: ${file.name} → ${webpFile.name} (${(blob.size / 1024).toFixed(1)}KB)`)
-    } catch (error) {
-      console.error('Error converting image:', error)
-      alert('Error al procesar la imagen. Intenta con otra imagen.')
-    }
+  if (target.files && target.files[0]) {
+    imageFile.value = target.files[0]
+    selectedImage.value = URL.createObjectURL(target.files[0])
   }
 }
 
-const removeImage = () => {
-  imageFile.value = null
-  selectedImage.value = ''
-  // Reset file input
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
+const addInstructionStep = () => {
+  exerciseForm.instructions.push('')
 }
 
-const resetForm = () => {
-  exerciseForm.title = ''
-  exerciseForm.description = ''
-  exerciseForm.difficulty = ''
-  muscleGroupsInput.value = ''
-  instructionsInput.value = ''
-  progressionsInput.value = []
-  regressionsInput.value = []
-  removeImage()
+const removeInstructionStep = (index: number) => {
+  exerciseForm.instructions.splice(index, 1)
 }
 
 const saveExercise = async () => {
-  if (!user.value?.uid) {
-    console.error('❌ No user UID available')
-    return
-  }
+  if (!user.value?.uid) return
 
-  // Validate required fields
-  if (!exerciseForm.title.trim()) {
-    alert('El nombre del ejercicio es obligatorio')
-    return
-  }
-
-  if (!exerciseForm.description.trim()) {
-    alert('La descripción del ejercicio es obligatoria')
-    return
-  }
-
-  console.log('💾 Iniciando guardado de ejercicio:', exerciseForm.title)
   isSaving.value = true
-  
   try {
-    let photoUrl = ''
-    let imagePath = ''
+    const { createExercise, updateExercise } = useExercises()
+    const { uploadExerciseImage } = useFirebaseStorage()
 
-    // Upload image if one was selected
+    let photoUrl = selectedImage.value
+
+    // Upload new image if selected
     if (imageFile.value) {
-      console.log('📤 Subiendo imagen a Firebase Storage...')
-      
-      const { uploadExerciseImage } = useFirebaseStorage()
       const uploadResult = await uploadExerciseImage(
         imageFile.value,
-        exerciseForm.title, // Use exercise name for folder structure
-        editingExercise.value?.id || `temp_${Date.now()}`
+        editingExercise.value?.id || `exercise_${Date.now()}`,
+        exerciseForm.title
       )
-
+      
       if (uploadResult.success) {
         photoUrl = uploadResult.url!
-        imagePath = uploadResult.path!
-        console.log('✅ Imagen subida exitosamente:', photoUrl)
+        console.log('📸 Imagen del ejercicio subida exitosamente:', photoUrl)
       } else {
-        console.error('❌ Error uploading image:', uploadResult.error)
-        alert('Error al subir la imagen. Verifica tu conexión e intenta nuevamente.')
-        return
+        console.error('Error uploading exercise image:', uploadResult.error)
       }
     }
 
-    console.log('📝 Preparando datos del ejercicio...')
-    const exerciseData = {
-      ...exerciseForm,
+    const exerciseToSave = {
+      title: exerciseForm.title,
+      description: exerciseForm.description,
+      regionWorking: exerciseForm.regionWorking,
       difficulty: exerciseForm.difficulty as 'principiante' | 'intermedio' | 'avanzado',
-      muscleGroups: muscleGroupsInput.value.split(',').map(s => s.trim()).filter(Boolean),
-      instructions: instructionsInput.value.split('\n').map(s => s.trim()).filter(Boolean),
+      primaryMuscleWorking: exerciseForm.primaryMuscleWorking,
+      secondaryMuscleWorking: exerciseForm.secondaryMuscleWorking,
+      photo: photoUrl,
+      instructions: exerciseForm.instructions,
       progressions: progressionsInput.value,
       regressions: regressionsInput.value,
-      createdBy: user.value.uid,
-      ...(photoUrl && { photo: photoUrl, photoUrl, imagePath })
+      createdBy: user.value.uid
     }
 
-    console.log('💾 Guardando en Firestore...', exerciseData)
-
+    let result
     if (editingExercise.value) {
-      // Update existing exercise
-      console.log('🔄 Actualizando ejercicio existente...')
-      const { updateExercise } = useExercises()
-      const result = await updateExercise(editingExercise.value.id!, exerciseData)
-      
-      if (result.success) {
-        console.log('✅ Ejercicio actualizado exitosamente')
-        closeModal()
-        await loadExercises()
-      } else {
-        console.error('❌ Error actualizando ejercicio:', result.error)
-        alert(`Error al actualizar el ejercicio: ${result.error}`)
-      }
+      result = await updateExercise(editingExercise.value.id!, exerciseToSave)
     } else {
-      // Create new exercise
-      console.log('🆕 Creando nuevo ejercicio...')
-      const { createExercise } = useExercises()
-      const result = await createExercise(exerciseData)
+      result = await createExercise(exerciseToSave)
+    }
+
+    if (result.success) {
+      showCreateModal.value = false
+      editingExercise.value = null
       
-      if (result.success) {
-        console.log('✅ Ejercicio creado exitosamente')
-        closeModal()
-        await loadExercises()
-      } else {
-        console.error('❌ Error creando ejercicio:', result.error)
-        alert(`Error al crear el ejercicio: ${result.error}`)
-      }
+      // Reset form
+      exerciseForm.title = ''
+      exerciseForm.description = ''
+      exerciseForm.regionWorking = ''
+      exerciseForm.difficulty = ''
+      exerciseForm.primaryMuscleWorking = []
+      exerciseForm.secondaryMuscleWorking = []
+      muscleGroupsInput.value = ''
+      instructionsInput.value = ''
+      progressionsInput.value = []
+      regressionsInput.value = []
+      imageFile.value = null
+      selectedImage.value = ''
+      
+      // Reload exercises
+      await loadExercises()
+      
+      console.log('✅ Ejercicio guardado exitosamente:', exerciseForm.title)
     }
   } catch (error) {
-    console.error('❌ Error inesperado guardando ejercicio:', error)
-    alert('Error inesperado al guardar el ejercicio. Revisa la consola para más detalles.')
+    console.error('Error saving exercise:', error)
   } finally {
-    console.log('🏁 Finalizando proceso de guardado')
     isSaving.value = false
   }
-}
-
-const closeModal = () => {
-  showCreateModal.value = false
-  editingExercise.value = null
-  resetForm()
 }
 
 const viewExercise = (exercise: Exercise) => {
@@ -716,12 +778,34 @@ const editExercise = (exercise: Exercise) => {
   exerciseForm.title = exercise.title
   exerciseForm.description = exercise.description
   exerciseForm.difficulty = exercise.difficulty
-  muscleGroupsInput.value = exercise.muscleGroups.join(', ')
+  exerciseForm.regionWorking = exercise.regionWorking || ''
+  exerciseForm.primaryMuscleWorking = exercise.primaryMuscleWorking || []
+  exerciseForm.secondaryMuscleWorking = exercise.secondaryMuscleWorking || []
+  muscleGroupsInput.value = exercise.primaryMuscleWorking.join(', ')
   instructionsInput.value = exercise.instructions.join('\n')
   progressionsInput.value = exercise.progressions || []
   regressionsInput.value = exercise.regressions || []
   if (exercise.photo || exercise.photoUrl) {
     selectedImage.value = exercise.photo || exercise.photoUrl || ''
+  }
+}
+
+const deleteExercise = async (exercise: Exercise) => {
+  if (!confirm(`¿Estás seguro de que quieres eliminar el ejercicio "${exercise.title}"?`)) {
+    return
+  }
+
+  try {
+    const { deleteExercise: deleteExerciseFn } = useExercises()
+    const result = await deleteExerciseFn(exercise.id!)
+    
+    if (result.success) {
+      selectedExercise.value = null
+      await loadExercises()
+      console.log('✅ Ejercicio eliminado exitosamente')
+    }
+  } catch (error) {
+    console.error('Error deleting exercise:', error)
   }
 }
 
@@ -756,9 +840,44 @@ const closeEditModal = () => {
   }, 350)
 }
 
+const removeSelectedImage = () => {
+  selectedImage.value = ''
+  imageFile.value = null
+}
+
 onMounted(() => {
   loadExercises()
 })
+
+// Composable para badges dinámicos
+const useDynamicBadges = () => {
+  const calculateVisibleBadges = (items: string[], containerWidth: number, badgeWidth: number = 80, gap: number = 4) => {
+    if (!items || items.length === 0) return { visible: [], hidden: [] }
+    
+    let totalWidth = 0
+    let visibleCount = 0
+    
+    for (let i = 0; i < items.length; i++) {
+      const itemWidth = Math.min(badgeWidth, items[i].length * 8 + 16) // Aproximación del ancho del texto
+      const currentTotal = totalWidth + itemWidth + (i > 0 ? gap : 0)
+      
+      // Si agregar este badge excede el contenedor, paramos
+      if (currentTotal > containerWidth - 30) { // 30px para el badge "+N"
+        break
+      }
+      
+      totalWidth = currentTotal
+      visibleCount = i + 1
+    }
+    
+    return {
+      visible: items.slice(0, visibleCount),
+      hidden: items.slice(visibleCount)
+    }
+  }
+  
+  return { calculateVisibleBadges }
+}
 </script> 
 
 <style scoped>
@@ -781,108 +900,8 @@ onMounted(() => {
   transform: translateY(-60vh);
   opacity: 0;
 }
-.modal-slide-enter-to {
-  transform: translateY(0);
-  opacity: 1;
-}
-.modal-slide-leave-from {
-  transform: translateY(0);
-  opacity: 1;
-}
 .modal-slide-leave-to {
   transform: translateY(-60vh);
   opacity: 0;
-}
-.rz-multiselect .multiselect {
-  background-color: #0f172a !important;
-  border: 1px solid #334155 !important;
-  border-radius: 0.5rem !important;
-  min-height: 50px !important;
-  padding-left: 1rem !important;
-  padding-right: 1rem !important;
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
-  color: #fff !important;
-  font-size: 1rem !important;
-  transition: border-color 0.2s !important;
-  box-shadow: none !important;
-  outline: none !important;
-  display: block !important;
-  width: 100% !important;
-}
-.rz-multiselect .multiselect__tags,
-.rz-multiselect .multiselect__input,
-.rz-multiselect .multiselect__single {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  color: #fff !important;
-}
-:deep(.rz-multiselect .multiselect) {
-  background-color: #0f172a !important;
-  border: 1px solid #334155 !important;
-  border-radius: 0.5rem !important;
-  min-height: 50px !important;
-  padding-left: 1rem !important;
-  padding-right: 1rem !important;
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
-  color: #fff !important;
-  font-size: 1rem !important;
-  transition: border-color 0.2s !important;
-  box-shadow: none !important;
-  outline: none !important;
-  display: block !important;
-  width: 100% !important;
-}
-:deep(.rz-multiselect .multiselect__content-wrapper) {
-  background: #1e293b !important;
-  border: 1px solid #334155 !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.25) !important;
-  margin-top: 0.25rem !important;
-  padding: 0 !important;
-}
-.rz-multiselect .multiselect__option {
-  background: transparent !important;
-  color: #cbd5e1 !important;
-  font-size: 1rem !important;
-  padding: 0.5rem 1rem !important;
-  border-radius: 0.375rem !important;
-  transition: background 0.2s, color 0.2s !important;
-}
-.rz-multiselect .multiselect__option--highlight {
-  background: #334155 !important; /* bg-slate-700 */
-  color: #fff !important;
-}
-.rz-multiselect .multiselect__option--selected {
-  background: #ea580c !important; /* bg-orange-600 */
-  color: #fff !important;
-}
-.rz-multiselect .multiselect__option--selected.multiselect__option--highlight {
-  background: #ea580c !important; /* bg-orange-600 */
-  color: #fff !important;
-}
-.rz-multiselect .multiselect__select {
-  color: #ea580c !important;
-}
-.rz-multiselect .multiselect__tag {
-  background: #334155 !important;
-  color: #cbd5e1 !important;
-  border-radius: 0.375rem !important;
-  font-weight: 500 !important;
-  padding: 0.25rem 0.75rem !important;
-  font-size: 0.875rem !important;
-  margin: 0 !important;
-  width: auto !important;
-  max-width: 100%;
-  display: inline-flex !important;
-  align-items: center;
-  white-space: nowrap !important;
-}
-.rz-multiselect .multiselect__tag + .multiselect__tag {
-  margin-left: 4px !important;
 }
 </style> 

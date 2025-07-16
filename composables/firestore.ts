@@ -82,12 +82,13 @@ export interface Exercise {
   photo?: string // Main photo field for exercise image
   photoUrl?: string // Deprecated: keeping for backward compatibility
   imagePath?: string // Firebase Storage path for image deletion
-  category?: string // 'pecho', 'espalda', 'piernas', etc. (opcional, deprecated)
+  regionWorking: string // 'Tren Superior', 'Tren Inferior', 'Core'
   difficulty: 'principiante' | 'intermedio' | 'avanzado'
   createdAt: Timestamp
   createdBy: string // Coach ID who created this exercise
   instructions: string[]
-  muscleGroups: string[]
+  primaryMuscleWorking: string[] // Array of primary muscles worked
+  secondaryMuscleWorking: string[] // Array of secondary muscles worked
   progressions: string[] // Array of exercise IDs that are harder versions
   regressions: string[] // Array of exercise IDs that are easier versions
 }
@@ -108,7 +109,7 @@ export interface Workout {
   exercises: WorkoutExercise[]
   estimatedDuration: number // In minutes
   difficulty: 'principiante' | 'intermedio' | 'avanzado'
-  category: string
+  regionWorking: string[] // Array of regions: 'tren superior', 'tren inferior', 'core', 'full body'
   createdBy: string // Coach ID
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -487,14 +488,58 @@ export const useExercises = () => {
 
 // Workout operations
 export const useWorkouts = () => {
+  // Helper function to calculate region working based on exercises
+  const calculateRegionWorking = (exercises: WorkoutExercise[], allExercises: Exercise[]): string[] => {
+    const regions = new Set<string>()
+    let hasCore = false
+    
+    exercises.forEach(workoutExercise => {
+      const exercise = allExercises.find(e => e.id === workoutExercise.exerciseId)
+      if (exercise) {
+        if (exercise.regionWorking === 'Core') {
+          hasCore = true
+        } else {
+          regions.add(exercise.regionWorking)
+        }
+      }
+    })
+    
+    const regionArray = Array.from(regions)
+    const finalRegions: string[] = []
+    
+    // Logic for determining region combinations
+    if (regionArray.length === 1) {
+      finalRegions.push(regionArray[0])
+    } else if (regionArray.length > 1) {
+      finalRegions.push('Full Body')
+    }
+    
+    if (hasCore) {
+      finalRegions.push('Core')
+    }
+    
+    return finalRegions
+  }
 
   const createWorkout = async (workoutData: Omit<Workout, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const db = getDb()
       const workoutsCollection = collection(db, 'workouts')
       
+      // If regionWorking is not provided, calculate it from exercises
+      let finalWorkoutData = { ...workoutData }
+      if (!workoutData.regionWorking || workoutData.regionWorking.length === 0) {
+        // Get all exercises to calculate region working
+        const { getExercises } = useExercises()
+        const exercisesResult = await getExercises()
+        if (exercisesResult.success && exercisesResult.exercises) {
+          const calculatedRegions = calculateRegionWorking(workoutData.exercises, exercisesResult.exercises)
+          finalWorkoutData.regionWorking = calculatedRegions
+        }
+      }
+      
       const docData = {
-        ...workoutData,
+        ...finalWorkoutData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }

@@ -4,9 +4,14 @@
     <header class="container mx-auto px-4 py-6">
       <nav class="flex items-center justify-between">
         <TheLogo />
-        <NuxtLink to="/login" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors">
-          ACCEDER
-        </NuxtLink>
+        <div class="flex gap-4">
+          <AppButtonSecondary to="/register">
+            Regístrate
+          </AppButtonSecondary>
+          <AppButtonPrimary to="/login">
+            Iniciar Sesión
+          </AppButtonPrimary>
+        </div>
       </nav>
     </header>
 
@@ -17,21 +22,18 @@
           THE<span class="text-orange-600">REP</span>ZONE
         </h1>
 
-        <p class="text-xl md:text-2xl text-slate-300 mb-8 font-semibold">
-          REGISTRA TUS ENTRENAMIENTOS. CONQUISTA TUS METAS.
+        <p class="text-2xl md:text-3xl text-slate-300 mb-8 font-bold">
+          REGISTRA TUS ENTRENAMIENTOS. <br> CONQUISTA TUS METAS.
         </p>
 
         <p class="text-lg text-slate-400 mb-12 max-w-2xl mx-auto">
           La plataforma definitiva para el seguimiento de entrenamientos con una base de datos completa de ejercicios. Registra tus entrenamientos, rastrea tu progreso y domina tu camino hacia el fitness.
         </p>
 
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <NuxtLink to="/login" class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 py-4 rounded-lg text-lg transition-colors">
-            COMENZAR AHORA
-          </NuxtLink>
-          <button class="border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white font-bold px-8 py-4 rounded-lg text-lg transition-colors">
-            SABER MÁS
-          </button>
+        <div class="flex justify-center">
+          <AppButtonPrimary to="/login" class="text-lg px-8 py-4">
+            Comenzar Ahora
+          </AppButtonPrimary>
         </div>
       </div>
 

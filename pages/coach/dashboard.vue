@@ -49,6 +49,10 @@
               <UIcon name="i-heroicons-fire" class="w-5 h-5" />
               Rutinas
             </button>
+            <button @click="navigate('programming')" :class="navBtnClass('programming')">
+              <UIcon name="i-heroicons-calendar" class="w-5 h-5" />
+              Programación
+            </button>
             <button @click="navigate('profile')" :class="navBtnClass('profile')">
               <UIcon name="i-heroicons-user" class="w-5 h-5" />
               Perfil
@@ -99,6 +103,10 @@
           <button @click="currentView = 'workouts'" :class="navBtnClass('workouts')">
             <UIcon name="i-heroicons-fire" class="w-5 h-5" />
             Rutinas
+          </button>
+          <button @click="currentView = 'programming'" :class="navBtnClass('programming')">
+            <UIcon name="i-heroicons-calendar" class="w-5 h-5" />
+            Programación
           </button>
           <button @click="currentView = 'profile'" :class="navBtnClass('profile')">
             <UIcon name="i-heroicons-user" class="w-5 h-5" />
@@ -201,51 +209,31 @@
           <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
             <h3 class="text-xl font-bold text-white mb-4">Acciones Rápidas</h3>
             <div class="space-y-3">
-              <button 
+              <AppButtonPrimary
                 @click="currentView = 'workouts'"
-                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                fullWidth
               >
                 Crear Rutina
-              </button>
-              <button 
+              </AppButtonPrimary>
+              <AppButtonSecondary
                 @click="currentView = 'exercises'"
-                class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                fullWidth
               >
                 Añadir Ejercicio
-              </button>
-              <button 
+              </AppButtonSecondary>
+              <AppButtonSecondary
                 @click="currentView = 'clients'"
-                class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                fullWidth
               >
                 Ver Clientes
-              </button>
+              </AppButtonSecondary>
             </div>
           </div>
         </div>
 
         <!-- Clients Section -->
         <div v-else-if="currentView === 'clients'">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div v-for="athlete in athletes" :key="athlete.id" class="bg-slate-800/50 border border-slate-700 rounded-xl p-6 flex flex-col gap-2 shadow">
-              <div class="flex items-center gap-4 mb-2">
-                <div class="w-14 h-14 rounded-full bg-slate-700 flex items-center justify-center text-2xl font-bold text-orange-500">
-                  <span v-if="athlete.profilePhoto">
-                    <img :src="athlete.profilePhoto" class="w-14 h-14 rounded-full object-cover" />
-                  </span>
-                  <span v-else>{{ athlete.firstName?.charAt(0) }}{{ athlete.lastName?.charAt(0) }}</span>
-                </div>
-                <div>
-                  <div class="text-lg font-bold text-white">{{ athlete.fullName || (athlete.firstName + ' ' + athlete.lastName) }}</div>
-                  <div class="text-slate-400 text-sm">{{ athlete.email }}</div>
-                </div>
-              </div>
-              <div class="flex gap-2 text-slate-400 text-sm">
-                <span v-if="athlete.city">🏙️ {{ athlete.city }}</span>
-                <span v-if="athlete.country">🌎 {{ athlete.country }}</span>
-              </div>
-              <!-- Aquí puedes agregar más info: estado de pago, fecha de vencimiento, etc. -->
-            </div>
-          </div>
+          <CoachClientsView />
         </div>
 
         <!-- Exercises Section -->
@@ -256,6 +244,16 @@
         <!-- Workouts Section -->
         <div v-else-if="currentView === 'workouts'">
           <CoachWorkoutsView />
+        </div>
+
+        <!-- Programming Section -->
+        <div v-else-if="currentView === 'programming'">
+          <CoachProgrammingView />
+        </div>
+
+        <!-- Profile Section -->
+        <div v-else-if="currentView === 'profile'" class="-mx-4 -my-6">
+          <ProfileView />
         </div>
 
         <!-- Other Views Placeholder -->
@@ -275,6 +273,9 @@ import type { User } from '~/composables/firestore'
 import { watch, onMounted, ref, isRef, computed, unref } from 'vue'
 import { useUserStore } from '~/stores/user'
 import { useAuth } from '~/composables/firebase'
+import CoachClientsView from '~/components/CoachClientsView.vue'
+import CoachProgrammingView from '~/components/CoachProgrammingView.vue'
+import ProfileView from '~/components/ProfileView.vue'
 
 const currentView = ref('overview')
 // Elimina la copia local userProfile, usa directamente userStore.userProfile
@@ -393,21 +394,6 @@ const loadStats = async () => {
   }
 }
 
-const athletes = ref<User[]>([])
-
-const loadAthletes = async () => {
-  const uid = getUserUid()
-  if (!uid) return
-  const { getClientsByCoach } = useUsers()
-  const result = await getClientsByCoach(uid)
-  console.log('[CoachDashboard] Resultado getClientsByCoach:', result)
-  if (result.success) {
-    athletes.value = result.clients ?? []
-  } else {
-    athletes.value = []
-  }
-}
-
 // Safe watcher for current view and user profile
 watch(
   [
@@ -423,7 +409,6 @@ watch(
   ([view, uid]) => {
     if (view === 'clients' && uid) {
       loadStats();
-      loadAthletes();
     }
   },
   { immediate: true }
@@ -441,7 +426,6 @@ watch(
   (uid) => {
     if (uid) {
       loadStats();
-      loadAthletes();
     }
   },
   { immediate: true }
@@ -464,6 +448,7 @@ const currentViewTitle = computed(() => {
     'clients': 'Mis Clientes',
     'exercises': 'Ejercicios',
     'workouts': 'Rutinas',
+    'programming': 'Programación',
     'profile': 'Perfil'
   }
   return titles[currentView.value] || 'Dashboard'

@@ -115,14 +115,14 @@
           <h2 class="text-xl font-bold text-white mb-4">Verificar Usuarios</h2>
           <button 
             @click="checkUsersCollection"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition-colors mr-4"
+            class="h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 rounded-lg transition-colors mr-4"
           >
             Verificar Colección Users
           </button>
           
           <button 
             @click="clearLogs"
-            class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-3 rounded-lg transition-colors"
+            class="h-12 bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 rounded-lg transition-colors"
           >
             Limpiar Logs
           </button>
@@ -132,7 +132,7 @@
         <div class="pt-8 border-t border-slate-700">
           <NuxtLink 
             to="/admin-seed" 
-            class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 py-3 rounded-lg transition-colors inline-block"
+            class="h-12 bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 rounded-lg transition-colors inline-block"
           >
             ← Volver al Admin Panel
           </NuxtLink>

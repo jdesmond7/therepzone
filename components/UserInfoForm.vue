@@ -68,7 +68,7 @@
       <!-- Apodo -->
       <div>
         <label for="nickname" class="block text-sm font-bold text-white mb-2">
-          Apodo
+          Apodo:
         </label>
         <input
           id="nickname"
@@ -347,23 +347,20 @@
               class="hidden"
               ref="fileInput"
             />
-            <button
-              type="button"
-              @click="fileInput?.click()"
-              class="bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              Seleccionar imagen
-            </button>
+                          <AppButtonSecondary
+                @click="fileInput?.click()"
+              >
+                Seleccionar imagen
+              </AppButtonSecondary>
           </div>
           <div v-else class="relative">
             <img :src="selectedImage" alt="Preview" class="w-24 h-24 rounded-full mx-auto object-cover mb-3">
-            <button
-              type="button"
-              @click="removeImage"
-              class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-sm transition-colors"
-            >
-              Cambiar imagen
-            </button>
+                          <AppButtonDestructive
+                @click="removeImage"
+                class="py-1 px-3 text-sm"
+              >
+                Cambiar imagen
+              </AppButtonDestructive>
           </div>
         </div>
         <p v-if="fieldErrors.profilePhoto" class="text-red-400 text-xs mt-1">{{ fieldErrors.profilePhoto }}</p>
@@ -389,7 +386,7 @@
         <button
           type="button"
           @click="$emit('cancel')"
-          class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+          class="flex-1 h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-4 rounded-lg transition-colors bg-transparent"
           v-if="showCancelButton"
         >
           Cancelar

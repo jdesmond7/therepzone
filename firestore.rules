@@ -2,124 +2,70 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'admin';
-    }
-    
-    function isCoach() {
-      return isAuthenticated() && getUserRole() == 'coach';
-    }
-    
-    function isClient() {
-      return isAuthenticated() && getUserRole() == 'client';
-    }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    function isClientOfCoach(clientId) {
-      return isCoach() && 
-             get(/databases/$(database)/documents/users/$(clientId)).data.coachId == request.auth.uid;
-    }
-    
-    // Reglas para la colección de usuarios
-    match /users/{userId} {
-      // Los usuarios pueden leer y escribir sus propios datos
-      allow read, write: if isOwner(userId);
-      
-      // Los coaches pueden leer datos de sus clientes asignados
-      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
-      
-      // Los coaches pueden leer datos de otros coaches (para asignaciones)
-      allow read: if isCoach() && resource.data.role == 'coach';
-      
-      // Los coaches pueden actualizar el contador de clientes
-      allow update: if isCoach() && request.auth.uid == userId &&
-                      request.writeFields.hasOnly(['currentClients', 'updatedAt']);
-      
-      // Los coaches pueden asignar clientes a sí mismos
-      allow update: if isCoach() && resource.data.role == 'client' &&
-                      request.writeFields.hasOnly(['coachId', 'updatedAt']) &&
-                      request.resource.data.coachId == request.auth.uid;
-      
-      // Los admins pueden leer y escribir todo
-      allow read, write: if isAdmin();
-    }
-    
-    // Reglas para ejercicios
-    match /exercises/{exerciseId} {
-      // Todos los usuarios autenticados pueden leer ejercicios
+
+    // Colección de coaches
+    match /coaches/{coachId} {
+      // El propio coach puede leer y escribir sus datos
+      allow write: if isOwner(resource.data.authUid);
+
+      // Cualquier usuario autenticado puede leer (temporal para pruebas)
       allow read: if isAuthenticated();
-      
-      // Los coaches pueden crear, actualizar y eliminar ejercicios que crearon
-      allow create: if isCoach() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isCoach() && resource.data.createdBy == request.auth.uid;
-      allow delete: if isCoach() && resource.data.createdBy == request.auth.uid;
-      
-      // Los admins pueden hacer todo
-      allow read, write: if isAdmin();
     }
-    
-    // Reglas para workouts
+
+    // Colección de atletas (antes users)
+    match /athletes/{athleteId} {
+      // El propio atleta puede leer y escribir sus datos
+      allow write: if isOwner(resource.data.authUid);
+
+      // Cualquier usuario autenticado puede leer (temporal para pruebas)
+      allow read: if isAuthenticated();
+    }
+
+    // Colección de admins
+    match /admins/{adminId} {
+      // El propio admin puede leer y escribir sus datos
+      allow write: if isOwner(resource.data.authUid);
+
+      // Cualquier usuario autenticado puede leer (temporal para pruebas)
+      allow read: if isAuthenticated();
+    }
+
+    // Colección de usuarios (mantener para compatibilidad temporal)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow read: if isAuthenticated(); // temporal para pruebas
+    }
+
+    // Ejercicios
+    match /exercises/{exerciseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // simplificado para pruebas
+    }
+
+    // Workouts
     match /workouts/{workoutId} {
-      // Los coaches pueden leer y escribir workouts que crearon
-      allow read, write: if isCoach() && resource.data.createdBy == request.auth.uid;
-      
-      // Los clientes pueden leer workouts asignados a ellos
-      allow read: if isClient() && 
-                     exists(/databases/$(database)/documents/workoutAssignments/$(request.auth.uid + '_' + workoutId));
-      
-      // Los admins pueden hacer todo
-      allow read, write: if isAdmin();
+      allow read, write: if isAuthenticated(); // simplificado para pruebas
     }
-    
-    // Reglas para asignaciones de workouts
+
+    // Asignaciones de workouts
     match /workoutAssignments/{assignmentId} {
-      // Los coaches pueden crear asignaciones para sus clientes
-      allow create: if isCoach() && 
-                      request.resource.data.coachId == request.auth.uid &&
-                      isClientOfCoach(request.resource.data.clientId);
-      
-      // Los coaches pueden leer y actualizar asignaciones que crearon
-      allow read, update: if isCoach() && resource.data.coachId == request.auth.uid;
-      
-      // Los clientes pueden leer sus propias asignaciones
-      allow read: if isClient() && resource.data.clientId == request.auth.uid;
-      
-      // Los clientes pueden actualizar el estado de sus asignaciones
-      allow update: if isClient() && 
-                      resource.data.clientId == request.auth.uid &&
-                      request.writeFields.hasOnly(['status', 'completedAt']);
-      
-      // Los admins pueden hacer todo
-      allow read, write: if isAdmin();
+      allow read, write: if isAuthenticated(); // simplificado para pruebas
     }
-    
-    // Reglas para logs de workouts
+
+    // Logs de workouts
     match /workoutLogs/{logId} {
-      // Los clientes pueden crear y actualizar sus propios logs
-      allow create, update: if isClient() && request.resource.data.clientId == request.auth.uid;
-      
-      // Los clientes pueden leer sus propios logs
-      allow read: if isClient() && resource.data.clientId == request.auth.uid;
-      
-      // Los coaches pueden leer logs de sus clientes
-      allow read: if isCoach() && isClientOfCoach(resource.data.clientId);
-      
-      // Los admins pueden hacer todo
-      allow read, write: if isAdmin();
+      allow read, write: if isAuthenticated(); // simplificado para pruebas
     }
-    
+
     // Denegar todo lo demás por defecto
     match /{document=**} {
       allow read, write: if false;

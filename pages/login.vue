@@ -1,15 +1,13 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
     <div class="w-full max-w-md">
-      <!-- Logo -->
-      <div class="text-center mb-8">
-        <NuxtLink to="/">
-          <TheLogo />
-        </NuxtLink>
-      </div>
-
       <!-- Login Form -->
       <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+          <TheLogo :vertical="true" />
+        </div>
+        
         <h1 class="text-3xl font-black text-white text-center mb-2">BIENVENIDO DE VUELTA</h1>
         <p class="text-slate-400 text-center mb-8">¿Listo para conquistar tu entrenamiento?</p>
 
@@ -23,13 +21,13 @@
             <label for="email" class="block text-sm font-bold text-white mb-2">
               CORREO ELECTRÓNICO
             </label>
-            <input
+            <AppInput
               id="email"
               v-model="email"
               type="email"
-              class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent email-input"
               placeholder="tu@email.com"
-              required
+              autocomplete="email"
+              :disabled="isLoading"
             />
           </div>
 
@@ -40,10 +38,9 @@
             <PasswordInput
               id="password"
               v-model="password"
-              autocomplete="off"
-              class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent"
               placeholder="••••••••"
-              required
+              autocomplete="off"
+              :disabled="isLoading"
             />
           </div>
 
@@ -60,45 +57,45 @@
             </label>
           </div>
 
-          <button
+          <AppButtonPrimary
             type="submit"
             :disabled="isLoading"
-            class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
-            :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
+            fullWidth
+            class="h-12"
           >
             <UIcon 
               v-if="isLoading" 
               name="i-heroicons-arrow-path" 
               class="w-6 h-6 animate-spin" 
             />
-            <span v-else>ACCEDER</span>
-          </button>
-
-
+            <span v-else>Iniciar Sesión</span>
+          </AppButtonPrimary>
         </form>
 
         <div class="mt-6 text-center space-y-3">
           <!-- Emergency stop loading button -->
-          <button 
+          <AppButtonPrimary
             @click="handleEmergencyStop" 
-            class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+            fullWidth
+            class="bg-yellow-600 hover:bg-yellow-700 h-12"
           >
-            🛑 PARAR LOADING DE EMERGENCIA
-          </button>
+            🛑 Parar Loading de Emergencia
+          </AppButtonPrimary>
           
           <!-- Logout button for testing (only visible when authenticated) -->
-          <button 
+          <AppButtonDestructive
             v-if="user" 
             @click="handleLogout" 
-            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+            fullWidth
+            class="h-12"
           >
             🚪 Cerrar Sesión (Para Testing)
-          </button>
+          </AppButtonDestructive>
           
           <p class="text-slate-400">
             ¿No tienes cuenta? 
             <NuxtLink to="/register" class="text-orange-600 hover:text-orange-500 font-bold">
-              Regístrate aquí
+              Regístrate Aquí
             </NuxtLink>
           </p>
           <NuxtLink to="/" class="text-slate-400 hover:text-white transition-colors block">

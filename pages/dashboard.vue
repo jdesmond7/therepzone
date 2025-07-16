@@ -210,7 +210,7 @@
                     >
                       ▶️ Empezar Ahora
                     </button>
-                    <button class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-3 rounded-lg transition-colors">
+                    <button class="h-12 bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-lg transition-colors">
                       👁️ Ver Detalles
                     </button>
                   </div>
@@ -324,7 +324,7 @@
                 >
                   ✅ Completado
                 </button>
-                <button class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-lg transition-colors">
+                <button class="h-12 bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-lg transition-colors">
                   👁️ Detalles
                 </button>
               </div>
@@ -353,9 +353,9 @@
             <div class="flex flex-wrap gap-4 flex-1">
               <div class="min-w-[200px]">
                 <CustomSelect
-                  v-model="selectedCategory"
-                  :options="categoryOptions"
-                  placeholder="Todas las categorías"
+                  v-model="selectedRegion"
+                  :options="regionOptions"
+                  placeholder="Todas las regiones"
                   @update:model-value="filterExercises"
                 />
               </div>
@@ -427,7 +427,7 @@
                   
                   <div class="flex items-center gap-2 mb-3">
                     <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium">
-                      {{ exercise.category }}
+                      {{ exercise.regionWorking.charAt(0).toUpperCase() + exercise.regionWorking.slice(1) }}
                     </span>
                   </div>
 
@@ -437,17 +437,17 @@
                     <p class="text-slate-400 text-xs mb-1">Músculos trabajados:</p>
                     <div class="flex flex-wrap gap-1">
                       <span 
-                        v-for="muscle in exercise.muscleGroups.slice(0, 3)" 
+                        v-for="muscle in exercise.primaryMuscleWorking.slice(0, 3)" 
                         :key="muscle"
                         class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs"
                       >
                         {{ muscle }}
                       </span>
                       <span 
-                        v-if="exercise.muscleGroups.length > 3"
+                        v-if="exercise.primaryMuscleWorking.length > 3"
                         class="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs"
                       >
-                        +{{ exercise.muscleGroups.length - 3 }}
+                        +{{ exercise.primaryMuscleWorking.length - 3 }}
                       </span>
                     </div>
                   </div>
@@ -461,7 +461,7 @@
             <div class="text-6xl mb-4">🏋️</div>
             <h3 class="text-xl font-bold text-white mb-2">No se encontraron ejercicios</h3>
             <p class="text-slate-400 mb-6">
-              {{ searchTerm || selectedCategory || selectedDifficulty ? 'Prueba ajustando los filtros' : 'No hay ejercicios disponibles en este momento' }}
+              {{ searchTerm || selectedRegion || selectedDifficulty ? 'Prueba ajustando los filtros' : 'No hay ejercicios disponibles en este momento' }}
             </p>
           </div>
 
@@ -548,10 +548,10 @@
               }"
               class="px-3 py-1 rounded-full text-sm font-medium"
             >
-              {{ selectedExercise.difficulty }}
+              {{ selectedExercise.difficulty.charAt(0).toUpperCase() + selectedExercise.difficulty.slice(1) }}
             </span>
             <span class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium">
-              {{ selectedExercise.category }}
+              {{ selectedExercise.regionWorking.charAt(0).toUpperCase() + selectedExercise.regionWorking.slice(1) }}
             </span>
           </div>
 
@@ -564,7 +564,7 @@
             <p class="text-slate-400 mb-2">Músculos trabajados:</p>
             <div class="flex flex-wrap gap-2">
               <span 
-                v-for="muscle in selectedExercise.muscleGroups" 
+                v-for="muscle in selectedExercise.primaryMuscleWorking" 
                 :key="muscle"
                 class="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-sm"
               >
@@ -777,19 +777,16 @@ const selectedMetric = ref<'weight' | 'time' | 'reps'>('weight')
 const selectedPeriod = ref<'weekly' | 'monthly' | 'yearly'>('weekly')
 
 // Exercise filters
-const selectedCategory = ref('')
+const selectedRegion = ref('')
 const selectedDifficulty = ref('')
 const searchTerm = ref('')
 
 // Exercise options
-const categoryOptions = ref([
-  { value: '', label: 'Todas las categorías' },
-  { value: 'fuerza', label: 'Fuerza' },
-  { value: 'cardio', label: 'Cardio' },
-  { value: 'flexibilidad', label: 'Flexibilidad' },
-  { value: 'funcional', label: 'Funcional' },
-  { value: 'balance', label: 'Balance' },
-  { value: 'resistencia', label: 'Resistencia' }
+const regionOptions = ref([
+  { value: '', label: 'Todas las regiones' },
+  { value: 'Tren Superior', label: 'Tren Superior' },
+  { value: 'Tren Inferior', label: 'Tren Inferior' },
+  { value: 'Core', label: 'Core' }
 ])
 
 const difficultyOptions = ref([
@@ -989,9 +986,9 @@ const loadExercises = async () => {
 const filterExercises = () => {
   let filtered = [...allExercises.value]
 
-  // Filter by category
-  if (selectedCategory.value) {
-    filtered = filtered.filter(exercise => exercise.category === selectedCategory.value)
+  // Filter by region
+  if (selectedRegion.value) {
+    filtered = filtered.filter(exercise => exercise.regionWorking === selectedRegion.value)
   }
 
   // Filter by difficulty
@@ -1005,7 +1002,7 @@ const filterExercises = () => {
     filtered = filtered.filter(exercise =>
       exercise.title.toLowerCase().includes(search) ||
       exercise.description.toLowerCase().includes(search) ||
-      exercise.muscleGroups.some(muscle => muscle.toLowerCase().includes(search))
+      exercise.primaryMuscleWorking.some(muscle => muscle.toLowerCase().includes(search))
     )
   }
 
