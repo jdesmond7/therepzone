@@ -254,8 +254,25 @@
           :options="countryOptions"
           placeholder="Selecciona tu país"
           :error="!!fieldErrors.country"
+          @update:modelValue="onCountryChange"
         />
         <p v-if="fieldErrors.country" class="text-red-400 text-xs mt-1">{{ fieldErrors.country }}</p>
+      </div>
+
+      <!-- Estado -->
+      <div>
+        <label class="block text-sm font-bold text-white mb-2">
+          Estado / Provincia *
+        </label>
+        <CustomSelect
+          v-model="formData.state"
+          :options="stateOptions"
+          :placeholder="!formData.country ? 'Primero selecciona un país' : 'Selecciona tu estado'"
+          :disabled="!formData.country"
+          :error="!!fieldErrors.state"
+          @update:modelValue="onStateChange"
+        />
+        <p v-if="fieldErrors.state" class="text-red-400 text-xs mt-1">{{ fieldErrors.state }}</p>
       </div>
 
       <!-- Ciudad -->
@@ -266,9 +283,10 @@
         <CustomSelect
           v-model="formData.city"
           :options="cityOptions"
-          :placeholder="!formData.country ? 'Primero selecciona un país' : 'Selecciona tu ciudad'"
-          :disabled="!formData.country"
+          :placeholder="!formData.state ? 'Primero selecciona un estado' : 'Selecciona tu ciudad'"
+          :disabled="!formData.state"
           :error="!!fieldErrors.city"
+          @update:modelValue="onCityChange"
         />
         <p v-if="fieldErrors.city" class="text-red-400 text-xs mt-1">{{ fieldErrors.city }}</p>
       </div>
@@ -347,20 +365,27 @@
               class="hidden"
               ref="fileInput"
             />
-                          <AppButtonSecondary
+            <div class="flex justify-center">
+              <AppButtonSecondary
                 @click="fileInput?.click()"
               >
-                Seleccionar imagen
+                Seleccionar Imagen
               </AppButtonSecondary>
+            </div>
           </div>
           <div v-else class="relative">
-            <img :src="selectedImage" alt="Preview" class="w-24 h-24 rounded-full mx-auto object-cover mb-3">
-                          <AppButtonDestructive
+            <div class="relative inline-block">
+              <img 
+                :src="selectedImage" 
+                alt="Preview" 
+                class="w-20 h-20 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                 @click="removeImage"
-                class="py-1 px-3 text-sm"
-              >
-                Cambiar imagen
-              </AppButtonDestructive>
+                title="Haz clic para eliminar la imagen"
+              />
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                <UIcon name="i-heroicons-trash" class="w-6 h-6 text-red-400" />
+              </div>
+            </div>
           </div>
         </div>
         <p v-if="fieldErrors.profilePhoto" class="text-red-400 text-xs mt-1">{{ fieldErrors.profilePhoto }}</p>
@@ -412,6 +437,7 @@ interface UserFormData {
   birthDate: string
   gender: 'masculino' | 'femenino' | 'otro' | ''
   country: string
+  state: string
   city: string
   email: string
   phone: string
@@ -442,87 +468,12 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-// Países disponibles
-const countries = [
-  'México',
-  'Estados Unidos',
-  'Colombia',
-  'Argentina',
-  'Chile',
-  'Perú',
-  'Ecuador',
-  'Venezuela',
-  'España',
-  'Costa Rica',
-  'Panamá',
-  'Guatemala',
-  'El Salvador',
-  'Honduras',
-  'Nicaragua',
-  'República Dominicana',
-  'Puerto Rico',
-  'Uruguay',
-  'Paraguay',
-  'Bolivia'
-]
-
-// Ciudades por país
-const citiesByCountry: Record<string, string[]> = {
-  'México': [
-    'Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Tijuana', 'León', 'Juárez', 'Torreón',
-    'Querétaro', 'San Luis Potosí', 'Mérida', 'Mexicali', 'Aguascalientes', 'Cuernavaca', 'Saltillo',
-    'Hermosillo', 'Culiacán', 'Morelia', 'Toluca', 'Chihuahua', 'Tampico', 'Cancún', 'Veracruz'
-  ],
-  'Estados Unidos': [
-    'Nueva York', 'Los Ángeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio',
-    'San Diego', 'Dallas', 'San José', 'Austin', 'Jacksonville', 'San Francisco', 'Columbus',
-    'Fort Worth', 'Indianapolis', 'Charlotte', 'Seattle', 'Denver', 'Boston', 'El Paso', 'Nashville',
-    'Detroit', 'Oklahoma City', 'Portland', 'Las Vegas', 'Memphis', 'Louisville', 'Baltimore', 'Milwaukee'
-  ],
-  'Colombia': [
-    'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Cúcuta', 'Soledad', 'Ibagué',
-    'Bucaramanga', 'Soacha', 'Santa Marta', 'Villavicencio', 'Valledupar', 'Pereira', 'Manizales',
-    'Montería', 'Neiva', 'Pasto', 'Armenia', 'Sincelejo', 'Popayán', 'Buenaventura'
-  ],
-  'Argentina': [
-    'Buenos Aires', 'Córdoba', 'Rosario', 'Mendoza', 'Tucumán', 'La Plata', 'Mar del Plata',
-    'Salta', 'Santa Fe', 'San Juan', 'Resistencia', 'Neuquén', 'Santiago del Estero', 'Corrientes',
-    'Posadas', 'Bahía Blanca', 'Paraná', 'Formosa', 'San Luis', 'La Rioja'
-  ],
-  'Chile': [
-    'Santiago', 'Valparaíso', 'Concepción', 'La Serena', 'Antofagasta', 'Temuco', 'Rancagua',
-    'Talca', 'Arica', 'Chillán', 'Iquique', 'Los Ángeles', 'Puerto Montt', 'Calama', 'Copiapó',
-    'Osorno', 'Quillota', 'Valdivia', 'Punta Arenas'
-  ],
-  'Perú': [
-    'Lima', 'Arequipa', 'Trujillo', 'Chiclayo', 'Piura', 'Iquitos', 'Cusco', 'Chimbote', 'Huancayo',
-    'Tacna', 'Juliaca', 'Ica', 'Sullana', 'Ayacucho', 'Chincha Alta', 'Huánuco', 'Pucallpa',
-    'Tarapoto', 'Puno', 'Tumbes', 'Talara', 'Jaén', 'Huaraz'
-  ],
-  'Ecuador': [
-    'Guayaquil', 'Quito', 'Cuenca', 'Santo Domingo', 'Machala', 'Durán', 'Manta', 'Portoviejo',
-    'Ambato', 'Riobamba', 'Loja', 'Esmeraldas', 'Quevedo', 'Milagro', 'Ibarra', 'La Libertad'
-  ],
-  'Venezuela': [
-    'Caracas', 'Maracaibo', 'Valencia', 'Barquisimeto', 'Maracay', 'Ciudad Guayana', 'San Cristóbal',
-    'Maturín', 'Ciudad Bolívar', 'Cumará', 'Punto Fijo', 'Coro', 'Guarenas', 'Los Teques',
-    'Barcelona', 'Mérida', 'Petare', 'Turmero', 'Cabimas'
-  ],
-  'España': [
-    'Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Zaragoza', 'Málaga', 'Murcia', 'Palma',
-    'Las Palmas', 'Bilbao', 'Alicante', 'Córdoba', 'Valladolid', 'Vigo', 'Gijón', 'L\'Hospitalet',
-    'Vitoria', 'A Coruña', 'Elche', 'Granada', 'Oviedo', 'Badalona', 'Cartagena', 'Terrassa'
-  ],
-  'Costa Rica': [
-    'San José', 'Cartago', 'Puntarenas', 'Heredia', 'Alajuela', 'Limón', 'San Carlos', 'Pérez Zeledón',
-    'Desamparados', 'Escazú', 'Curridabat', 'Guadalupe', 'Goicoechea'
-  ],
-  'Panamá': [
-    'Ciudad de Panamá', 'San Miguelito', 'Tocumen', 'David', 'Arraijan', 'Colón', 'La Chorrera',
-    'Pacora', 'Chitré', 'Santiago', 'Penonomé', 'Las Cumbres'
-  ]
-  // Se pueden agregar más países según sea necesario
-}
+// Use the country/city select composable
+const { countryOptions, stateOptions, cityOptions, onCountryChange, onStateChange, onCityChange } = useCountryCitySelect(
+  computed(() => formData.country),
+  computed(() => formData.state),
+  computed(() => formData.city)
+)
 
 // Reactive state
 const isLoading = ref(false)
@@ -557,6 +508,7 @@ const formData = reactive<UserFormData>({
   birthDate: props.initialData.birthDate || '',
   gender: props.initialData.gender || '',
   country: props.initialData.country || '',
+  state: props.initialData.state || '',
   city: props.initialData.city || '',
   email: props.initialData.email || '',
   phone: props.initialData.phone || '',
@@ -569,25 +521,7 @@ if (props.initialData.profilePhoto) {
   selectedImage.value = props.initialData.profilePhoto
 }
 
-// Computed para ciudades disponibles
-const availableCities = computed(() => {
-  return citiesByCountry[formData.country] || []
-})
 
-// Computed para opciones de los selects personalizados
-const countryOptions = computed(() => {
-  return countries.map(country => ({
-    value: country,
-    label: country
-  }))
-})
-
-const cityOptions = computed(() => {
-  return availableCities.value.map(city => ({
-    value: city,
-    label: city
-  }))
-})
 
 const howDidYouHearOptions = computed(() => [
   { value: 'redes-sociales', label: 'Redes sociales (Instagram, Facebook, TikTok)' },
@@ -798,10 +732,14 @@ const updateCalendar = () => {
 // CustomSelect handlers for date picker
 const handleMonthChange = (newMonth: string) => {
   selectedMonth.value = newMonth
+  // Keep date picker open when changing month
+  showDatePicker.value = true
 }
 
 const handleYearChange = (newYear: string) => {
   selectedYear.value = newYear
+  // Keep date picker open when changing year
+  showDatePicker.value = true
 }
 
 const selectDate = (dateInfo: any) => {
@@ -915,6 +853,10 @@ const validateForm = (): boolean => {
     setFieldError('country', 'El país es obligatorio')
     valid = false
   }
+  if (!formData.state) {
+    setFieldError('state', 'El estado es obligatorio')
+    valid = false
+  }
   if (!formData.city) {
     setFieldError('city', 'La ciudad es obligatoria')
     valid = false
@@ -1020,6 +962,10 @@ watch(() => formData.gender, (val) => {
 
 watch(() => formData.country, (val) => {
   if (fieldErrors.country && val) fieldErrors.country = ''
+})
+
+watch(() => formData.state, (val) => {
+  if (fieldErrors.state && val) fieldErrors.state = ''
 })
 
 watch(() => formData.city, (val) => {

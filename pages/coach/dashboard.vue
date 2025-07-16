@@ -26,8 +26,8 @@
               </span>
             </div>
             <div>
-              <span v-if="userStore.userProfile" class="text-white font-bold text-lg block max-w-xs break-words">
-                {{ userStore.userProfile?.nickname || userStore.userProfile?.fullName || userStore.userProfile?.email || userStore.userProfile?.id || 'Coach' }}
+              <span v-if="coachProfile" class="text-white font-bold text-lg block max-w-xs break-words">
+                {{ coachProfile?.nickname || coachProfile?.fullName || coachProfile?.email || coachProfile?.uid || 'Coach' }}
               </span>
             </div>
           </div>
@@ -78,8 +78,8 @@
               </span>
             </div>
             <div>
-              <span v-if="userStore.userProfile" class="text-white font-bold text-lg block max-w-xs break-words">
-                {{ userStore.userProfile?.nickname || userStore.userProfile?.fullName || userStore.userProfile?.email || userStore.userProfile?.id || 'Coach' }}
+              <span v-if="coachProfile" class="text-white font-bold text-lg block max-w-xs break-words">
+                {{ coachProfile?.nickname || coachProfile?.fullName || coachProfile?.email || coachProfile?.uid || 'Coach' }}
               </span>
             </div>
           </div>
@@ -273,33 +273,41 @@ import type { User } from '~/composables/firestore'
 import { watch, onMounted, ref, isRef, computed, unref } from 'vue'
 import { useUserStore } from '~/stores/user'
 import { useAuth } from '~/composables/firebase'
+import { useCoaches } from '~/composables/coaches'
 import CoachClientsView from '~/components/CoachClientsView.vue'
 import CoachProgrammingView from '~/components/CoachProgrammingView.vue'
 import ProfileView from '~/components/ProfileView.vue'
 
 const currentView = ref('overview')
-// Elimina la copia local userProfile, usa directamente userStore.userProfile
 const userStore = useUserStore()
+const { user } = useAuth()
+const { getCoachByAuthUID } = useCoaches()
+
+// Coach profile state
+const coachProfile = ref<any>(null)
 
 // Elimina logs directos de userStore.userProfile.value fuera de watchers o template
 
-onMounted(() => {
-  const auth = useAuth()
-  const userRef = auth && auth.user && isRef(auth.user) ? auth.user : null
-  if (userRef && userRef.value && !userStore.userProfile) {
-    userStore.loadUserProfile(userRef.value.uid)
+onMounted(async () => {
+  // Load coach profile
+  if (user.value?.uid) {
+    const result = await getCoachByAuthUID(user.value.uid)
+    if (result.success && result.coach) {
+      coachProfile.value = result.coach
+    }
   }
-  if (userRef) {
-    watch(
-      () => userRef.value ? userRef.value.uid : null,
-      (uid) => {
-        if (uid) {
-          userStore.loadUserProfile(uid)
-        }
-      },
-      { immediate: true }
-    )
-  }
+  
+  // Watch for user changes to load coach profile
+  watch(user, async (newUser) => {
+    if (newUser?.uid) {
+      const result = await getCoachByAuthUID(newUser.uid)
+      if (result.success && result.coach) {
+        coachProfile.value = result.coach
+      }
+    } else {
+      coachProfile.value = null
+    }
+  }, { immediate: true })
 })
 
 // Stats
@@ -365,7 +373,7 @@ onMounted(async () => {
 })
 
 const loadStats = async () => {
-  const uid = getUserUid()
+  const uid = coachProfile.value?.uid || user.value?.uid
   if (!uid) return
 
   try {
@@ -394,17 +402,11 @@ const loadStats = async () => {
   }
 }
 
-// Safe watcher for current view and user profile
+// Safe watcher for current view and coach profile
 watch(
   [
     currentView,
-    () => {
-      try {
-        return userStore.userProfile?.uid || null
-      } catch (e) {
-        return null
-      }
-    }
+    () => coachProfile.value?.uid || null
   ],
   ([view, uid]) => {
     if (view === 'clients' && uid) {
@@ -414,15 +416,9 @@ watch(
   { immediate: true }
 )
 
-// Watch para cargar clientes cuando el perfil esté listo
+// Watch para cargar clientes cuando el perfil del coach esté listo
 watch(
-  () => {
-    try {
-      return userStore.userProfile?.uid || null
-    } catch (e) {
-      return null
-    }
-  },
+  () => coachProfile.value?.uid || null,
   (uid) => {
     if (uid) {
       loadStats();
@@ -431,11 +427,11 @@ watch(
   { immediate: true }
 )
 
-// Safe watcher for userProfile
+// Safe watcher for coachProfile
 watchEffect(() => {
   try {
-    if (userStore.userProfile) {
-      // console.log('userProfile actualizado:', userStore.userProfile)
+    if (coachProfile.value) {
+      // console.log('coachProfile actualizado:', coachProfile.value)
     }
   } catch (e) {
     // Ignore errors during hydration
@@ -499,10 +495,10 @@ function navigate(view: string) {
   showMobileMenu.value = false
 }
 
-// Helper seguro para obtener el uid del usuario
-const getUserUid = () => {
+// Helper seguro para obtener el uid del coach
+const getCoachUid = () => {
   try {
-    return userStore.userProfile?.uid || userStore.userProfile?.id || null
+    return coachProfile.value?.uid || user.value?.uid || null
   } catch (e) {
     return null
   }

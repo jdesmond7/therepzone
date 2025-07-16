@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" ref="selectContainer">
+  <div class="relative" ref="selectContainer" style="z-index: 999999;">
     <!-- Main select button -->
     <button
       type="button"
@@ -33,7 +33,8 @@
     >
       <div
         v-if="isOpen"
-        class="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
+        class="absolute top-full left-0 right-0 mt-1 bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-sm"
+        style="z-index: 999999; background-color: rgb(30 41 59 / 0.95); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(71, 85, 105, 0.5);"
       >
         <div class="py-2">
           <button
@@ -163,5 +164,24 @@ onMounted(() => {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* Ensure dropdowns are always on top */
+.relative {
+  position: relative;
+  z-index: 999999;
+}
+
+/* Force the dropdown to be above everything */
+.absolute {
+  position: absolute !important;
+  z-index: 999999 !important;
+  isolation: isolate;
+}
+
+/* Additional stacking context for the container */
+.relative[style*="z-index"] {
+  position: relative !important;
+  z-index: 999999 !important;
 }
 </style> 

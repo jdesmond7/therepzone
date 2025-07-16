@@ -1,12 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanupOrphanedUsers = exports.deleteAuthUserOnDocDelete = exports.deleteUserDocOnAuthDelete = void 0;
+exports.cleanupOrphanedUsers = exports.deleteAuthUserOnDocDelete = exports.deleteUserDocOnAuthDelete = exports.migrateCoachLocation = void 0;
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
 const auth = admin.auth();
+// Importar función de migración
+var migrate_coach_location_1 = require("./migrate-coach-location");
+Object.defineProperty(exports, "migrateCoachLocation", { enumerable: true, get: function () { return migrate_coach_location_1.migrateCoachLocation; } });
 /**
  * Cloud Function que se ejecuta cuando un usuario se elimina de Authentication
  * Automáticamente elimina el documento correspondiente en Firestore

@@ -7,6 +7,9 @@ admin.initializeApp()
 const db = admin.firestore()
 const auth = admin.auth()
 
+// Importar función de migración
+export { migrateCoachLocation } from './migrate-coach-location'
+
 /**
  * Cloud Function que se ejecuta cuando un usuario se elimina de Authentication
  * Automáticamente elimina el documento correspondiente en Firestore

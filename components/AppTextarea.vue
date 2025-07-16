@@ -8,9 +8,10 @@
       @input="$emit('update:modelValue', modelValueProxy)"
       @focus="$emit('focus', $event)"
       @blur="$emit('blur', $event)"
-      class="w-full px-4 py-3 bg-slate-900 border rounded-lg text-white placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+      class="w-full px-4 py-3 bg-slate-900 border rounded-lg text-white placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
       :class="[
         error ? 'border-red-500 focus:ring-red-500' : 'border-slate-600',
+        resize || 'resize-none'
       ]"
     ></textarea>
     <div v-if="error && errorMessage" class="text-xs text-red-500 mt-1">{{ errorMessage }}</div>
@@ -43,6 +44,10 @@ const props = defineProps({
   errorMessage: {
     type: String,
     default: ''
+  },
+  resize: {
+    type: String,
+    default: 'resize-none'
   }
 })
 const emit = defineEmits(['update:modelValue', 'focus', 'blur'])

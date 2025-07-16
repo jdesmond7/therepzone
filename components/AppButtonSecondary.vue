@@ -18,7 +18,7 @@
     :disabled="disabled"
     :class="[
       'h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-6 rounded-lg transition-colors bg-transparent flex items-center justify-center gap-2 cursor-pointer',
-      disabled && 'opacity-50 cursor-not-allowed',
+      disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
       fullWidth && 'w-full',
       className
     ]"

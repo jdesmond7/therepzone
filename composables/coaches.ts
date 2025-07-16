@@ -6,6 +6,7 @@ export interface Coach {
   firstName: string
   lastName: string
   fullName: string
+  nickname?: string
   email: string
   phone?: string
   profileImageUrl?: string
@@ -15,9 +16,14 @@ export interface Coach {
   // Personal information
   gender?: 'masculino' | 'femenino' | 'otro'
   birthDate?: string
-  hometown?: string
+  country?: string
+  state?: string
+  city?: string
   nationality?: string
   currentAddress?: string
+  addressLine1?: string
+  addressLine2?: string
+  postalCode?: string
   biography?: string
   
   // Education
@@ -46,15 +52,21 @@ export interface CreateCoachData {
   firstName: string
   lastName: string
   fullName: string
+  nickname?: string
   email: string
   phone?: string
   profileImageUrl?: string
   presentationTitle?: string
   gender?: 'masculino' | 'femenino' | 'otro'
   birthDate?: string
-  hometown?: string
+  country?: string
+  state?: string
+  city?: string
   nationality?: string
   currentAddress?: string
+  addressLine1?: string
+  addressLine2?: string
+  postalCode?: string
   biography?: string
   education?: Array<{
     degree: string
@@ -74,15 +86,21 @@ export interface UpdateCoachData {
   firstName?: string
   lastName?: string
   fullName?: string
+  nickname?: string
   email?: string
   phone?: string
   profileImageUrl?: string
   presentationTitle?: string
   gender?: 'masculino' | 'femenino' | 'otro'
   birthDate?: string
-  hometown?: string
+  country?: string
+  state?: string
+  city?: string
   nationality?: string
   currentAddress?: string
+  addressLine1?: string
+  addressLine2?: string
+  postalCode?: string
   biography?: string
   education?: Array<{
     degree: string
