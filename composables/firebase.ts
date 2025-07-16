@@ -6,16 +6,6 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import { getFirestore, type Firestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
-// Firebase config - using environment variables
-const firebaseConfig = {
-  apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID
-}
-
 // Lazy Firebase initialization - only on client side
 let app: FirebaseApp | null = null
 let auth: Auth | null = null
@@ -25,6 +15,32 @@ const initFirebase = () => {
   if (!process.client) return null
   
   if (!app) {
+    // Get runtime config inside the function
+    const config = useRuntimeConfig()
+    
+    // Debug environment variables
+    console.log('🔍 Runtime config check:')
+    console.log('API Key:', config.public.firebaseApiKey ? '✅ Set' : '❌ Missing')
+    console.log('Auth Domain:', config.public.firebaseAuthDomain ? '✅ Set' : '❌ Missing')
+    console.log('Project ID:', config.public.firebaseProjectId ? '✅ Set' : '❌ Missing')
+
+    // Firebase config - using runtime config
+    const firebaseConfig = {
+      apiKey: config.public.firebaseApiKey,
+      authDomain: config.public.firebaseAuthDomain,
+      projectId: config.public.firebaseProjectId,
+      storageBucket: config.public.firebaseStorageBucket,
+      messagingSenderId: config.public.firebaseMessagingSenderId,
+      appId: config.public.firebaseAppId
+    }
+
+    // Debug Firebase config
+    console.log('🔥 Firebase config:', {
+      apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : 'undefined',
+      authDomain: firebaseConfig.authDomain,
+      projectId: firebaseConfig.projectId
+    })
+    
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
     auth = getAuth(app)
     db = getFirestore(app)
