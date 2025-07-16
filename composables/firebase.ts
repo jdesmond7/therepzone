@@ -8,12 +8,12 @@ import { getStorage } from 'firebase/storage'
 
 // Firebase config - using environment variables
 const firebaseConfig = {
-  apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDHHTMz2IHf-rcKjzF0nkGtGqwzzMtl3PU",
-  authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "therepvana.firebaseapp.com",
-  projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID || "therepvana",
-  storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "therepvana.firebasestorage.app",
-  messagingSenderId: process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "899532370249",
-  appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID || "1:899532370249:web:3e77341c8c3d96c2d2aa98"
+  apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID
 }
 
 // Lazy Firebase initialization - only on client side

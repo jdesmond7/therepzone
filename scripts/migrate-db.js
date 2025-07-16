@@ -2,18 +2,20 @@
 
 // Database migration script for THEREPZONE
 // Run with: node scripts/migrate-db.js
+// IMPORTANT: Set up Firebase credentials via environment variables or service account
 
 const { initializeApp } = require('firebase/app')
 const { getFirestore, collection, getDocs, updateDoc, doc } = require('firebase/firestore')
 
-// Firebase config - you'll need to add your actual config here
+// Firebase config - Set up your credentials via environment variables
+// or use service account authentication for production migrations
 const firebaseConfig = {
-  apiKey: "AIzaSyDHHTMz2IHf-rcKjzF0nkGtGqwzzMtl3PU",
-  authDomain: "therepvana.firebaseapp.com",
-  projectId: "therepvana",
-  storageBucket: "therepvana.firebasestorage.app",
-  messagingSenderId: "899532370249",
-  appId: "1:899532370249:web:3e77341c8c3d96c2d2aa98"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
 }
 
 // Initialize Firebase
