@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
 import { getFirebaseDb } from './firebase'
 
 export interface Athlete {
@@ -45,6 +45,15 @@ export interface CreateAthleteData {
   coachId?: string
   assignedWorkouts?: string[]
   profileCompleted?: boolean
+  // Campos adicionales del perfil
+  nickname?: string
+  birthDate?: string
+  gender?: 'masculino' | 'femenino' | 'otro'
+  country?: string
+  city?: string
+  howDidYouHearAboutUs?: string
+  startDate?: string
+  authUid?: string
 }
 
 export interface UpdateAthleteData {
@@ -139,21 +148,44 @@ export const useAthletes = () => {
   // Get athletes by coach
   const getAthletesByCoach = async (coachId: string): Promise<{ success: boolean; athletes?: Athlete[]; error?: string }> => {
     try {
-      const athletesQuery = query(
-        athletesCollection(), 
-        where('coachId', '==', coachId),
-        orderBy('createdAt', 'desc')
-      )
-      const athletesSnapshot = await getDocs(athletesQuery)
+      console.log('🔍 [useAthletes] Buscando atletas para coach:', coachId)
       
-      const athletes: Athlete[] = []
-      athletesSnapshot.forEach((doc) => {
-        athletes.push({ ...doc.data(), uid: doc.id } as Athlete)
-      })
-      
-      return { success: true, athletes }
+      // Primero intentar con orderBy
+      try {
+        const athletesQuery = query(
+          athletesCollection(), 
+          where('coachId', '==', coachId),
+          orderBy('createdAt', 'desc')
+        )
+        const athletesSnapshot = await getDocs(athletesQuery)
+        
+        const athletes: Athlete[] = []
+        athletesSnapshot.forEach((doc) => {
+          athletes.push({ ...doc.data(), uid: doc.id } as Athlete)
+        })
+        
+        console.log(`✅ [useAthletes] Query con orderBy exitoso: ${athletes.length} atletas`)
+        return { success: true, athletes }
+      } catch (orderError) {
+        console.warn('⚠️ [useAthletes] Query con orderBy falló, intentando sin orderBy...', orderError)
+        
+        // Fallback: query simple sin orderBy
+        const athletesQuery = query(
+          athletesCollection(), 
+          where('coachId', '==', coachId)
+        )
+        const athletesSnapshot = await getDocs(athletesQuery)
+        
+        const athletes: Athlete[] = []
+        athletesSnapshot.forEach((doc) => {
+          athletes.push({ ...doc.data(), uid: doc.id } as Athlete)
+        })
+        
+        console.log(`✅ [useAthletes] Query simple exitoso: ${athletes.length} atletas`)
+        return { success: true, athletes }
+      }
     } catch (error) {
-      console.error('Error getting athletes by coach:', error)
+      console.error('❌ [useAthletes] Error getting athletes by coach:', error)
       return { success: false, error: 'Error al obtener los atletas del coach' }
     }
   }
@@ -161,18 +193,38 @@ export const useAthletes = () => {
   // Create new athlete
   const createAthlete = async (athleteData: CreateAthleteData): Promise<{ success: boolean; athleteId?: string; error?: string }> => {
     try {
+      // Generate custom UID for the athlete
+      const { generateUniqueCustomUid } = await import('~/utils/custom-uid-generator')
+      const customUid = await generateUniqueCustomUid({
+        role: 'client',
+        firstName: athleteData.firstName,
+        lastName: athleteData.lastName,
+        authUid: athleteData.authUid || ''
+      })
+      
       const athleteDoc = {
         ...athleteData,
         fullName: athleteData.fullName || `${athleteData.firstName} ${athleteData.lastName}`.trim(),
         role: 'client' as const,
         assignedWorkouts: athleteData.assignedWorkouts || [],
         profileCompleted: athleteData.profileCompleted || false,
+        // Campos adicionales del perfil
+        nickname: athleteData.nickname,
+        birthDate: athleteData.birthDate,
+        gender: athleteData.gender,
+        country: athleteData.country,
+        city: athleteData.city,
+        howDidYouHearAboutUs: athleteData.howDidYouHearAboutUs,
+        startDate: athleteData.startDate,
+        authUid: athleteData.authUid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
       
-      const docRef = await addDoc(athletesCollection(), athleteDoc)
-      return { success: true, athleteId: docRef.id }
+      // Usar setDoc con el UID personalizado en lugar de addDoc
+      const docRef = doc(getDb(), 'athletes', customUid)
+      await setDoc(docRef, athleteDoc)
+      return { success: true, athleteId: customUid }
     } catch (error) {
       console.error('Error creating athlete:', error)
       return { success: false, error: 'Error al crear el atleta' }

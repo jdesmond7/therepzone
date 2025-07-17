@@ -14,35 +14,42 @@ service cloud.firestore {
 
     // Colección de coaches
     match /coaches/{coachId} {
+      // Permitir creación si el usuario está autenticado y el authUid coincide
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
       // El propio coach puede leer y escribir sus datos
-      allow write: if isOwner(resource.data.authUid);
-
+      allow read, write: if isAuthenticated() && (request.auth.uid == coachId || request.auth.uid == resource.data.authUid);
       // Cualquier usuario autenticado puede leer (temporal para pruebas)
       allow read: if isAuthenticated();
     }
 
     // Colección de atletas (antes users)
     match /athletes/{athleteId} {
+      // Permitir creación si el usuario está autenticado y el authUid coincide
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
       // El propio atleta puede leer y escribir sus datos
-      allow write: if isOwner(resource.data.authUid);
-
+      allow read, write: if isAuthenticated() && (request.auth.uid == athleteId || request.auth.uid == resource.data.authUid);
       // Cualquier usuario autenticado puede leer (temporal para pruebas)
       allow read: if isAuthenticated();
     }
 
     // Colección de admins
     match /admins/{adminId} {
+      // Permitir creación si el usuario está autenticado y el authUid coincide
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
       // El propio admin puede leer y escribir sus datos
-      allow write: if isOwner(resource.data.authUid);
-
+      allow read, write: if isAuthenticated() && (request.auth.uid == adminId || request.auth.uid == resource.data.authUid);
       // Cualquier usuario autenticado puede leer (temporal para pruebas)
       allow read: if isAuthenticated();
     }
 
     // Colección de usuarios (mantener para compatibilidad temporal)
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
-      allow read: if isAuthenticated(); // temporal para pruebas
+      // Permitir creación si el usuario está autenticado y el userId coincide con su authUid
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
+      // Permitir lectura y escritura si es el propietario
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || request.auth.uid == resource.data.authUid);
+      // Permitir lectura general para usuarios autenticados (temporal para pruebas)
+      allow read: if isAuthenticated();
     }
 
     // Ejercicios

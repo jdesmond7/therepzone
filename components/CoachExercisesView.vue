@@ -171,7 +171,7 @@
               <div class="space-y-4">
                 <!-- Dificultad -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Dificultad</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Dificultad</label>
                   <CustomSelect
                     v-model="exerciseForm.difficulty"
                     :options="difficultyOptions"
@@ -180,7 +180,7 @@
                 </div>
                 <!-- Nombre del Ejercicio -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Nombre del Ejercicio</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Nombre del Ejercicio</label>
                   <AppInput
                     v-model="exerciseForm.title"
                     placeholder="Ej: Flexiones"
@@ -189,7 +189,7 @@
                 </div>
                 <!-- Región Trabajada -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Región Trabajada</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Región Trabajada</label>
                   <CustomSelect
                     v-model="exerciseForm.regionWorking"
                     :options="regionOptions"
@@ -198,7 +198,7 @@
                 </div>
                 <!-- Músculo Primario -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Músculo Primario Trabajado</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Músculo Primario Trabajado</label>
                   <CustomMultiSelect
                     v-model="exerciseForm.primaryMuscleWorking"
                     :options="primaryMuscleOptions"
@@ -207,7 +207,7 @@
                 </div>
                 <!-- Músculo Secundario -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Músculo Secundario Trabajado</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Músculo Secundario Trabajado</label>
                   <CustomMultiSelect
                     v-model="exerciseForm.secondaryMuscleWorking"
                     :options="secondaryMuscleOptions"
@@ -216,7 +216,7 @@
                 </div>
                 <!-- Descripción -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Descripción</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Descripción</label>
                   <AppTextarea
                     v-model="exerciseForm.description"
                     :rows="3"
@@ -225,7 +225,7 @@
                 </div>
                 <!-- Instrucciones como pasos dinámicos -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Instrucciones</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Instrucciones</label>
                   <div class="space-y-3">
                     <template v-for="(step, idx) in exerciseForm.instructions" :key="idx">
                       <div class="flex items-start gap-2">
@@ -265,7 +265,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Progresiones</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Progresiones</label>
                   <CustomMultiSelect
                     v-model="progressionsInput"
                     :options="relatedExercisesOptions"
@@ -273,7 +273,7 @@
                   />
                 </div>
                 <div class="mt-4">
-                  <label class="block text-sm font-medium text-white mb-2">Regresiones</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Regresiones</label>
                   <CustomMultiSelect
                     v-model="regressionsInput"
                     :options="relatedExercisesOptions"
@@ -282,7 +282,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Imagen del Ejercicio</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Imagen del Ejercicio</label>
                   <div class="flex items-center gap-4">
                     <input
                       ref="fileInput"

@@ -9,7 +9,21 @@
         </div>
         
         <h1 class="text-3xl font-black text-white text-center mb-2">CREA TU CUENTA</h1>
-        <p class="text-slate-400 text-center mb-8">¡Únete a THEREPZONE y lleva tu entrenamiento al siguiente nivel!</p>
+        <p class="text-slate-400 text-center mb-6">¡Únete a THEREPZONE y lleva tu entrenamiento al siguiente nivel!</p>
+
+        <!-- Account Type Tabs -->
+        <div class="mb-6">
+          <Tabs
+            v-model="selectedTab"
+            :options="[
+              { value: 'atleta', label: 'Atleta' },
+              { value: 'coach', label: 'Coach' }
+            ]"
+          />
+          <p class="text-xs text-slate-500 text-center mt-2">
+            {{ selectedTab === 'atleta' ? 'Cuenta para atletas que quieren seguir sus entrenamientos' : 'Cuenta para coaches que quieren gestionar atletas' }}
+          </p>
+        </div>
 
         <form @submit.prevent="handleRegister" class="space-y-6">
           <!-- Error message -->
@@ -161,19 +175,20 @@
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const selectedTab = ref(0)
+const selectedTab = ref('atleta')
 const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
 // Computed property to get user role based on selected tab
 const userRole = computed(() => {
-  return selectedTab.value === 0 ? 'client' : 'coach'
+  return selectedTab.value === 'atleta' ? 'client' : 'coach'
 })
 
 const { register } = useAuth()
 
 import TermsModal from '~/components/TermsModal.vue'
+import Tabs from '~/components/Tabs.vue'
 import { Timestamp } from 'firebase/firestore'
 
 const showTermsModal = ref(false)

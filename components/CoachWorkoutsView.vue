@@ -142,7 +142,7 @@
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-white mb-2">Nombre de la Rutina</label>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Nombre de la Rutina</label>
             <input
               v-model="workoutForm.title"
               type="text"
@@ -152,7 +152,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-white mb-2">Descripción</label>
+                            <label class="block text-sm font-medium text-slate-400 mb-1">Descripción</label>
             <textarea
               v-model="workoutForm.description"
               rows="3"
@@ -163,7 +163,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-white mb-2">Región Trabajada</label>
+                              <label class="block text-sm font-medium text-slate-400 mb-1">Región Trabajada</label>
               <select
                 v-model="workoutForm.regionWorking"
                 multiple
@@ -177,7 +177,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-white mb-2">Dificultad</label>
+                              <label class="block text-sm font-medium text-slate-400 mb-1">Dificultad</label>
               <select
                 v-model="workoutForm.difficulty"
                 class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
@@ -190,7 +190,7 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-white mb-2">Duración (min)</label>
+                              <label class="block text-sm font-medium text-slate-400 mb-1">Duración (min)</label>
               <input
                 v-model.number="workoutForm.estimatedDuration"
                 type="number"

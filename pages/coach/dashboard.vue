@@ -274,6 +274,7 @@ import { watch, onMounted, ref, isRef, computed, unref } from 'vue'
 import { useUserStore } from '~/stores/user'
 import { useAuth } from '~/composables/firebase'
 import { useCoaches } from '~/composables/coaches'
+import { useAthletes } from '~/composables/athletes'
 import CoachClientsView from '~/components/CoachClientsView.vue'
 import CoachProgrammingView from '~/components/CoachProgrammingView.vue'
 import ProfileView from '~/components/ProfileView.vue'
@@ -377,11 +378,15 @@ const loadStats = async () => {
   if (!uid) return
 
   try {
-    // Load client count
-    const { getClientsByCoach } = useUsers()
-    const clientsResult = await getClientsByCoach(uid)
-    if (clientsResult.success) {
-      clientCount.value = clientsResult.clients?.length || 0
+    // Load client count - usar el UID personalizado del coach
+    const coachUid = coachProfile.value?.uid
+    if (coachUid) {
+      const { getAthletesByCoach } = useAthletes()
+      const clientsResult = await getAthletesByCoach(coachUid)
+      if (clientsResult.success) {
+        clientCount.value = clientsResult.athletes?.length || 0
+        console.log('📊 Clientes encontrados:', clientCount.value)
+      }
     }
 
     // Load workout count

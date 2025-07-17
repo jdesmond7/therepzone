@@ -44,7 +44,7 @@
               <!-- Hover overlay for delete (when not editing and has image) -->
               <div 
                 v-if="!isEditingProfile && profileData.profileImageUrl"
-                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+                class="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
                 @click="handleDeleteImage"
               >
                 <UIcon name="i-heroicons-trash" class="w-8 h-8 text-white" />
@@ -126,8 +126,8 @@
                 </div>
               </div>
 
-              <!-- Row 2: Título, Género, Edad -->
-              <div class="grid grid-cols-3 gap-4">
+              <!-- Row 2: Título, Género -->
+              <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-slate-400 mb-1">Título:</label>
                   <AppInput 
@@ -143,13 +143,15 @@
                     placeholder="Seleccionar género"
                   />
                 </div>
-                <div>
-                  <DatePickerInput 
-                    v-model="profileData.birthDate"
-                    label="Fecha de nacimiento:"
-                    placeholder="dd/mm/yyyy"
-                  />
-                </div>
+              </div>
+
+              <!-- Row 3: Fecha de nacimiento (fila completa) -->
+              <div>
+                <DatePickerInput 
+                  v-model="profileData.birthDate"
+                  label="Fecha de nacimiento:"
+                  placeholder="dd/mm/yyyy"
+                />
               </div>
 
               <!-- Biography -->
@@ -251,15 +253,6 @@
             
             <!-- Address Fields (when editing) -->
             <div v-else class="space-y-4">
-              <!-- Address Search -->
-              <div>
-                <label class="block text-sm font-medium text-slate-400 mb-1">Dirección (con autocompletado)</label>
-                <GoogleAddressAutocomplete 
-                  v-model="addressSearchQuery"
-                  placeholder="Buscar dirección..."
-                  @address-selected="handleAddressSelected"
-                />
-              </div>
               
               <!-- Address Line 1 -->
               <div>
@@ -289,7 +282,7 @@
               </div>
               
               <!-- Country -->
-              <div>
+              <div style="z-index: 999999;">
                 <label class="block text-sm font-medium text-slate-400 mb-1">País</label>
                 <CustomSelect 
                   v-model="profileData.country"
@@ -300,7 +293,7 @@
               </div>
               
               <!-- State -->
-              <div>
+              <div style="z-index: 999999;">
                 <label class="block text-sm font-medium text-slate-400 mb-1">Estado / Provincia</label>
                 <CustomSelect 
                   v-model="profileData.state"
@@ -312,7 +305,7 @@
               </div>
               
               <!-- City -->
-              <div>
+              <div style="z-index: 999999;">
                 <label class="block text-sm font-medium text-slate-400 mb-1">Ciudad / Municipio</label>
                 <CustomSelect 
                   v-model="profileData.city"
@@ -516,713 +509,15 @@ import AppInput from '~/components/AppInput.vue'
 import AppTextarea from '~/components/AppTextarea.vue'
 import AppButtonSecondary from '~/components/AppButtonSecondary.vue'
 import AppButtonPrimary from '~/components/AppButtonPrimary.vue'
-import GoogleAddressAutocomplete from '~/components/GoogleAddressAutocomplete.vue'
+
 import DatePickerInput from '~/components/DatePickerInput.vue'
+import { useCountryCitySelect } from '~/composables/useCountryCitySelect'
 
 const { user } = useAuth()
 const { uploadProfileImage, uploadCredentialFile } = useFirebaseStorage()
 const { getCoachById, getCoachByAuthUID, updateCoach } = useCoaches()
 
-// Country, State, City select
-const { countryOptions, stateOptions, cityOptions, onCountryChange, onStateChange, onCityChange } = useCountryCitySelect(
-  computed(() => profileData.country),
-  computed(() => profileData.state),
-  computed(() => profileData.city)
-)
 
-// Function to update city when city changes
-const handleCityChange = (newCity: string) => {
-  onCityChange(newCity)
-  profileData.city = newCity
-}
-
-// Handle address selection from Google Autocomplete
-const handleAddressSelected = (address: {
-  addressLine1: string
-  addressLine2: string
-  city: string
-  state: string
-  country: string
-  postalCode: string
-}) => {
-  console.log('📍 Dirección seleccionada:', address)
-  
-  // Update address fields
-  profileData.addressLine1 = address.addressLine1
-  profileData.addressLine2 = address.addressLine2
-  profileData.postalCode = address.postalCode
-  
-  // Map Google values to our local values
-  const countryMapping: Record<string, string> = {
-    'Mexico': 'México',
-    'United States': 'Estados Unidos',
-    'Colombia': 'Colombia',
-    'Argentina': 'Argentina',
-    'Chile': 'Chile',
-    'Peru': 'Perú',
-    'Ecuador': 'Ecuador',
-    'Venezuela': 'Venezuela',
-    'Spain': 'España',
-    'Costa Rica': 'Costa Rica',
-    'Panama': 'Panamá',
-    'Guatemala': 'Guatemala',
-    'El Salvador': 'El Salvador',
-    'Honduras': 'Honduras',
-    'Nicaragua': 'Nicaragua',
-    'Dominican Republic': 'República Dominicana',
-    'Puerto Rico': 'Puerto Rico',
-    'Uruguay': 'Uruguay',
-    'Paraguay': 'Paraguay',
-    'Bolivia': 'Bolivia'
-  }
-  
-  const stateMapping: Record<string, string> = {
-    'Nuevo Leon': 'Nuevo León',
-    'Mexico City': 'Ciudad de México',
-    'Mexico State': 'Estado de México',
-    'San Luis Potosi': 'San Luis Potosí',
-    'Queretaro': 'Querétaro',
-    'Yucatan': 'Yucatán',
-    'Quintana Roo': 'Quintana Roo',
-    'Veracruz': 'Veracruz',
-    'Tamaulipas': 'Tamaulipas',
-    'Tabasco': 'Tabasco',
-    'Sonora': 'Sonora',
-    'Sinaloa': 'Sinaloa',
-    'San Luis Potosí': 'San Luis Potosí',
-    'Querétaro': 'Querétaro',
-    'Yucatán': 'Yucatán',
-    'Nuevo León': 'Nuevo León'
-  }
-  
-  const cityMapping: Record<string, string> = {
-    // Nuevo León
-    'Monterrey': 'Monterrey',
-    'San Pedro Garza Garcia': 'San Pedro Garza García',
-    'San Nicolas de los Garza': 'San Nicolás de los Garza',
-    'Santa Catarina': 'Santa Catarina',
-    'General Escobedo': 'General Escobedo',
-    'Apodaca': 'Apodaca',
-    'Linares': 'Linares',
-    'Montemorelos': 'Montemorelos',
-    'Santiago': 'Santiago',
-    'Allende': 'Allende',
-    'El Carmen': 'El Carmen',
-    'General Teran': 'General Terán',
-    'Hualahuises': 'Hualahuises',
-    'Rayones': 'Rayones',
-    'Sabinas Hidalgo': 'Sabinas Hidalgo',
-    'Salinas Victoria': 'Salinas Victoria',
-    'Villaldama': 'Villaldama',
-    'Aramberri': 'Aramberri',
-    'Bustamante': 'Bustamante',
-    'Cadereyta Jimenez': 'Cadereyta Jiménez',
-    'Cerralvo': 'Cerralvo',
-    'Cienega de Flores': 'Ciénega de Flores',
-    'Ciudad Anahuac': 'Ciudad Anáhuac',
-    'Doctor Arroyo': 'Doctor Arroyo',
-    'Doctor Coss': 'Doctor Coss',
-    'Doctor Gonzalez': 'Doctor González',
-    'Galeana': 'Galeana',
-    'Garcia': 'García',
-    'General Bravo': 'General Bravo',
-    
-    // Ciudad de México
-    'Alvaro Obregon': 'Álvaro Obregón',
-    'Azcapotzalco': 'Azcapotzalco',
-    'Benito Juarez': 'Benito Juárez',
-    'Coyoacan': 'Coyoacán',
-    'Cuajimalpa de Morelos': 'Cuajimalpa de Morelos',
-    'Cuauhtemoc': 'Cuauhtémoc',
-    'Gustavo A. Madero': 'Gustavo A. Madero',
-    'Iztacalco': 'Iztacalco',
-    'Iztapalapa': 'Iztapalapa',
-    'La Magdalena Contreras': 'La Magdalena Contreras',
-    'Miguel Hidalgo': 'Miguel Hidalgo',
-    'Milpa Alta': 'Milpa Alta',
-    'Tlahuac': 'Tláhuac',
-    'Tlalpan': 'Tlalpan',
-    'Venustiano Carranza': 'Venustiano Carranza',
-    'Xochimilco': 'Xochimilco',
-    
-    // Estado de México
-    'Toluca': 'Toluca',
-    'Ecatepec de Morelos': 'Ecatepec de Morelos',
-    'Nezahualcoyotl': 'Nezahualcóyotl',
-    'Naucalpan de Juarez': 'Naucalpan de Juárez',
-    'Cuautitlan Izcalli': 'Cuautitlán Izcalli',
-    'Chimalhuacan': 'Chimalhuacán',
-    'Ixtapaluca': 'Ixtapaluca',
-    'Tlalnepantla de Baz': 'Tlalnepantla de Baz',
-    'Atizapan de Zaragoza': 'Atizapán de Zaragoza',
-    'Cuautitlan': 'Cuautitlán',
-    'Tultitlan': 'Tultitlán',
-    'Coacalco de Berriozabal': 'Coacalco de Berriozábal',
-    'Chalco': 'Chalco',
-    'Valle de Chalco Solidaridad': 'Valle de Chalco Solidaridad',
-    
-    // Jalisco
-    'Guadalajara': 'Guadalajara',
-    'Zapopan': 'Zapopan',
-    'San Pedro Tlaquepaque': 'San Pedro Tlaquepaque',
-    'Tlaquepaque': 'Tlaquepaque',
-    'Tonala': 'Tonalá',
-    'Puerto Vallarta': 'Puerto Vallarta',
-    'Lagos de Moreno': 'Lagos de Moreno',
-    'El Salto': 'El Salto',
-    'Tepatitlan de Morelos': 'Tepatitlán de Morelos',
-    'Tlajomulco de Zuniga': 'Tlajomulco de Zúñiga',
-    'Zapotlan el Grande': 'Zapotlán el Grande',
-    'Autlan de Navarro': 'Autlán de Navarro',
-    'Ameca': 'Ameca',
-    'Arandas': 'Arandas',
-    'Atotonilco el Alto': 'Atotonilco el Alto',
-    'Ayotlan': 'Ayotlán',
-    'Bolanos': 'Bolaños',
-    'Cabo Corrientes': 'Cabo Corrientes',
-    'Casimiro Castillo': 'Casimiro Castillo',
-    'Chapala': 'Chapala',
-    'Chimaltitan': 'Chimaltitán',
-    'Chiquilistlan': 'Chiquilistlán',
-    'Cihuatlan': 'Cihuatlán',
-    'Cocula': 'Cocula',
-    'Colotlan': 'Colotlán',
-    
-    // Guanajuato
-    'Leon': 'León',
-    'Irapuato': 'Irapuato',
-    'Celaya': 'Celaya',
-    'Salamanca': 'Salamanca',
-    'Guanajuato': 'Guanajuato',
-    'Silao': 'Silao',
-    'San Miguel de Allende': 'San Miguel de Allende',
-    'Dolores Hidalgo': 'Dolores Hidalgo',
-    'Valle de Santiago': 'Valle de Santiago',
-    'Penjamo': 'Pénjamo',
-    'San Luis de la Paz': 'San Luis de la Paz',
-    'Acambaro': 'Acámbaro',
-    'Comonfort': 'Comonfort',
-    'Cortazar': 'Cortazar',
-    'Abasolo': 'Abasolo',
-    'San Felipe': 'San Felipe',
-    'Purisima del Rincon': 'Purísima del Rincón',
-    
-    // Querétaro
-    'Santiago de Queretaro': 'Santiago de Querétaro',
-    'San Juan del Rio': 'San Juan del Río',
-    'Corregidora': 'Corregidora',
-    'El Marques': 'El Marqués',
-    'Pedro Escobedo': 'Pedro Escobedo',
-    'Amealco de Bonfil': 'Amealco de Bonfil',
-    'Arroyo Seco': 'Arroyo Seco',
-    'Cadereyta de Montes': 'Cadereyta de Montes',
-    'Colon': 'Colón',
-    'Jalpan de Serra': 'Jalpan de Serra',
-    'Landa de Matamoros': 'Landa de Matamoros',
-    'Penamiller': 'Peñamiller',
-    'Pinal de Amoles': 'Pinal de Amoles',
-    'San Joaquin': 'San Joaquín',
-    'Tequisquiapan': 'Tequisquiapan',
-    'Toliman': 'Tolimán',
-    'Villa Corregidora': 'Villa Corregidora',
-    
-    // San Luis Potosí
-    'San Luis Potosi': 'San Luis Potosí',
-    'Soledad de Graciano Sanchez': 'Soledad de Graciano Sánchez',
-    'Ciudad Valles': 'Ciudad Valles',
-    'Matehuala': 'Matehuala',
-    'Rioverde': 'Rioverde',
-    'Ciudad Fernandez': 'Ciudad Fernández',
-    'Xilitla': 'Xilitla',
-    'Ciudad Santos': 'Ciudad Santos',
-    'Tamasopo': 'Tamasopo',
-    'Rayon': 'Rayón',
-    'Aquismon': 'Aquismón',
-    'Axtla de Terrazas': 'Axtla de Terrazas',
-    'Cardenas': 'Cárdenas',
-    'Catorce': 'Catorce',
-    'Cedral': 'Cedral',
-    'Cerritos': 'Cerritos',
-    'Charcas': 'Charcas',
-    'Ciudad del Maiz': 'Ciudad del Maíz',
-    'Tancanhuitz': 'Tancanhuitz',
-    'Tamuin': 'Tamuín',
-    'Tanlajas': 'Tanlajás',
-    'Tierra Nueva': 'Tierra Nueva',
-    'Vanegas': 'Vanegas',
-    'Venado': 'Venado',
-    'Villa de Arista': 'Villa de Arista',
-    
-    // Yucatán
-    'Merida': 'Mérida',
-    'Valladolid': 'Valladolid',
-    'Progreso': 'Progreso',
-    'Kanasin': 'Kanasín',
-    'Uman': 'Umán',
-    'Tekax': 'Tekax',
-    'Izamal': 'Izamal',
-    'Hunucma': 'Hunucmá',
-    'Tizimin': 'Tizimín',
-    'Motul': 'Motul',
-    'Tekit': 'Tekit',
-    'Hocaba': 'Hocabá',
-    'Seye': 'Seyé',
-    'Yaxcaba': 'Yaxcabá',
-    'Yobain': 'Yobaín',
-    
-    // Quintana Roo
-    'Benito Juarez': 'Benito Juárez',
-    'Othon P. Blanco': 'Othón P. Blanco',
-    'Felipe Carrillo Puerto': 'Felipe Carrillo Puerto',
-    'Lazaro Cardenas': 'Lázaro Cárdenas',
-    'Isla Mujeres': 'Isla Mujeres',
-    'Jose Maria Morelos': 'José María Morelos',
-    'Tulum': 'Tulum',
-    'Bacalar': 'Bacalar',
-    'Cozumel': 'Cozumel',
-    'Solidaridad': 'Solidaridad',
-    
-    // Veracruz
-    'Veracruz': 'Veracruz',
-    'Xalapa-Enriquez': 'Xalapa-Enríquez',
-    'Orizaba': 'Orizaba',
-    'Cordoba': 'Córdoba',
-    'Poza Rica de Hidalgo': 'Poza Rica de Hidalgo',
-    'San Andres Tuxtla': 'San Andrés Tuxtla',
-    'Minatitlan': 'Minatitlán',
-    'Coatzacoalcos': 'Coatzacoalcos',
-    'Tuxpan de Rodriguez Cano': 'Tuxpan de Rodríguez Cano',
-    'Boca del Rio': 'Boca del Río',
-    'San Juan Evangelista': 'San Juan Evangelista',
-    'Tierra Blanca': 'Tierra Blanca',
-    'Cosamaloapan de Carpio': 'Cosamaloapan de Carpio',
-    'Carlos A. Carrillo': 'Carlos A. Carrillo',
-    'Tantoyuca': 'Tantoyuca',
-    'Panuco': 'Pánuco',
-    'Ozuluama de Mascarenas': 'Ozuluama de Mascareñas',
-    'Tampico Alto': 'Tampico Alto',
-    'Tempoal': 'Tempoal',
-    'Platon Sanchez': 'Platón Sánchez',
-    'Chicontepec': 'Chicontepec',
-    
-    // Tamaulipas
-    'Reynosa': 'Reynosa',
-    'Matamoros': 'Matamoros',
-    'Nuevo Laredo': 'Nuevo Laredo',
-    'Victoria': 'Victoria',
-    'Tampico': 'Tampico',
-    'Ciudad Madero': 'Ciudad Madero',
-    'Altamira': 'Altamira',
-    'Rio Bravo': 'Río Bravo',
-    'Mante': 'Mante',
-    'Xicotencatl': 'Xicoténcatl',
-    'San Fernando': 'San Fernando',
-    'Valle Hermoso': 'Valle Hermoso',
-    'Gomez Farias': 'Gómez Farías',
-    'El Mante': 'El Mante',
-    'Guemez': 'Güémez',
-    'Gustavo Diaz Ordaz': 'Gustavo Díaz Ordaz',
-    'Hidalgo': 'Hidalgo',
-    'Jaumave': 'Jaumave',
-    'Jimenez': 'Jiménez',
-    'Llera': 'Llera',
-    'Mainero': 'Mainero',
-    'Mendez': 'Méndez',
-    'Mier': 'Mier',
-    'Miguel Aleman': 'Miguel Alemán',
-    'Miquihuana': 'Miquihuana',
-    'Nuevo Morelos': 'Nuevo Morelos',
-    
-    // Tabasco
-    'Centro': 'Centro',
-    'Cardenas': 'Cárdenas',
-    'Cunduacan': 'Cunduacán',
-    'Comalcalco': 'Comalcalco',
-    'Huimanguillo': 'Huimanguillo',
-    'Teapa': 'Teapa',
-    'Jalpa de Mendez': 'Jalpa de Méndez',
-    'Nacajuca': 'Nacajuca',
-    'Tenosique': 'Tenosique',
-    'Balancan': 'Balancán',
-    'Emiliano Zapata': 'Emiliano Zapata',
-    'Jonuta': 'Jonuta',
-    'Macuspana': 'Macuspana',
-    'Paraiso': 'Paraíso',
-    'Tacotalpa': 'Tacotalpa',
-    
-    // Sonora
-    'Hermosillo': 'Hermosillo',
-    'Ciudad Obregon': 'Ciudad Obregón',
-    'Nogales': 'Nogales',
-    'San Luis Rio Colorado': 'San Luis Río Colorado',
-    'Huatabampo': 'Huatabampo',
-    'Puerto Penasco': 'Puerto Peñasco',
-    'Guaymas': 'Guaymas',
-    'Navojoa': 'Navojoa',
-    'Cananea': 'Cananea',
-    'Agua Prieta': 'Agua Prieta',
-    'Altar': 'Altar',
-    'Arizpe': 'Arizpe',
-    'Atil': 'Atil',
-    'Bacadehuachi': 'Bacadéhuachi',
-    'Bacanora': 'Bacanora',
-    'Bacerac': 'Bacerac',
-    'Bacoachi': 'Bacoachi',
-    'Bacum': 'Bácum',
-    'Banamichi': 'Banámichi',
-    'Baviacora': 'Baviácora',
-    'Bavispe': 'Bavispe',
-    'Benito Juarez': 'Benito Juárez',
-    'Benjamin Hill': 'Benjamín Hill',
-    'Caborca': 'Caborca',
-    
-    // Sinaloa
-    'Culiacan Rosales': 'Culiacán Rosales',
-    'Mazatlan': 'Mazatlán',
-    'Los Mochis': 'Los Mochis',
-    'Guasave': 'Guasave',
-    'Navolato': 'Navolato',
-    'El Rosario': 'El Rosario',
-    'El Fuerte': 'El Fuerte',
-    'El Dorado': 'El Dorado',
-    'Concordia': 'Concordia',
-    'Cosala': 'Cosalá',
-    'Escuinapa': 'Escuinapa',
-    'San Ignacio': 'San Ignacio',
-    'Badiraguato': 'Badiraguato',
-    'Choix': 'Choix',
-    'Salvador Alvarado': 'Salvador Alvarado',
-    
-    // Michoacán
-    'Morelia': 'Morelia',
-    'Uruapan': 'Uruapan',
-    'Zamora de Hidalgo': 'Zamora de Hidalgo',
-    'Lazaro Cardenas': 'Lázaro Cárdenas',
-    'Zitacuaro': 'Zitácuaro',
-    'Hidalgo': 'Hidalgo',
-    'Apatzingan': 'Apatzingán',
-    'La Piedad de Cabadas': 'La Piedad de Cabadas',
-    'Patzcuaro': 'Pátzcuaro',
-    'Sahuayo': 'Sahuayo',
-    'Nueva Italia': 'Nueva Italia',
-    'Paracho': 'Paracho',
-    'Tacambaro': 'Tacámbaro',
-    'Tinguindin': 'Tingüindín',
-    'Tuxpan': 'Tuxpan',
-    'Villa Jimenez': 'Villa Jiménez',
-    'Yurecuaro': 'Yurécuaro',
-    'Zacapu': 'Zacapu',
-    'Zamora': 'Zamora',
-    
-    // Morelos
-    'Cuernavaca': 'Cuernavaca',
-    'Jiutepec': 'Jiutepec',
-    'Ayala': 'Ayala',
-    'Emiliano Zapata': 'Emiliano Zapata',
-    'Temixco': 'Temixco',
-    'Xochitepec': 'Xochitepec',
-    'Puente de Ixtla': 'Puente de Ixtla',
-    'Amacuzac': 'Amacuzac',
-    'Atlatlahucan': 'Atlatlahucan',
-    'Axochiapan': 'Axochiapan',
-    'Coatlan del Rio': 'Coatlán del Río',
-    'Cuautla': 'Cuautla',
-    'Huitzilac': 'Huitzilac',
-    'Jantetelco': 'Jantetelco',
-    'Jonacatepec': 'Jonacatepec',
-    'Mazatepec': 'Mazatepec',
-    'Miacatlan': 'Miacatlán',
-    'Ocuituco': 'Ocuituco',
-    'Temoac': 'Temoac',
-    'Tepalcingo': 'Tepalcingo',
-    
-    // Nayarit
-    'Tepic': 'Tepic',
-    'Bahia de Banderas': 'Bahía de Banderas',
-    'Santiago Ixcuintla': 'Santiago Ixcuintla',
-    'Tuxpan': 'Tuxpan',
-    'Ixtlan del Rio': 'Ixtlán del Río',
-    'Xalisco': 'Xalisco',
-    'San Blas': 'San Blas',
-    'Compostela': 'Compostela',
-    'Tecuala': 'Tecuala',
-    'Jala': 'Jala',
-    'La Yesca': 'La Yesca',
-    'Rosamorada': 'Rosamorada',
-    'Ruiz': 'Ruíz',
-    'San Pedro Lagunillas': 'San Pedro Lagunillas',
-    'Santa Maria del Oro': 'Santa María del Oro',
-    
-    // Oaxaca
-    'Oaxaca de Juarez': 'Oaxaca de Juárez',
-    'Tuxtepec': 'Tuxtepec',
-    'Santa Cruz Xoxocotlan': 'Santa Cruz Xoxocotlán',
-    'Santa Lucia del Camino': 'Santa Lucía del Camino',
-    'Villa de Zaachila': 'Villa de Zaachila',
-    'San Antonio de la Cal': 'San Antonio de la Cal',
-    'San Agustin de las Juntas': 'San Agustín de las Juntas',
-    'San Jacinto Amilpas': 'San Jacinto Amilpas',
-    'San Andres Huayapam': 'San Andrés Huayapam',
-    'San Agustin Yatareni': 'San Agustín Yatareni',
-    'Santa Maria Atzompa': 'Santa María Atzompa',
-    'Santa Maria del Tule': 'Santa María del Tule',
-    'San Sebastian Tutla': 'San Sebastián Tutla',
-    'San Raymundo Jalpan': 'San Raymundo Jalpan',
-    'San Pablo Etla': 'San Pablo Etla',
-    'San Pedro Ixtlahuaca': 'San Pedro Ixtlahuaca',
-    'San Pedro Mixtepec': 'San Pedro Mixtepec',
-    'San Pedro Pochutla': 'San Pedro Pochutla',
-    'San Pedro Tapanatepec': 'San Pedro Tapanatepec',
-    'San Pedro Taviche': 'San Pedro Taviche',
-    'San Pedro y San Pablo Ayutla': 'San Pedro y San Pablo Ayutla',
-    
-    // Puebla
-    'Puebla de Zaragoza': 'Puebla de Zaragoza',
-    'Amozoc de Mota': 'Amozoc de Mota',
-    'Atlixco': 'Atlixco',
-    'Cuautlancingo': 'Cuautlancingo',
-    'San Pedro Cholula': 'San Pedro Cholula',
-    'San Andres Cholula': 'San Andrés Cholula',
-    'Teziutlan': 'Teziutlán',
-    'San Martin Texmelucan': 'San Martín Texmelucan',
-    'Huauchinango': 'Huauchinango',
-    'Tehuacan': 'Tehuacán',
-    'San Pedro Pochutla': 'San Pedro Pochutla',
-    'Izucar de Matamoros': 'Izúcar de Matamoros',
-    'Ajalpan': 'Ajalpan',
-    'Acatlan de Osorio': 'Acatlán de Osorio',
-    'Acajete': 'Acajete',
-    'Acteopan': 'Acteopan',
-    'Ahuacatlan': 'Ahuacatlán',
-    'Ahuatlan': 'Ahuatlán',
-    'Ahuazotepec': 'Ahuazotepec',
-    'Ahuehuetitla': 'Ahuehuetitla',
-    'Albino Zertuche': 'Albino Zertuche',
-    
-    // Aguascalientes
-    'Aguascalientes': 'Aguascalientes',
-    'Jesus Maria': 'Jesús María',
-    'San Francisco de los Romo': 'San Francisco de los Romo',
-    'Calvillo': 'Calvillo',
-    'Rincon de Romos': 'Rincón de Romos',
-    'Pabellon de Arteaga': 'Pabellón de Arteaga',
-    'Asientos': 'Asientos',
-    'Cosio': 'Cosío',
-    'San Jose de Gracia': 'San José de Gracia',
-    'Tepezala': 'Tepezalá',
-    'El Llano': 'El Llano',
-    
-    // Baja California
-    'Tijuana': 'Tijuana',
-    'Mexicali': 'Mexicali',
-    'Ensenada': 'Ensenada',
-    'Tecate': 'Tecate',
-    'Playas de Rosarito': 'Playas de Rosarito',
-    'San Quintin': 'San Quintín',
-    'San Felipe': 'San Felipe',
-    'Punta Colonet': 'Punta Colonet',
-    'La Rumorosa': 'La Rumorosa',
-    'El Hongo': 'El Hongo',
-    'Ojos Negros': 'Ojos Negros',
-    'Valle de Guadalupe': 'Valle de Guadalupe',
-    
-    // Baja California Sur
-    'La Paz': 'La Paz',
-    'San Jose del Cabo': 'San José del Cabo',
-    'Cabo San Lucas': 'Cabo San Lucas',
-    'Loreto': 'Loreto',
-    'Santa Rosalia': 'Santa Rosalía',
-    'Mulege': 'Mulegé',
-    'Comondu': 'Comondú',
-    'Todos Santos': 'Todos Santos',
-    'San Ignacio': 'San Ignacio',
-    'Villa Alberto Andres Alvarado Aramburo': 'Villa Alberto Andrés Alvarado Arámburo',
-    
-    // Campeche
-    'San Francisco de Campeche': 'San Francisco de Campeche',
-    'Ciudad del Carmen': 'Ciudad del Carmen',
-    'Champoton': 'Champotón',
-    'Escarcega': 'Escárcega',
-    'Calkini': 'Calkiní',
-    'Dzitbalche': 'Dzitbalché',
-    'Tenabo': 'Tenabo',
-    'Hopelchen': 'Hopelchén',
-    'Palizada': 'Palizada',
-    'Seybaplaya': 'Seybaplaya',
-    
-    // Chiapas
-    'Tuxtla Gutierrez': 'Tuxtla Gutiérrez',
-    'Tapachula': 'Tapachula',
-    'San Cristobal de las Casas': 'San Cristóbal de las Casas',
-    'Comitan de Dominguez': 'Comitán de Domínguez',
-    'Chiapa de Corzo': 'Chiapa de Corzo',
-    'Villaflores': 'Villaflores',
-    'Tonala': 'Tonalá',
-    'Villahermosa': 'Villahermosa',
-    'Palenque': 'Palenque',
-    'Ocosingo': 'Ocosingo',
-    'Cintalapa': 'Cintalapa',
-    'San Juan Chamula': 'San Juan Chamula',
-    'Bochil': 'Bochil',
-    'Ocozocoautla de Espinosa': 'Ocozocoautla de Espinosa',
-    
-    // Chihuahua
-    'Chihuahua': 'Chihuahua',
-    'Ciudad Juarez': 'Ciudad Juárez',
-    'Delicias': 'Delicias',
-    'Cuauhtemoc': 'Cuauhtémoc',
-    'Nuevo Casas Grandes': 'Nuevo Casas Grandes',
-    'Hidalgo del Parral': 'Hidalgo del Parral',
-    'Meoqui': 'Meoqui',
-    'Camargo': 'Camargo',
-    'Jimenez': 'Jiménez',
-    'Aldama': 'Aldama',
-    'Aquiles Serdan': 'Aquiles Serdán',
-    'Bachiniva': 'Bachíniva',
-    'Balleza': 'Balleza',
-    'Batopilas': 'Batopilas',
-    
-    // Coahuila
-    'Saltillo': 'Saltillo',
-    'Torreon': 'Torreón',
-    'Monclova': 'Monclova',
-    'Piedras Negras': 'Piedras Negras',
-    'Ramos Arizpe': 'Ramos Arizpe',
-    'Matamoros': 'Matamoros',
-    'San Pedro': 'San Pedro',
-    'Frontera': 'Frontera',
-    'Acuna': 'Acuña',
-    'Muzquiz': 'Múzquiz',
-    'San Buenaventura': 'San Buenaventura',
-    'Allende': 'Allende',
-    'Arteaga': 'Arteaga',
-    'Candela': 'Candela',
-    
-    // Colima
-    'Colima': 'Colima',
-    'Manzanillo': 'Manzanillo',
-    'Villa de Alvarez': 'Villa de Álvarez',
-    'Tecoman': 'Tecomán',
-    'Comala': 'Comala',
-    'Coquimatlan': 'Coquimatlán',
-    'Cuauhtemoc': 'Cuauhtémoc',
-    'Ixtlahuacan': 'Ixtlahuacán',
-    'Minatitlan': 'Minatitlán',
-    'Armeria': 'Armería',
-    
-    // Durango
-    'Victoria de Durango': 'Victoria de Durango',
-    'Gomez Palacio': 'Gómez Palacio',
-    'Lerdo': 'Lerdo',
-    'El Oro': 'El Oro',
-    'Santiago Papasquiaro': 'Santiago Papasquiaro',
-    'Poanas': 'Poanas',
-    'Mapimi': 'Mapimí',
-    'Nombre de Dios': 'Nombre de Dios',
-    'Pueblo Nuevo': 'Pueblo Nuevo',
-    'San Dimas': 'San Dimas',
-    'San Juan del Rio': 'San Juan del Río',
-    'Suchil': 'Súchil',
-    
-    // Guerrero
-    'Acapulco de Juarez': 'Acapulco de Juárez',
-    'Chilpancingo de los Bravo': 'Chilpancingo de los Bravo',
-    'Iguala de la Independencia': 'Iguala de la Independencia',
-    'Chilapa de Alvarez': 'Chilapa de Álvarez',
-    'Tlapa de Comonfort': 'Tlapa de Comonfort',
-    'Ayutla de los Libres': 'Ayutla de los Libres',
-    'Atoyac de Alvarez': 'Atoyac de Álvarez',
-    'Tecpan de Galeana': 'Técpan de Galeana',
-    'San Marcos': 'San Marcos',
-    'Florencio Villarreal': 'Florencio Villarreal',
-    'Cruz Grande': 'Cruz Grande',
-    'Tlalchapa': 'Tlalchapa',
-    'Arcelia': 'Arcelia',
-    'Tlapehuala': 'Tlapehuala',
-    
-    // Hidalgo
-    'Pachuca de Soto': 'Pachuca de Soto',
-    'Tizayuca': 'Tizayuca',
-    'Tulancingo de Bravo': 'Tulancingo de Bravo',
-    'Ixmiquilpan': 'Ixmiquilpan',
-    'Mixquiahuala de Juarez': 'Mixquiahuala de Juárez',
-    'Actopan': 'Actopan',
-    'Zimapan': 'Zimapán',
-    'Tula de Allende': 'Tula de Allende',
-    'Huejutla de Reyes': 'Huejutla de Reyes',
-    'San Salvador': 'San Salvador',
-    'Santiago Tulantepec': 'Santiago Tulantepec',
-    'Mineral de la Reforma': 'Mineral de la Reforma',
-    'San Agustin Tlaxiaca': 'San Agustín Tlaxiaca',
-    'Epazoyucan': 'Epazoyucan',
-    
-    // Tlaxcala
-    'Tlaxcala de Xicohtencatl': 'Tlaxcala de Xicohténcatl',
-    'San Pablo del Monte': 'San Pablo del Monte',
-    'Apizaco': 'Apizaco',
-    'Calpulalpan': 'Calpulalpan',
-    'Chiautempan': 'Chiautempan',
-    'Contla de Juan Cuamatzi': 'Contla de Juan Cuamatzi',
-    'Huamantla': 'Huamantla',
-    'Papalotla de Xicohtencatl': 'Papalotla de Xicohténcatl',
-    'Sanctorum de Lazaro Cardenas': 'Sanctórum de Lázaro Cárdenas',
-    'Tlaxco': 'Tlaxco',
-    'Zacatelco': 'Zacatelco',
-    'Acuamanala de Miguel Hidalgo': 'Acuamanala de Miguel Hidalgo',
-    'Amaxac de Guerrero': 'Amaxac de Guerrero',
-    'Apetatitlan de Antonio Carvajal': 'Apetatitlán de Antonio Carvajal',
-    'Atlangatepec': 'Atlangatepec',
-    'Atltzayanca': 'Atltzayanca',
-    'Benito Juarez': 'Benito Juárez',
-    
-    // Zacatecas
-    'Zacatecas': 'Zacatecas',
-    'Fresnillo': 'Fresnillo',
-    'Calera de Victor Rosales': 'Calera de Víctor Rosales',
-    'Sombrerete': 'Sombrerete',
-    'Loreto': 'Loreto',
-    'Nochistlan de Mejia': 'Nochistlán de Mejía',
-    'Jerez de Garcia Salinas': 'Jerez de García Salinas',
-    'Rio Grande': 'Río Grande',
-    'Ojocaliente': 'Ojocaliente',
-    'Luis Moya': 'Luis Moya',
-    'Genaro Codina': 'Genaro Codina',
-    'General Enrique Estrada': 'General Enrique Estrada',
-    'General Francisco R. Murguia': 'General Francisco R. Murguía',
-    'General Panfilo Natera': 'General Pánfilo Natera',
-    'Guadalupe': 'Guadalupe',
-    'Huanusco': 'Huanusco',
-    'Jalpa': 'Jalpa',
-    'Jerez': 'Jerez',
-    'Jimenez del Teul': 'Jiménez del Teul',
-    'Juan Aldama': 'Juan Aldama',
-    'Juchipila': 'Juchipila'
-  }
-  
-  // Map the values
-  const mappedCountry = countryMapping[address.country] || address.country
-  const mappedState = stateMapping[address.state] || address.state
-  const mappedCity = cityMapping[address.city] || address.city
-  
-  // Update location fields with mapped values
-  profileData.country = mappedCountry
-  profileData.state = mappedState
-  profileData.city = mappedCity
-  
-  // Update the country/state/city selects to trigger dropdown updates
-  onCountryChange(mappedCountry)
-  onStateChange(mappedState)
-  onCityChange(mappedCity)
-  
-  console.log('✅ Campos actualizados:', {
-    addressLine1: profileData.addressLine1,
-    addressLine2: profileData.addressLine2,
-    city: profileData.city,
-    state: profileData.state,
-    country: profileData.country,
-    postalCode: profileData.postalCode
-  })
-}
 
 // Reactive state
 const isEditing = ref(false)
@@ -1230,9 +525,9 @@ const isEditingProfile = ref(false)
 const isEditingPersonal = ref(false)
 const isEditingEducation = ref(false)
 const isEditingCredentials = ref(false)
+
 const imageInput = ref<HTMLInputElement>()
 const uidError = ref('')
-const addressSearchQuery = ref('')
 
 // Original data for change detection
 const originalProfileData = ref({
@@ -1339,6 +634,19 @@ const profileData = reactive({
     fileName?: string
   }>
 })
+
+// Country, State, City select (moved after profileData definition)
+const { countryOptions, stateOptions, cityOptions, onCountryChange, onStateChange, onCityChange } = useCountryCitySelect(
+  computed(() => profileData.country),
+  computed(() => profileData.state),
+  computed(() => profileData.city)
+)
+
+// Function to update city when city changes
+const handleCityChange = (newCity: string) => {
+  onCityChange(newCity)
+  profileData.city = newCity
+}
 
 // Options for selects
 const genderOptions = [
@@ -1951,3 +1259,7 @@ onMounted(() => {
   }
 })
 </script> 
+
+<style scoped>
+/* No styles needed for date picker anymore - using modal approach */
+</style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" ref="selectContainer" style="z-index: 999999;">
+  <div class="relative" ref="selectContainer" style="z-index: 9999999;">
     <!-- Main select button -->
     <button
       type="button"
@@ -11,6 +11,7 @@
           ? 'border-red-500 focus:ring-red-500' 
           : 'border-slate-600 focus:ring-orange-600'
       ]"
+      ref="buttonRef"
     >
       <span class="flex-1 truncate" :class="{ 'text-slate-400': !selectedOption }">
         {{ selectedOption ? selectedOption.label : placeholder }}
@@ -23,40 +24,45 @@
     </button>
 
     <!-- Dropdown menu -->
-    <Transition
-      enter-active-class="transition ease-out duration-200"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition ease-in duration-150"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="isOpen"
-        class="absolute top-full left-0 right-0 mt-1 bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-sm"
-        style="z-index: 999999; background-color: rgb(30 41 59 / 0.95); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(71, 85, 105, 0.5);"
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition ease-out duration-200"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
       >
-        <div class="py-2">
-          <button
-            v-for="option in options"
-            :key="option.value"
-            type="button"
-            @click="selectOption(option)"
-            class="w-full px-4 py-2 text-left hover:bg-slate-700 focus:bg-slate-700 focus:outline-none transition-colors duration-150 text-white"
-            :class="{ 'bg-orange-600 hover:bg-orange-700': selectedOption?.value === option.value }"
-          >
-            <div class="flex items-center justify-between">
-              <span>{{ option.label }}</span>
-              <UIcon 
-                v-if="selectedOption?.value === option.value"
-                name="i-heroicons-check" 
-                class="w-4 h-4 text-white"
-              />
-            </div>
-          </button>
+        <div
+          v-if="isOpen"
+          class="fixed bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-sm"
+          :style="dropdownStyle"
+          @keydown="handleKeyDown"
+          tabindex="0"
+        >
+          <div class="py-2">
+            <button
+              v-for="option in options"
+              :key="option.value"
+              type="button"
+              @click="selectOption(option)"
+              :data-option-value="option.value"
+              class="w-full px-4 py-2 text-left hover:bg-slate-700 focus:bg-slate-700 focus:outline-none transition-colors duration-150 text-white"
+              :class="{ 'bg-orange-600 hover:bg-orange-700': selectedOption?.value === option.value }"
+            >
+              <div class="flex items-center justify-between">
+                <span>{{ option.label }}</span>
+                <UIcon 
+                  v-if="selectedOption?.value === option.value"
+                  name="i-heroicons-check" 
+                  class="w-4 h-4 text-white"
+                />
+              </div>
+            </button>
+          </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -87,6 +93,8 @@ const emit = defineEmits<{
 const selectContainer = ref<HTMLElement>()
 
 const isOpen = ref(false)
+const searchQuery = ref('')
+const searchTimeout = ref<NodeJS.Timeout | null>(null)
 
 const selectedOption = computed(() => 
   props.options.find(option => option.value === props.modelValue)
@@ -97,31 +105,149 @@ const selectId = Math.random().toString(36).slice(2)
 const toggleDropdown = () => {
   if (!props.disabled) {
     if (!isOpen.value) {
-      window.dispatchEvent(new CustomEvent('custom-select-or-multiselect-open', { detail: selectId }))
+      // Only dispatch the event if we're not inside a date picker
+      const isInsideDatePicker = buttonRef.value?.closest('.date-picker-overlay')
+      if (!isInsideDatePicker) {
+        window.dispatchEvent(new CustomEvent('custom-select-or-multiselect-open', { detail: selectId }))
+      }
     }
     isOpen.value = !isOpen.value
+    if (isOpen.value) {
+      searchQuery.value = ''
+    }
   }
 }
 
 function closeDropdown() {
+  // Don't close if we're inside a date picker and the date picker is still open
+  const isInsideDatePicker = buttonRef.value?.closest('.date-picker-overlay')
+  const datePickerIsOpen = document.querySelector('.date-picker-overlay')
+  
+  if (isInsideDatePicker && datePickerIsOpen) {
+    // Don't close the select dropdown when inside an open date picker
+    return
+  }
+  
   isOpen.value = false
+  searchQuery.value = ''
 }
 
 function handleGlobalOpen(e: CustomEvent) {
   if (e.detail !== selectId) {
-    closeDropdown()
+    // Don't close if we're inside a date picker
+    const isInsideDatePicker = buttonRef.value?.closest('.date-picker-overlay')
+    if (!isInsideDatePicker) {
+      closeDropdown()
+    }
   }
 }
 
 const selectOption = (option: SelectOption) => {
   emit('update:modelValue', option.value)
-  closeDropdown()
+  
+  // Don't close the dropdown if we're inside a date picker
+  const isInsideDatePicker = buttonRef.value?.closest('.date-picker-overlay')
+  const datePickerIsOpen = document.querySelector('.date-picker-overlay')
+  
+  if (!isInsideDatePicker || !datePickerIsOpen) {
+    closeDropdown()
+  }
+}
+
+// Handle keyboard search
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (!isOpen.value) return
+  
+  const key = event.key.toLowerCase()
+  
+  // Only handle single character keys (letters and numbers)
+  if (key.length === 1 && /[a-z0-9]/i.test(key)) {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    console.log('Key pressed:', key) // Debug log
+    
+    // Clear previous timeout
+    if (searchTimeout.value) {
+      clearTimeout(searchTimeout.value)
+    }
+    
+    // Add to search query
+    searchQuery.value += key
+    console.log('Search query:', searchQuery.value) // Debug log
+    
+    // Find first option that starts with the search query
+    const matchingOption = props.options.find(option => 
+      option.label.toLowerCase().startsWith(searchQuery.value.toLowerCase())
+    )
+    
+    console.log('Matching option:', matchingOption) // Debug log
+    
+    if (matchingOption) {
+      // Scroll to the matching option
+      const optionElement = document.querySelector(`[data-option-value="${matchingOption.value}"]`) as HTMLElement
+      if (optionElement) {
+        optionElement.scrollIntoView({ block: 'nearest' })
+        console.log('Scrolled to option:', matchingOption.label) // Debug log
+      }
+    }
+    
+    // Clear search query after 1 second
+    searchTimeout.value = setTimeout(() => {
+      searchQuery.value = ''
+      console.log('Search query cleared') // Debug log
+    }, 1000)
+  }
+  
+  // Handle Enter key to select the first matching option
+  if (event.key === 'Enter' && searchQuery.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    const matchingOption = props.options.find(option => 
+      option.label.toLowerCase().startsWith(searchQuery.value.toLowerCase())
+    )
+    
+    if (matchingOption) {
+      selectOption(matchingOption)
+    }
+  }
+}
+
+const buttonRef = ref<HTMLElement>()
+const dropdownStyle = ref('')
+
+watch(isOpen, (open) => {
+  if (open) {
+    nextTick(() => {
+      updateDropdownPosition()
+      window.addEventListener('scroll', updateDropdownPosition, true)
+      window.addEventListener('resize', updateDropdownPosition)
+      // Add global keyboard listener when dropdown is open
+      document.addEventListener('keydown', handleKeyDown, true)
+    })
+  } else {
+    window.removeEventListener('scroll', updateDropdownPosition, true)
+    window.removeEventListener('resize', updateDropdownPosition)
+    // Remove global keyboard listener when dropdown is closed
+    document.removeEventListener('keydown', handleKeyDown, true)
+  }
+})
+
+function updateDropdownPosition() {
+  if (!buttonRef.value) return
+  const rect = buttonRef.value.getBoundingClientRect()
+  dropdownStyle.value = `z-index: 9999999; position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px; background-color: rgb(30 41 59 / 0.95); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(71, 85, 105, 0.5);`
 }
 
 onMounted(() => {
   const handleClickOutside = (event: MouseEvent) => {
     if (selectContainer.value && !selectContainer.value.contains(event.target as Node)) {
-      closeDropdown()
+      // Don't close if we're inside a date picker
+      const isInsideDatePicker = buttonRef.value?.closest('.date-picker-overlay')
+      if (!isInsideDatePicker) {
+        closeDropdown()
+      }
     }
   }
   document.addEventListener('click', handleClickOutside, true) // use capture phase
@@ -138,6 +264,14 @@ onMounted(() => {
     document.removeEventListener('click', handleClickOutside, true)
     window.removeEventListener('custom-select-or-multiselect-open', handleGlobalOpen as EventListener)
     document.removeEventListener('keydown', handleEscape)
+    document.removeEventListener('keydown', handleKeyDown, true)
+    window.removeEventListener('scroll', updateDropdownPosition, true)
+    window.removeEventListener('resize', updateDropdownPosition)
+    
+    // Clear timeout on unmount
+    if (searchTimeout.value) {
+      clearTimeout(searchTimeout.value)
+    }
   })
 })
 </script>
@@ -169,19 +303,19 @@ onMounted(() => {
 /* Ensure dropdowns are always on top */
 .relative {
   position: relative;
-  z-index: 999999;
+  z-index: 9999999;
 }
 
 /* Force the dropdown to be above everything */
 .absolute {
   position: absolute !important;
-  z-index: 999999 !important;
+  z-index: 9999999 !important;
   isolation: isolate;
 }
 
 /* Additional stacking context for the container */
 .relative[style*="z-index"] {
   position: relative !important;
-  z-index: 999999 !important;
+  z-index: 9999999 !important;
 }
 </style> 

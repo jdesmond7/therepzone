@@ -1,8 +1,56 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useGoogleMapsLocation } from './useGoogleMapsLocation'
 
-const countries = [
+// Datos locales como fallback
+const localCountries = [
   'México', 'Estados Unidos', 'Colombia', 'Argentina', 'Chile', 'Perú', 'Ecuador', 'Venezuela', 'España', 'Costa Rica', 'Panamá', 'Guatemala', 'El Salvador', 'Honduras', 'Nicaragua', 'República Dominicana', 'Puerto Rico', 'Uruguay', 'Paraguay', 'Bolivia'
 ]
+
+// Mapeo de valores de Google Maps a valores locales
+const googleMapsMapping: Record<string, { country: string, state: string, city: string }> = {
+  // México - Nuevo León
+  'Ciudad Apodaca': { country: 'México', state: 'Nuevo León', city: 'Apodaca' },
+  'Ciudad de México': { country: 'México', state: 'Ciudad de México', city: 'Ciudad de México' },
+  'Ciudad Obregón': { country: 'México', state: 'Sonora', city: 'Ciudad Obregón' },
+  'Ciudad Valles': { country: 'México', state: 'San Luis Potosí', city: 'Ciudad Valles' },
+  'Ciudad Fernández': { country: 'México', state: 'San Luis Potosí', city: 'Ciudad Fernández' },
+  'Ciudad Santos': { country: 'México', state: 'San Luis Potosí', city: 'Ciudad Santos' },
+  'Ciudad del Maíz': { country: 'México', state: 'San Luis Potosí', city: 'Ciudad del Maíz' },
+  'Ciudad Juárez': { country: 'México', state: 'Chihuahua', city: 'Ciudad Juárez' },
+  'Ciudad del Carmen': { country: 'México', state: 'Campeche', city: 'Ciudad del Carmen' },
+  'Ciudad Madero': { country: 'México', state: 'Tamaulipas', city: 'Ciudad Madero' },
+  'Ciudad Anáhuac': { country: 'México', state: 'Nuevo León', city: 'Ciudad Anáhuac' },
+  
+  // Estados
+  'Nuevo Leon': { country: 'México', state: 'Nuevo León', city: '' },
+  'Mexico City': { country: 'México', state: 'Ciudad de México', city: '' },
+  'Mexico State': { country: 'México', state: 'Estado de México', city: '' },
+  'San Luis Potosi': { country: 'México', state: 'San Luis Potosí', city: '' },
+  'Queretaro': { country: 'México', state: 'Querétaro', city: '' },
+  'Yucatan': { country: 'México', state: 'Yucatán', city: '' },
+  
+  // Países
+  'Mexico': { country: 'México', state: '', city: '' },
+  'United States': { country: 'Estados Unidos', state: '', city: '' },
+  'Colombia': { country: 'Colombia', state: '', city: '' },
+  'Argentina': { country: 'Argentina', state: '', city: '' },
+  'Chile': { country: 'Chile', state: '', city: '' },
+  'Peru': { country: 'Perú', state: '', city: '' },
+  'Ecuador': { country: 'Ecuador', state: '', city: '' },
+  'Venezuela': { country: 'Venezuela', state: '', city: '' },
+  'Spain': { country: 'España', state: '', city: '' },
+  'Costa Rica': { country: 'Costa Rica', state: '', city: '' },
+  'Panama': { country: 'Panamá', state: '', city: '' },
+  'Guatemala': { country: 'Guatemala', state: '', city: '' },
+  'El Salvador': { country: 'El Salvador', state: '', city: '' },
+  'Honduras': { country: 'Honduras', state: '', city: '' },
+  'Nicaragua': { country: 'Nicaragua', state: '', city: '' },
+  'Dominican Republic': { country: 'República Dominicana', state: '', city: '' },
+  'Puerto Rico': { country: 'Puerto Rico', state: '', city: '' },
+  'Uruguay': { country: 'Uruguay', state: '', city: '' },
+  'Paraguay': { country: 'Paraguay', state: '', city: '' },
+  'Bolivia': { country: 'Bolivia', state: '', city: '' }
+}
 
 // Estados por país
 const statesByCountry: Record<string, string[]> = {
@@ -89,7 +137,7 @@ const citiesByState: Record<string, string[]> = {
   // México - Colima
   'Colima': [
     'Colima', 'Manzanillo', 'Villa de Álvarez', 'Tecomán', 'Comala', 'Coquimatlán', 'Cuauhtémoc',
-    'Ixtlahuacán', 'Minatitlán', 'Armería', 'Coquimatlán', 'Villa de Álvarez'
+    'Ixtlahuacán', 'Minatitlán', 'Armería'
   ],
   // México - Durango
   'Durango': [
@@ -110,124 +158,122 @@ const citiesByState: Record<string, string[]> = {
   ],
   // México - Guerrero
   'Guerrero': [
-    'Acapulco de Juárez', 'Chilpancingo de los Bravo', 'Iguala de la Independencia', 'Chilapa de Álvarez',
-    'Tlapa de Comonfort', 'Ayutla de los Libres', 'Atoyac de Álvarez', 'Técpan de Galeana',
-    'San Marcos', 'Florencio Villarreal', 'Cruz Grande', 'Tlalchapa', 'Arcelia', 'Tlapehuala'
+    'Acapulco de Juárez', 'Chilpancingo de los Bravo', 'Iguala de la Independencia', 'Tlapa de Comonfort',
+    'Taxco de Alarcón', 'Ayutla de los Libres', 'Atoyac de Álvarez', 'Técpan de Galeana', 'Zihuatanejo',
+    'Chilapa de Álvarez', 'Tlapa', 'Ayutla', 'Atoyac', 'Técpan', 'Zihuatanejo de Azueta'
   ],
   // México - Hidalgo
   'Hidalgo': [
-    'Pachuca de Soto', 'Tizayuca', 'Tulancingo de Bravo', 'Ixmiquilpan', 'Mixquiahuala de Juárez',
-    'Actopan', 'Zimapán', 'Tula de Allende', 'Huejutla de Reyes', 'San Salvador', 'Santiago Tulantepec',
-    'Tizayuca', 'Mineral de la Reforma', 'San Agustín Tlaxiaca', 'Epazoyucan'
+    'Pachuca de Soto', 'Tizayuca', 'Tula de Allende', 'Ixmiquilpan', 'Mixquiahuala de Juárez',
+    'Actopan', 'Zimapán', 'Tula', 'Ixmiquilpan', 'Mixquiahuala', 'Actopan', 'Zimapán'
   ],
   // México - Jalisco
   'Jalisco': [
-    'Guadalajara', 'Zapopan', 'San Pedro Tlaquepaque', 'Tlaquepaque', 'Tonalá', 'Puerto Vallarta',
-    'Lagos de Moreno', 'El Salto', 'Tepatitlán de Morelos', 'Tlajomulco de Zúñiga', 'Zapotlán el Grande',
-    'Autlán de Navarro', 'Ameca', 'Arandas', 'Atotonilco el Alto', 'Ayotlán', 'Bolaños', 'Cabo Corrientes',
-    'Casimiro Castillo', 'Chapala', 'Chimaltitán', 'Chiquilistlán', 'Cihuatlán', 'Cocula', 'Colotlán'
+    'Guadalajara', 'Zapopan', 'San Pedro Tlaquepaque', 'Tonalá', 'Tlajomulco de Zúñiga', 'Puerto Vallarta',
+    'El Salto', 'Lagos de Moreno', 'Tepatitlán de Morelos', 'Autlán de Navarro', 'Zapotlán el Grande',
+    'San Juan de los Lagos', 'Tala', 'La Barca', 'Arandas', 'Ameca', 'Lagos de Moreno'
   ],
   // México - Michoacán
   'Michoacán': [
-    'Morelia', 'Uruapan', 'Zamora de Hidalgo', 'Lázaro Cárdenas', 'Zitácuaro', 'Hidalgo', 'Apatzingán',
-    'La Piedad de Cabadas', 'Pátzcuaro', 'Sahuayo', 'Nueva Italia', 'Paracho', 'Tacámbaro',
-    'Tingüindín', 'Tuxpan', 'Villa Jiménez', 'Yurécuaro', 'Zacapu', 'Zamora'
+    'Morelia', 'Uruapan', 'Zamora de Hidalgo', 'Lázaro Cárdenas', 'Zitácuaro', 'Hidalgo',
+    'Apatzingán de la Constitución', 'La Piedad de Cabadas', 'Pátzcuaro', 'Sahuayo de Morelos',
+    'Hidalgo', 'Apatzingán', 'La Piedad', 'Pátzcuaro', 'Sahuayo'
   ],
   // México - Morelos
   'Morelos': [
-    'Cuernavaca', 'Jiutepec', 'Ayala', 'Emiliano Zapata', 'Temixco', 'Xochitepec', 'Puente de Ixtla',
-    'Amacuzac', 'Atlatlahucan', 'Axochiapan', 'Coatlán del Río', 'Cuautla', 'Huitzilac', 'Jantetelco',
-    'Jonacatepec', 'Mazatepec', 'Miacatlán', 'Ocuituco', 'Puente de Ixtla', 'Temoac', 'Tepalcingo'
+    'Cuernavaca', 'Ayala', 'Emiliano Zapata', 'Temixco', 'Jiutepec', 'Cuautla', 'Puente de Ixtla',
+    'Xochitepec', 'Ayala', 'Emiliano Zapata', 'Temixco', 'Jiutepec', 'Cuautla Morelos', 'Puente de Ixtla',
+    'Xochitepec'
   ],
   // México - Nayarit
   'Nayarit': [
-    'Tepic', 'Bahía de Banderas', 'Santiago Ixcuintla', 'Tuxpan', 'Ixtlán del Río', 'Xalisco',
-    'San Blas', 'Compostela', 'Tecuala', 'Ixtlán del Río', 'Jala', 'La Yesca', 'Rosamorada',
-    'Ruíz', 'San Pedro Lagunillas', 'Santa María del Oro', 'Santiago Ixcuintla', 'Tecuala'
+    'Tepic', 'Bahía de Banderas', 'Santiago Ixcuintla', 'Tuxpan', 'Ixtlán del Río', 'Compostela',
+    'Xalisco', 'San Blas', 'Ixtlán del Río', 'Compostela', 'Xalisco', 'San Blas'
   ],
   // México - Nuevo León
   'Nuevo León': [
-    'Monterrey', 'San Pedro Garza García', 'Guadalupe', 'San Nicolás de los Garza', 'Santa Catarina',
-    'General Escobedo', 'Apodaca', 'Linares', 'Montemorelos', 'Santiago', 'Allende', 'El Carmen',
-    'General Terán', 'Hualahuises', 'Rayones', 'Sabinas Hidalgo', 'Salinas Victoria', 'Villaldama',
-    'Aramberri', 'Bustamante', 'Cadereyta Jiménez', 'Cerralvo', 'Ciénega de Flores', 'Ciudad Anáhuac',
-    'Doctor Arroyo', 'Doctor Coss', 'Doctor González', 'El Carmen', 'Galeana', 'García', 'General Bravo'
+    'Monterrey', 'San Nicolás de los Garza', 'Guadalupe', 'Santa Catarina', 'Apodaca', 'General Escobedo',
+    'San Pedro Garza García', 'Linares', 'Montemorelos', 'Cadereyta Jiménez', 'Allende', 'El Carmen',
+    'General Terán', 'Hualahuises', 'Iturbide', 'Lampazos de Naranjo', 'Los Herreras', 'Marín',
+    'Melchor Ocampo', 'Mier y Noriega', 'Mina', 'Pesquería', 'Rayones', 'Sabinas Hidalgo',
+    'Salinas Victoria', 'San Nicolás de los Garza', 'Villaldama', 'Ciudad Apodaca', 'San Pedro Garza García',
+    'Santa Catarina', 'General Escobedo', 'San Nicolás de los Garza', 'Guadalupe', 'Juárez', 'García',
+    'San Pedro Garza García', 'Santa Catarina', 'General Escobedo', 'San Nicolás de los Garza', 'Guadalupe',
+    'Juárez', 'García', 'Linares', 'Montemorelos', 'Cadereyta Jiménez', 'Allende', 'El Carmen',
+    'General Terán', 'Hualahuises', 'Iturbide', 'Lampazos de Naranjo', 'Los Herreras', 'Marín',
+    'Melchor Ocampo', 'Mier y Noriega', 'Mina', 'Pesquería', 'Rayones', 'Sabinas Hidalgo',
+    'Salinas Victoria', 'Villaldama', 'Aramberri', 'Bustamante', 'Cerralvo', 'Ciénega de Flores',
+    'Ciudad Anáhuac', 'Doctor Arroyo', 'Doctor Coss', 'Doctor González', 'Galeana', 'García',
+    'General Bravo', 'General Zaragoza', 'Hidalgo', 'Lampazos de Naranjo', 'Los Aldamas', 'Los Herreras',
+    'Los Ramones', 'Marín', 'Melchor Ocampo', 'Mier y Noriega', 'Mina', 'Montemorelos', 'Parás',
+    'Pesquería', 'Rayones', 'Sabinas Hidalgo', 'Salinas Victoria', 'San Nicolás de los Garza',
+    'Santa Catarina', 'Santiago', 'Vallecillo', 'Villaldama'
   ],
   // México - Oaxaca
   'Oaxaca': [
-    'Oaxaca de Juárez', 'Tuxtepec', 'Santa Cruz Xoxocotlán', 'Santa Lucía del Camino', 'Villa de Zaachila',
-    'San Antonio de la Cal', 'San Agustín de las Juntas', 'San Jacinto Amilpas', 'San Andrés Huayapam',
-    'San Agustín Yatareni', 'Santa María Atzompa', 'Santa María del Tule', 'San Sebastián Tutla',
-    'San Raymundo Jalpan', 'San Pablo Etla', 'San Pedro Ixtlahuaca', 'San Pedro Mixtepec',
-    'San Pedro Pochutla', 'San Pedro Tapanatepec', 'San Pedro Taviche', 'San Pedro y San Pablo Ayutla'
+    'Oaxaca de Juárez', 'Tuxtepec', 'Santa Cruz Xoxocotlán', 'Villa de Zaachila', 'Santa Lucía del Camino',
+    'San Antonio de la Cal', 'San Jacinto Amilpas', 'San Raymundo Jalpan', 'Santa María Atzompa',
+    'Santa María del Tule', 'Tlalixtac de Cabrera', 'Villa de Etla', 'Villa de Zaachila'
   ],
   // México - Puebla
   'Puebla': [
-    'Puebla de Zaragoza', 'Amozoc de Mota', 'Atlixco', 'Cuautlancingo', 'San Pedro Cholula',
-    'San Andrés Cholula', 'Teziutlán', 'San Martín Texmelucan', 'Huauchinango', 'Tehuacán',
-    'San Pedro Pochutla', 'Izúcar de Matamoros', 'Ajalpan', 'Acatlán de Osorio', 'Acajete',
-    'Acteopan', 'Ahuacatlán', 'Ahuatlán', 'Ahuazotepec', 'Ahuehuetitla', 'Ajalpan', 'Albino Zertuche'
+    'Puebla de Zaragoza', 'Amozoc de Mota', 'Atlixco', 'Cuautlancingo', 'Huauchinango', 'Izúcar de Matamoros',
+    'San Martín Texmelucan', 'San Pedro Cholula', 'Tehuacán', 'Teziutlán', 'Amozoc', 'Atlixco',
+    'Cuautlancingo', 'Huauchinango', 'Izúcar de Matamoros', 'San Martín Texmelucan', 'San Pedro Cholula',
+    'Tehuacán', 'Teziutlán'
   ],
   // México - Querétaro
   'Querétaro': [
-    'Santiago de Querétaro', 'San Juan del Río', 'Corregidora', 'El Marqués', 'Pedro Escobedo',
-    'Amealco de Bonfil', 'Arroyo Seco', 'Cadereyta de Montes', 'Colón', 'Jalpan de Serra',
-    'Landa de Matamoros', 'Peñamiller', 'Pinal de Amoles', 'San Joaquín', 'Tequisquiapan',
-    'Tolimán', 'Villa Corregidora'
+    'Querétaro', 'San Juan del Río', 'Corregidora', 'El Marqués', 'Colón', 'Amealco de Bonfil',
+    'Arroyo Seco', 'Cadereyta de Montes', 'Jalpan de Serra', 'Landa de Matamoros', 'Pedro Escobedo',
+    'Peñamiller', 'Pinal de Amoles', 'San Joaquín', 'Tequisquiapan', 'Tolimán'
   ],
   // México - Quintana Roo
   'Quintana Roo': [
     'Benito Juárez', 'Othón P. Blanco', 'Felipe Carrillo Puerto', 'Lázaro Cárdenas', 'Isla Mujeres',
-    'José María Morelos', 'Tulum', 'Bacalar', 'Cozumel', 'Solidaridad', 'Lázaro Cárdenas',
-    'Isla Mujeres', 'José María Morelos', 'Tulum', 'Bacalar', 'Cozumel', 'Solidaridad'
+    'José María Morelos', 'Tulum', 'Bacalar', 'Cozumel', 'Lázaro Cárdenas', 'Isla Mujeres',
+    'José María Morelos', 'Tulum', 'Bacalar', 'Cozumel'
   ],
   // México - San Luis Potosí
   'San Luis Potosí': [
     'San Luis Potosí', 'Soledad de Graciano Sánchez', 'Ciudad Valles', 'Matehuala', 'Rioverde',
-    'Ciudad Fernández', 'Xilitla', 'Ciudad Santos', 'Tamasopo', 'Rayón', 'Aquismón', 'Axtla de Terrazas',
-    'Cárdenas', 'Catorce', 'Cedral', 'Cerritos', 'Charcas', 'Ciudad del Maíz', 'Ciudad Fernández',
-    'Tancanhuitz', 'Tamuín', 'Tanlajás', 'Tierra Nueva', 'Vanegas', 'Venado', 'Villa de Arista'
+    'Ciudad Fernández', 'Xilitla', 'Ciudad Valles', 'Matehuala', 'Rioverde', 'Ciudad Fernández',
+    'Xilitla'
   ],
   // México - Sinaloa
   'Sinaloa': [
     'Culiacán Rosales', 'Mazatlán', 'Los Mochis', 'Guasave', 'Navolato', 'El Rosario', 'El Fuerte',
-    'El Dorado', 'Concordia', 'Cosalá', 'Escuinapa', 'San Ignacio', 'Badiraguato', 'Choix',
-    'El Fuerte', 'El Rosario', 'Escuinapa', 'Guasave', 'Mazatlán', 'Navolato', 'Salvador Alvarado'
+    'El Rosario', 'El Fuerte', 'Guasave', 'Los Mochis', 'Mazatlán', 'Navolato'
   ],
   // México - Sonora
   'Sonora': [
     'Hermosillo', 'Ciudad Obregón', 'Nogales', 'San Luis Río Colorado', 'Huatabampo', 'Puerto Peñasco',
-    'Guaymas', 'Navojoa', 'Cananea', 'Huatabampo', 'Puerto Peñasco', 'San Luis Río Colorado',
-    'Agua Prieta', 'Altar', 'Arizpe', 'Atil', 'Bacadéhuachi', 'Bacanora', 'Bacerac', 'Bacoachi',
-    'Bácum', 'Banámichi', 'Baviácora', 'Bavispe', 'Benito Juárez', 'Benjamín Hill', 'Caborca'
+    'Cananea', 'Navojoa', 'Huatabampo', 'Puerto Peñasco', 'Cananea', 'Navojoa'
   ],
   // México - Tabasco
   'Tabasco': [
-    'Centro', 'Cárdenas', 'Cunduacán', 'Comalcalco', 'Huimanguillo', 'Teapa', 'Jalpa de Méndez',
-    'Nacajuca', 'Tenosique', 'Balancán', 'Cárdenas', 'Centro', 'Comalcalco', 'Cunduacán',
-    'Emiliano Zapata', 'Huimanguillo', 'Jalpa de Méndez', 'Jonuta', 'Macuspana', 'Nacajuca',
-    'Paraíso', 'Tacotalpa', 'Teapa', 'Tenosique'
+    'Centro', 'Cárdenas', 'Comalcalco', 'Cunduacán', 'Emiliano Zapata', 'Huimanguillo', 'Jalpa de Méndez',
+    'Jalpa de Méndez', 'Cárdenas', 'Comalcalco', 'Cunduacán', 'Emiliano Zapata', 'Huimanguillo'
   ],
   // México - Tamaulipas
   'Tamaulipas': [
-    'Reynosa', 'Matamoros', 'Nuevo Laredo', 'Victoria', 'Tampico', 'Ciudad Madero', 'Altamira',
-    'Río Bravo', 'Mante', 'Xicoténcatl', 'San Fernando', 'Valle Hermoso', 'Gómez Farías',
-    'El Mante', 'Güémez', 'Gustavo Díaz Ordaz', 'Hidalgo', 'Jaumave', 'Jiménez', 'Llera',
-    'Mainero', 'Méndez', 'Mier', 'Miguel Alemán', 'Miquihuana', 'Nuevo Laredo', 'Nuevo Morelos'
+    'Reynosa', 'Matamoros', 'Nuevo Laredo', 'Victoria', 'Ciudad Madero', 'Tampico', 'Altamira',
+    'Río Bravo', 'Mante', 'Xicoténcatl', 'Altamira', 'Ciudad Madero', 'Mante', 'Matamoros',
+    'Nuevo Laredo', 'Reynosa', 'Río Bravo', 'Tampico', 'Victoria', 'Xicoténcatl'
   ],
   // México - Tlaxcala
   'Tlaxcala': [
-    'Tlaxcala de Xicohténcatl', 'San Pablo del Monte', 'Apizaco', 'Calpulalpan', 'Chiautempan',
-    'Contla de Juan Cuamatzi', 'Huamantla', 'Papalotla de Xicohténcatl', 'Sanctórum de Lázaro Cárdenas',
-    'Tlaxco', 'Zacatelco', 'Acuamanala de Miguel Hidalgo', 'Amaxac de Guerrero', 'Apetatitlán de Antonio Carvajal',
-    'Atlangatepec', 'Atltzayanca', 'Benito Juárez', 'Calpulalpan', 'Chiautempan', 'Contla de Juan Cuamatzi'
+    'Tlaxcala de Xicohténcatl', 'San Pablo del Monte', 'Calpulalpan', 'Chiautempan', 'Contla de Juan Cuamatzi',
+    'Huamantla', 'Papalotla de Xicohténcatl', 'Sanctórum de Lázaro Cárdenas', 'Tlaxco', 'Zacatelco',
+    'Calpulalpan', 'Chiautempan', 'Contla de Juan Cuamatzi', 'Huamantla', 'Papalotla de Xicohténcatl',
+    'San Pablo del Monte', 'Sanctórum de Lázaro Cárdenas', 'Tlaxco', 'Zacatelco'
   ],
   // México - Veracruz
   'Veracruz': [
     'Veracruz', 'Xalapa-Enríquez', 'Orizaba', 'Córdoba', 'Poza Rica de Hidalgo', 'San Andrés Tuxtla',
-    'Minatitlán', 'Coatzacoalcos', 'Tuxpan de Rodríguez Cano', 'Boca del Río', 'San Juan Evangelista',
-    'Tierra Blanca', 'Cosamaloapan de Carpio', 'Carlos A. Carrillo', 'Tantoyuca', 'Pánuco',
-    'Ozuluama de Mascareñas', 'Tampico Alto', 'Tempoal', 'Platón Sánchez', 'Chicontepec'
+    'Minatitlán', 'Boca del Río', 'Tuxpan de Rodríguez Cano', 'San Andrés Tuxtla', 'Boca del Río',
+    'Córdoba', 'Minatitlán', 'Orizaba', 'Poza Rica de Hidalgo', 'San Andrés Tuxtla', 'Tuxpan de Rodríguez Cano',
+    'Xalapa-Enríquez'
   ],
   // México - Yucatán
   'Yucatán': [
@@ -263,14 +309,106 @@ const citiesByState: Record<string, string[]> = {
 }
 
 export function useCountryCitySelect(selectedCountry: any, selectedState: any, selectedCity: any) {
-  const countryOptions = computed(() => countries.map(country => ({ value: country, label: country })))
+  const { getCountries, getStates, getCities, isLoading, error } = useGoogleMapsLocation()
   
-  const stateOptions = computed(() => {
-    return statesByCountry[selectedCountry.value] ? statesByCountry[selectedCountry.value].map(state => ({ value: state, label: state })) : []
+  // Reactive options
+  const countryOptions = ref<Array<{ value: string, label: string }>>([])
+  const stateOptions = ref<Array<{ value: string, label: string }>>([])
+  const cityOptions = ref<Array<{ value: string, label: string }>>([])
+  
+  // Load countries on mount
+  const loadCountries = async () => {
+    try {
+      const countries = await getCountries()
+      countryOptions.value = countries
+    } catch (err) {
+      // Fallback to local data
+      countryOptions.value = localCountries.map(country => ({ value: country, label: country }))
+    }
+  }
+  
+  // Load states when country changes
+  const loadStates = async (country: string) => {
+    if (!country) {
+      stateOptions.value = []
+      return
+    }
+    
+    try {
+      const states = await getStates(country)
+      stateOptions.value = states
+    } catch (err) {
+      // Fallback to local data
+      const localStates = statesByCountry[country] || []
+      stateOptions.value = localStates.map(state => ({ value: state, label: state }))
+    }
+  }
+  
+  // Load cities when state changes
+  const loadCities = async (state: string, country: string) => {
+    if (!state || !country) {
+      cityOptions.value = []
+      return
+    }
+    
+    try {
+      const cities = await getCities(state, country)
+      cityOptions.value = cities
+    } catch (err) {
+      // Fallback to local data
+      const localCities = citiesByState[state] || []
+      cityOptions.value = localCities.map(city => ({ value: city, label: city }))
+    }
+  }
+
+  // Function to map Google Maps values to local values
+  const mapGoogleMapsValueToLocal = (value: string) => {
+    const mapped = googleMapsMapping[value]
+    if (mapped) {
+      return mapped
+    }
+    return { country: value, state: '', city: '' }
+  }
+
+  // Function to map multiple Google Maps values to local values
+  const mapGoogleToLocal = ({ country, state, city }: { country?: string, state?: string, city?: string }) => {
+    // If there's an exact mapping for the city
+    if (city && googleMapsMapping[city]) {
+      return googleMapsMapping[city]
+    }
+    // If there's an exact mapping for the state
+    if (state && googleMapsMapping[state]) {
+      return googleMapsMapping[state]
+    }
+    // If there's an exact mapping for the country
+    if (country && googleMapsMapping[country]) {
+      return googleMapsMapping[country]
+    }
+    // If no mapping, return original values
+    return { country: country || '', state: state || '', city: city || '' }
+  }
+  
+  // Watch for changes and load data
+  watch(selectedCountry, (newCountry) => {
+    if (newCountry) {
+      loadStates(newCountry)
+    } else {
+      stateOptions.value = []
+      cityOptions.value = []
+    }
   })
   
-  const cityOptions = computed(() => {
-    return citiesByState[selectedState.value] ? citiesByState[selectedState.value].map(city => ({ value: city, label: city })) : []
+  watch(selectedState, (newState) => {
+    if (newState && selectedCountry.value) {
+      loadCities(newState, selectedCountry.value)
+    } else {
+      cityOptions.value = []
+    }
+  })
+  
+  // Load initial data
+  onMounted(() => {
+    loadCountries()
   })
   
   function onCountryChange(newCountry: string) {
@@ -289,11 +427,15 @@ export function useCountryCitySelect(selectedCountry: any, selectedState: any, s
   }
   
   return { 
-    countryOptions, 
-    stateOptions, 
-    cityOptions, 
+    countryOptions: computed(() => countryOptions.value), 
+    stateOptions: computed(() => stateOptions.value), 
+    cityOptions: computed(() => cityOptions.value), 
     onCountryChange, 
     onStateChange,
-    onCityChange
+    onCityChange,
+    isLoading,
+    error,
+    mapGoogleMapsValueToLocal,
+    mapGoogleToLocal
   }
 } 

@@ -95,8 +95,6 @@ const handleProfileSubmit = async (userData: any) => {
     }
 
     // 2. Guardar perfil y consentimiento en Firestore
-    const { useUsers } = await import('~/composables/firestore')
-    const { createUser, updateUser, getUserById } = useUsers()
     let profilePhotoUrl = ''
     if (userData.profileImageFile && result.user) {
       setLoading(true, 'Subiendo imagen de perfil...')
@@ -110,28 +108,75 @@ const handleProfileSubmit = async (userData: any) => {
         profilePhotoUrl = uploadResult.url!
       }
     }
-    // Generar UID custom con el nombre real
-    const { generateUniqueCustomUid } = await import('~/utils/custom-uid-generator')
-    const customUid = await generateUniqueCustomUid({
-      role: pendingRegistration.value.userRole === 'coach' ? 'coach' : 'client',
-      firstName: userData.firstName,
-      authUid: result.user.uid
-    })
-    // Crear el usuario en Firestore con el UID custom
-    const { profileImageFile, ...profileData } = {
-      ...userData,
-      profilePhoto: profilePhotoUrl || userData.profilePhoto || '',
-      startDate: new Date().toISOString(),
-      profileCompleted: true,
-      email: pendingRegistration.value.email,
-      role: pendingRegistration.value.userRole === 'coach' ? 'coach' : 'client',
-      assignedWorkouts: [],
-      consent: pendingRegistration.value.consent,
-      authUid: result.user.uid
-    }
-    const createResult = await createUser(customUid, profileData)
-    if (!createResult.success) {
-      throw new Error('Error creating user in Firestore: ' + createResult.error)
+
+    // Determinar qué colección usar basado en el rol
+    if (pendingRegistration.value.userRole === 'coach') {
+      // Para coaches, usar la colección coaches
+      const { useCoaches } = await import('~/composables/coaches')
+      const { createCoach } = useCoaches()
+      
+      // Generar UID custom para el coach
+      const { generateUniqueCustomUid } = await import('~/utils/custom-uid-generator')
+      const customUid = await generateUniqueCustomUid({
+        role: 'coach',
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        authUid: result.user.uid
+      })
+      
+      const coachData = {
+        uid: customUid,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        fullName: userData.fullName,
+        email: pendingRegistration.value.email,
+        phone: userData.phone,
+        profileImageUrl: profilePhotoUrl || userData.profilePhoto || '',
+        authUid: result.user.uid,
+        // Campos adicionales del perfil
+        nickname: userData.nickname,
+        birthDate: userData.birthDate,
+        gender: userData.gender,
+        country: userData.country,
+        city: userData.city,
+        howDidYouHearAboutUs: userData.howDidYouHearAboutUs,
+        startDate: new Date().toISOString(),
+        profileCompleted: true
+      }
+      
+      const createResult = await createCoach(coachData)
+      if (!createResult.success) {
+        throw new Error('Error creating coach in Firestore: ' + createResult.error)
+      }
+    } else {
+      // Para atletas, usar la colección athletes
+      const { useAthletes } = await import('~/composables/athletes')
+      const { createAthlete } = useAthletes()
+      
+      const athleteData = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        fullName: userData.fullName,
+        email: pendingRegistration.value.email,
+        phone: userData.phone,
+        profileImageUrl: profilePhotoUrl || userData.profilePhoto || '',
+        authUid: result.user.uid,
+        // Campos adicionales del perfil
+        nickname: userData.nickname,
+        birthDate: userData.birthDate,
+        gender: userData.gender,
+        country: userData.country,
+        city: userData.city,
+        howDidYouHearAboutUs: userData.howDidYouHearAboutUs,
+        startDate: new Date().toISOString(),
+        profileCompleted: true,
+        assignedWorkouts: []
+      }
+      
+      const createResult = await createAthlete(athleteData)
+      if (!createResult.success) {
+        throw new Error('Error creating athlete in Firestore: ' + createResult.error)
+      }
     }
     
     // 3. Limpiar localStorage

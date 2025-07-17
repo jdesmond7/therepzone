@@ -23,7 +23,7 @@
 
       <!-- Nombre * -->
       <div>
-        <label for="firstName" class="block text-sm font-bold text-white mb-2">
+        <label for="firstName" class="block text-sm font-medium text-slate-400 mb-1">
           Nombre(s) *
         </label>
         <input
@@ -45,7 +45,7 @@
 
       <!-- Apellido * -->
       <div>
-        <label for="lastName" class="block text-sm font-bold text-white mb-2">
+        <label for="lastName" class="block text-sm font-medium text-slate-400 mb-1">
           Apellido(s) *
         </label>
         <input
@@ -67,7 +67,7 @@
 
       <!-- Apodo -->
       <div>
-        <label for="nickname" class="block text-sm font-bold text-white mb-2">
+        <label for="nickname" class="block text-sm font-medium text-slate-400 mb-1">
           Apodo:
         </label>
         <input
@@ -87,123 +87,21 @@
       </div>
 
       <!-- Fecha de cumpleaños -->
-      <div class="relative">
-        <label for="birthDate" class="block text-sm font-bold text-white mb-2">
-          Fecha de cumpleaños *
-        </label>
-        <div class="relative">
-          <input
-            id="birthDate"
-            v-model="formData.birthDate"
-            type="text"
-            placeholder="dd/mm/yyyy"
-            autocomplete="off"
-            @input="formatBirthDate"
-            @keydown="handleKeyDown"
-            @keydown.enter.prevent
-            @focus="showDatePicker = true"
-            @blur="handleDateInputBlur"
-            :class="[
-              'w-full pl-4 pr-12 py-3 bg-slate-900 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent',
-              fieldErrors.birthDate 
-                ? 'border-red-500 focus:ring-red-500' 
-                : 'border-slate-600 focus:ring-orange-600'
-            ]"
-            maxlength="10"
-            required
-          />
-          <button
-            type="button"
-            @click="toggleDatePicker"
-            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-orange-600 transition-colors"
-          >
-            <UIcon name="i-heroicons-calendar-days" class="w-5 h-5" />
-          </button>
-        </div>
-        
-        <!-- Date Picker -->
-        <div 
-          v-if="showDatePicker"
-          ref="datePickerRef"
-          class="absolute z-50 mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 w-full max-w-xs sm:w-[420px] sm:max-w-none"
-        >
-          <!-- Calendar Header -->
-          <div class="flex flex-col items-center gap-2 sm:flex-row sm:justify-between sm:gap-4 mb-4">
-            <div class="flex items-center justify-center gap-2 w-full">
-              <button
-                type="button"
-                @click="changeMonth(-1)"
-                class="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                <UIcon name="i-heroicons-chevron-left" class="w-5 h-5 text-white" />
-              </button>
-              <div class="flex flex-col sm:flex-row gap-2 w-full">
-                <div class="w-full sm:w-[160px]">
-                  <CustomSelect
-                    v-model="selectedMonth"
-                    :options="monthOptions"
-                    placeholder="Mes"
-                    @update:model-value="handleMonthChange"
-                  />
-                </div>
-                <div class="w-full sm:w-[120px]">
-                  <CustomSelect
-                    v-model="selectedYear"
-                    :options="yearOptions"
-                    placeholder="Año"
-                    @update:model-value="handleYearChange"
-                  />
-                </div>
-              </div>
-              <button
-                type="button"
-                @click="changeMonth(1)"
-                class="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-white" />
-              </button>
-            </div>
-          </div>
-          
-          <!-- Calendar Grid -->
-          <div class="grid grid-cols-7 gap-1 mb-2">
-            <div 
-              v-for="day in weekDaysShort" 
-              :key="day"
-              class="text-xs font-medium text-slate-400 text-center py-2"
-            >
-              {{ day }}
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-7 gap-1">
-              <button
-                v-for="date in calendarDates"
-                :key="`${date.month}-${date.day}`"
-                type="button"
-                @click="selectDate(date)"
-                :class="[
-                  'w-8 h-8 text-sm rounded-lg transition-colors',
-                  date.isCurrentMonth 
-                    ? 'text-white hover:bg-slate-700' 
-                    : 'text-slate-400 hover:bg-slate-700',
-                  date.isSelected 
-                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
-                    : '',
-                  date.isToday && !date.isSelected 
-                    ? 'bg-slate-700 text-orange-400 font-bold' 
-                    : ''
-                ]"
-              >
-                {{ date.day }}
-              </button>
-          </div>
-        </div>
+      <div>
+        <DatePickerInput
+          v-model="formData.birthDate"
+          label="Fecha de cumpleaños *"
+          placeholder="dd/mm/yyyy"
+          :class="[
+            fieldErrors.birthDate ? 'border-red-500' : ''
+          ]"
+        />
+        <p v-if="fieldErrors.birthDate" class="text-red-400 text-xs mt-1">{{ fieldErrors.birthDate }}</p>
       </div>
 
       <!-- Género * -->
       <div>
-        <label class="block text-sm font-bold text-white mb-2">
+        <label class="block text-sm font-medium text-slate-400 mb-1">
           Género *
         </label>
         <div class="flex flex-col gap-3 sm:flex-row">
@@ -246,7 +144,7 @@
 
       <!-- País -->
       <div>
-        <label class="block text-sm font-bold text-white mb-2">
+        <label class="block text-sm font-medium text-slate-400 mb-1">
           País *
         </label>
         <CustomSelect
@@ -261,7 +159,7 @@
 
       <!-- Estado -->
       <div>
-        <label class="block text-sm font-bold text-white mb-2">
+        <label class="block text-sm font-medium text-slate-400 mb-1">
           Estado / Provincia *
         </label>
         <CustomSelect
@@ -277,8 +175,8 @@
 
       <!-- Ciudad -->
       <div>
-        <label class="block text-sm font-bold text-white mb-2">
-          Ciudad *
+        <label class="block text-sm font-medium text-slate-400 mb-1">
+          Ciudad / Municipio *
         </label>
         <CustomSelect
           v-model="formData.city"
@@ -293,7 +191,7 @@
 
       <!-- Correo electrónico (si no está en modo usuario existente) -->
       <div v-if="showEmailField">
-        <label for="email" class="block text-sm font-bold text-white mb-2">
+        <label for="email" class="block text-sm font-medium text-slate-400 mb-1">
           Correo electrónico *
         </label>
         <input
@@ -315,7 +213,7 @@
 
       <!-- Número de teléfono -->
       <div>
-        <label for="phone" class="block text-sm font-bold text-white mb-2">
+        <label for="phone" class="block text-sm font-medium text-slate-400 mb-1">
           Número de teléfono
         </label>
         <input
@@ -336,7 +234,7 @@
 
       <!-- ¿Cómo te enteraste de nosotros? -->
       <div>
-        <label class="block text-sm font-bold text-white mb-2">
+        <label class="block text-sm font-medium text-slate-400 mb-1">
           ¿Cómo supiste de Therepzone? *
         </label>
         <CustomSelect
@@ -350,42 +248,38 @@
 
       <!-- Foto de perfil -->
       <div>
-        <label class="block text-sm font-bold text-white mb-2">
+        <label class="block text-sm font-medium text-slate-400 mb-1">
           Foto de perfil
         </label>
-        <div class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-orange-600 transition-colors">
-          <div v-if="!selectedImage">
-            <UIcon name="i-heroicons-camera" class="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <p class="text-slate-400 mb-2">Subir foto de perfil</p>
-            <p class="text-slate-500 text-xs mb-2">Se convertirá automáticamente a WebP para mejor calidad</p>
-            <input
-              type="file"
-              @change="handleImageUpload"
-              accept="image/*"
-              class="hidden"
-              ref="fileInput"
-            />
-            <div class="flex justify-center">
-              <AppButtonSecondary
-                @click="fileInput?.click()"
-              >
-                Seleccionar Imagen
-              </AppButtonSecondary>
-            </div>
+        <div v-if="!selectedImage" class="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-orange-600 transition-colors">
+          <UIcon name="i-heroicons-camera" class="w-12 h-12 text-slate-400 mx-auto mb-3" />
+          <p class="text-slate-400 mb-2">Subir foto de perfil</p>
+          <p class="text-slate-500 text-xs mb-2">Se convertirá automáticamente a WebP para mejor calidad</p>
+          <input
+            type="file"
+            @change="handleImageUpload"
+            accept="image/*"
+            class="hidden"
+            ref="fileInput"
+          />
+          <div class="flex justify-center">
+            <AppButtonSecondary
+              @click="fileInput?.click()"
+            >
+              Seleccionar Imagen
+            </AppButtonSecondary>
           </div>
-          <div v-else class="relative">
-            <div class="relative inline-block">
-              <img 
-                :src="selectedImage" 
-                alt="Preview" 
-                class="w-20 h-20 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                @click="removeImage"
-                title="Haz clic para eliminar la imagen"
-              />
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <UIcon name="i-heroicons-trash" class="w-6 h-6 text-red-400" />
-              </div>
-            </div>
+        </div>
+        <div v-else class="relative inline-block">
+          <img 
+            :src="selectedImage" 
+            alt="Preview" 
+            class="w-60 h-60 rounded-full object-cover cursor-pointer group"
+            @click="removeImage"
+            title="Haz clic para eliminar la imagen"
+          />
+          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+            <UIcon name="i-heroicons-trash" class="w-8 h-8 text-white" />
           </div>
         </div>
         <p v-if="fieldErrors.profilePhoto" class="text-red-400 text-xs mt-1">{{ fieldErrors.profilePhoto }}</p>
@@ -430,6 +324,9 @@
 </template>
 
 <script setup lang="ts">
+import DatePickerInput from './DatePickerInput.vue'
+import { useCountryCitySelect } from '~/composables/useCountryCitySelect'
+
 interface UserFormData {
   firstName: string
   lastName: string
@@ -468,13 +365,6 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-// Use the country/city select composable
-const { countryOptions, stateOptions, cityOptions, onCountryChange, onStateChange, onCityChange } = useCountryCitySelect(
-  computed(() => formData.country),
-  computed(() => formData.state),
-  computed(() => formData.city)
-)
-
 // Reactive state
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -486,20 +376,6 @@ const fileInput = ref<HTMLInputElement>()
 // Field-specific errors
 const fieldErrors = reactive<Record<string, string>>({})
 const errorBlock = ref<HTMLElement | null>(null)
-
-// Date picker state
-const showDatePicker = ref(false)
-const selectedMonth = ref(new Date().getMonth().toString())
-const selectedYear = ref(new Date().getFullYear().toString())
-const datePickerRef = ref<HTMLElement>()
-
-// Date picker constants
-const monthNames = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-]
-
-const weekDaysShort = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 const formData = reactive<UserFormData>({
   firstName: props.initialData.firstName || '',
@@ -515,6 +391,13 @@ const formData = reactive<UserFormData>({
   profilePhoto: props.initialData.profilePhoto || '',
   howDidYouHearAboutUs: props.initialData.howDidYouHearAboutUs || ''
 })
+
+// Use the country/city select composable AFTER formData is initialized
+const { countryOptions, stateOptions, cityOptions, onCountryChange, onStateChange, onCityChange } = useCountryCitySelect(
+  computed(() => formData.country),
+  computed(() => formData.state),
+  computed(() => formData.city)
+)
 
 // Initialize image preview if there's initial data
 if (props.initialData.profilePhoto) {
@@ -537,29 +420,7 @@ const howDidYouHearOptions = computed(() => [
   { value: 'otro', label: 'Otro' }
 ])
 
-// Date picker computed properties
-const availableYears = computed(() => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let year = currentYear - 100; year <= currentYear; year++) {
-    years.push(year)
-  }
-  return years.reverse()
-})
 
-const monthOptions = computed(() => {
-  return monthNames.map((month, index) => ({
-    value: index.toString(),
-    label: month
-  }))
-})
-
-const yearOptions = computed(() => {
-  return availableYears.value.map(year => ({
-    value: year.toString(),
-    label: year.toString()
-  }))
-})
 
 // Check if there are any field errors
 const hasFieldErrors = computed(() => {
@@ -571,184 +432,9 @@ const allFieldErrorMessages = computed(() => {
   return Object.values(fieldErrors).filter(error => error.length > 0)
 })
 
-const calendarDates = computed(() => {
-  const year = parseInt(selectedYear.value)
-  const month = parseInt(selectedMonth.value)
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
-  const startDate = new Date(firstDay)
-  startDate.setDate(firstDay.getDate() - firstDay.getDay())
-  
-  const dates = []
-  const today = new Date()
-  const selectedDate = parseDateFromInput(formData.birthDate)
-  
-  for (let i = 0; i < 42; i++) {
-    const date = new Date(startDate)
-    date.setDate(startDate.getDate() + i)
-    
-    const isCurrentMonth = date.getMonth() === month
-    const isToday = date.toDateString() === today.toDateString()
-    const isSelected = selectedDate && 
-      date.getDate() === selectedDate.getDate() &&
-      date.getMonth() === selectedDate.getMonth() &&
-      date.getFullYear() === selectedDate.getFullYear()
-    
-    dates.push({
-      day: date.getDate(),
-      month: date.getMonth(),
-      year: date.getFullYear(),
-      isCurrentMonth,
-      isToday,
-      isSelected,
-      fullDate: date
-    })
-  }
-  
-  return dates
-})
 
-// Manejar teclas especiales para borrado fluido
-const handleKeyDown = (event: KeyboardEvent) => {
-  const target = event.target as HTMLInputElement
-  const key = event.key
-  
-  // Permitir teclas de navegación y control
-  if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
-    // Para Backspace, si estamos en una posición de "/" permitir borrar el carácter anterior
-    if (key === 'Backspace') {
-      const cursorPosition = target.selectionStart || 0
-      const value = target.value
-      
-      // Si el cursor está después de un "/" borrar tanto el "/" como el número anterior
-      if ((cursorPosition === 3 || cursorPosition === 6) && value[cursorPosition - 1] === '/') {
-        event.preventDefault()
-        const newValue = value.substring(0, cursorPosition - 2) + value.substring(cursorPosition)
-        formData.birthDate = newValue
-        target.value = newValue
-        
-        // Posicionar cursor correctamente
-        nextTick(() => {
-          target.setSelectionRange(cursorPosition - 2, cursorPosition - 2)
-        })
-        return
-      }
-    }
-    return
-  }
-  
-  // Solo permitir números
-  if (!/\d/.test(key)) {
-    event.preventDefault()
-  }
-}
 
-// Formatear fecha de nacimiento mientras se escribe
-const formatBirthDate = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  let value = target.value.replace(/\D/g, '') // Solo números
-  
-  if (value.length >= 2) {
-    value = value.substring(0, 2) + '/' + value.substring(2)
-  }
-  if (value.length >= 5) {
-    value = value.substring(0, 5) + '/' + value.substring(5, 9)
-  }
-  
-  formData.birthDate = value
-  target.value = value
-  
-  // Sync with date picker
-  syncDatePickerWithInput()
-}
 
-// Date picker utility functions
-const parseDateFromInput = (dateString: string): Date | null => {
-  if (!dateString || dateString.length !== 10) return null
-  
-  const [day, month, year] = dateString.split('/').map(Number)
-  if (!day || !month || !year) return null
-  
-  const date = new Date(year, month - 1, day)
-  if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
-    return null
-  }
-  
-  return date
-}
-
-const formatDateForDisplay = (date: Date): string => {
-  const day = date.getDate().toString().padStart(2, '0')
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
-}
-
-const syncDatePickerWithInput = () => {
-  const date = parseDateFromInput(formData.birthDate)
-  if (date) {
-    selectedMonth.value = date.getMonth().toString()
-    selectedYear.value = date.getFullYear().toString()
-  }
-}
-
-// Date picker event handlers
-const toggleDatePicker = () => {
-  showDatePicker.value = !showDatePicker.value
-  if (showDatePicker.value) {
-    syncDatePickerWithInput()
-  }
-}
-
-const closeDatePicker = () => {
-  showDatePicker.value = false
-}
-
-const handleDateInputBlur = (event: Event) => {
-  // No cerramos automáticamente en blur para permitir interacción con el datepicker
-}
-
-const changeMonth = (direction: number) => {
-  const currentMonth = parseInt(selectedMonth.value)
-  const currentYear = parseInt(selectedYear.value)
-  const newMonth = currentMonth + direction
-  
-  if (newMonth < 0) {
-    selectedMonth.value = '11'
-    selectedYear.value = (currentYear - 1).toString()
-  } else if (newMonth > 11) {
-    selectedMonth.value = '0'
-    selectedYear.value = (currentYear + 1).toString()
-  } else {
-    selectedMonth.value = newMonth.toString()
-  }
-}
-
-const updateCalendar = () => {
-  // Esta función se llama cuando se cambian los selects de mes/año
-  // No necesita hacer nada especial ya que las computed properties se actualizan automáticamente
-}
-
-// CustomSelect handlers for date picker
-const handleMonthChange = (newMonth: string) => {
-  selectedMonth.value = newMonth
-  // Keep date picker open when changing month
-  showDatePicker.value = true
-}
-
-const handleYearChange = (newYear: string) => {
-  selectedYear.value = newYear
-  // Keep date picker open when changing year
-  showDatePicker.value = true
-}
-
-const selectDate = (dateInfo: any) => {
-  const date = new Date(dateInfo.year, dateInfo.month, dateInfo.day)
-  formData.birthDate = formatDateForDisplay(date)
-  selectedMonth.value = dateInfo.month.toString()
-  selectedYear.value = dateInfo.year.toString()
-  showDatePicker.value = false
-}
 
 // Calcular edad basada en fecha de nacimiento
 const calculateAge = (birthDate: string): number => {
@@ -902,27 +588,7 @@ const handleSubmit = async () => {
   }
 }
 
-// Handle clicks outside date picker
-const handleClickOutside = (event: MouseEvent) => {
-  if (showDatePicker.value && datePickerRef.value) {
-    const target = event.target as HTMLElement
-    const inputElement = document.getElementById('birthDate')
-    
-    // Check if click is outside both the input and the datepicker
-    if (!datePickerRef.value.contains(target) && !inputElement?.contains(target)) {
-      showDatePicker.value = false
-    }
-  }
-}
 
-// Setup event listeners
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 
 // Clear field errors
 const clearFieldErrors = () => {

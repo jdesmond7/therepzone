@@ -121,7 +121,7 @@
               <div class="space-y-6">
                 <!-- Programming Name -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Nombre de la Programación</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Nombre de la Programación</label>
                   <AppInput
                     v-model="programmingForm.name"
                     placeholder="Ej: Programación Semanal de Fuerza"
@@ -131,7 +131,7 @@
 
                 <!-- Frequency -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Frecuencia</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Frecuencia</label>
                   <CustomSelect
                     v-model="programmingForm.frequency"
                     :options="frequencyOptions"
@@ -141,7 +141,7 @@
 
                 <!-- Start Date -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Fecha de Inicio</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Fecha de Inicio</label>
                   <DatePickerInput
                     v-model="programmingForm.startDate"
                     placeholder="Selecciona la fecha de inicio"
@@ -150,7 +150,7 @@
 
                 <!-- Weekly Schedule -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Programación Semanal</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Programación Semanal</label>
                   <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
                     <div v-for="day in weekDays" :key="day" class="space-y-2">
                       <div class="font-medium text-slate-300 text-sm">{{ day }}</div>
@@ -166,7 +166,7 @@
 
                 <!-- Notes -->
                 <div>
-                  <label class="block text-sm font-medium text-white mb-2">Notas Adicionales</label>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Notas Adicionales</label>
                   <AppTextarea
                     v-model="programmingForm.notes"
                     :rows="3"

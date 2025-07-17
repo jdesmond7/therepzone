@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore'
 import { getFirebaseDb } from './firebase'
 
 export interface Coach {
@@ -68,6 +68,10 @@ export interface CreateCoachData {
   addressLine2?: string
   postalCode?: string
   biography?: string
+  howDidYouHearAboutUs?: string
+  startDate?: string
+  profileCompleted?: boolean
+  authUid?: string
   education?: Array<{
     degree: string
     institution: string
@@ -195,12 +199,24 @@ export const useCoaches = () => {
         fullName: coachData.fullName || `${coachData.firstName} ${coachData.lastName}`.trim(),
         presentationTitle: coachData.presentationTitle || 'Fitness Coach',
         role: 'coach' as const,
+        // Campos adicionales del perfil
+        nickname: coachData.nickname,
+        birthDate: coachData.birthDate,
+        gender: coachData.gender,
+        country: coachData.country,
+        city: coachData.city,
+        howDidYouHearAboutUs: coachData.howDidYouHearAboutUs,
+        startDate: coachData.startDate,
+        profileCompleted: coachData.profileCompleted,
+        authUid: coachData.authUid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
       
-      const docRef = await addDoc(coachesCollection(), coachDoc)
-      return { success: true, coachId: docRef.id }
+      // Usar setDoc con el UID personalizado en lugar de addDoc
+      const docRef = doc(getDb(), 'coaches', coachData.uid)
+      await setDoc(docRef, coachDoc)
+      return { success: true, coachId: coachData.uid }
     } catch (error) {
       console.error('Error creating coach:', error)
       return { success: false, error: 'Error al crear el coach' }

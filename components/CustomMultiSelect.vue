@@ -16,6 +16,7 @@
         :tabindex="disabled ? -1 : 0"
         @focus="handleFocus"
         @blur="handleBlur"
+        ref="buttonRef"
       >
         <div class="flex flex-nowrap gap-1 items-center flex-1 min-h-[24px] overflow-hidden" ref="badgeContainer">
           <template v-if="selectedOptions.length">
@@ -52,57 +53,60 @@
       </button>
     </div>
     <!-- Dropdown menu -->
-    <Transition
-      enter-active-class="transition ease-out duration-200"
-      enter-from-class="opacity-0 scale-95"
-      enter-to-class="opacity-100 scale-100"
-      leave-active-class="transition ease-in duration-150"
-      leave-from-class="opacity-100 scale-100"
-      leave-to-class="opacity-0 scale-95"
-    >
-      <div
-        v-if="isOpen"
-        class="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition ease-out duration-200"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
       >
-        <!-- Search input inside dropdown -->
-        <div class="px-4 pt-3 pb-2 bg-slate-800 sticky top-0 z-10">
-          <input
-            ref="searchInput"
-            v-model="search"
-            @keydown.stop
-            @keydown.enter.prevent
-            @keydown.esc="closeDropdown"
-            type="text"
-            class="w-full bg-transparent border-none outline-none text-white text-base px-0 py-0 focus:ring-0 focus:border-none placeholder-slate-400"
-            placeholder="Buscar..."
-            autocomplete="off"
-          />
-          <div class="border-b border-slate-700 mt-2"></div>
-        </div>
-        <div class="py-2">
-          <button
-            v-for="option in filteredOptions"
-            :key="option.value"
-            type="button"
-            @click="toggleOption(option.value)"
-            class="w-full px-4 py-2 text-left hover:bg-slate-700 focus:bg-slate-700 focus:outline-none transition-colors duration-150 text-white flex items-center justify-between"
-            :class="{
-              'bg-slate-700': (modelValue as string[]).includes(option.value),
-              'opacity-50 cursor-not-allowed': option.disabled
-            }"
-            :disabled="option.disabled"
-          >
-            <span>{{ option.label }}</span>
-            <UIcon 
-              v-if="(modelValue as string[]).includes(option.value)"
-              name="i-heroicons-check" 
-              class="w-4 h-4 text-white"
+        <div
+          v-if="isOpen"
+          class="fixed z-50 w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
+          :style="dropdownStyle"
+        >
+          <!-- Search input inside dropdown -->
+          <div class="px-4 pt-3 pb-2 bg-slate-800 sticky top-0 z-10">
+            <input
+              ref="searchInput"
+              v-model="search"
+              @keydown.stop
+              @keydown.enter.prevent
+              @keydown.esc="closeDropdown"
+              type="text"
+              class="w-full bg-transparent border-none outline-none text-white text-base px-0 py-0 focus:ring-0 focus:border-none placeholder-slate-400"
+              placeholder="Buscar..."
+              autocomplete="off"
             />
-          </button>
-          <div v-if="!filteredOptions.length" class="px-4 py-2 text-slate-400 text-sm">Sin opciones</div>
+            <div class="border-b border-slate-700 mt-2"></div>
+          </div>
+          <div class="py-2">
+            <button
+              v-for="option in filteredOptions"
+              :key="option.value"
+              type="button"
+              @click="toggleOption(option.value)"
+              class="w-full px-4 py-2 text-left hover:bg-slate-700 focus:bg-slate-700 focus:outline-none transition-colors duration-150 text-white flex items-center justify-between"
+              :class="{
+                'bg-slate-700': (modelValue as string[]).includes(option.value),
+                'opacity-50 cursor-not-allowed': option.disabled
+              }"
+              :disabled="option.disabled"
+            >
+              <span>{{ option.label }}</span>
+              <UIcon 
+                v-if="(modelValue as string[]).includes(option.value)"
+                name="i-heroicons-check" 
+                class="w-4 h-4 text-white"
+              />
+            </button>
+            <div v-if="!filteredOptions.length" class="px-4 py-2 text-slate-400 text-sm">Sin opciones</div>
+          </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -255,6 +259,33 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside, true)
   window.removeEventListener('custom-select-or-multiselect-open', handleGlobalOpen as EventListener)
+})
+
+const buttonRef = ref<HTMLElement>()
+const dropdownStyle = ref('')
+
+watch(isOpen, (open) => {
+  if (open) {
+    nextTick(() => {
+      updateDropdownPosition()
+      window.addEventListener('scroll', updateDropdownPosition, true)
+      window.addEventListener('resize', updateDropdownPosition)
+    })
+  } else {
+    window.removeEventListener('scroll', updateDropdownPosition, true)
+    window.removeEventListener('resize', updateDropdownPosition)
+  }
+})
+
+function updateDropdownPosition() {
+  if (!buttonRef.value) return
+  const rect = buttonRef.value.getBoundingClientRect()
+  dropdownStyle.value = `z-index: 9999999; position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px;`
+}
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateDropdownPosition, true)
+  window.removeEventListener('resize', updateDropdownPosition)
 })
 </script>
 

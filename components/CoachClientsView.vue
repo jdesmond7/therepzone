@@ -20,8 +20,8 @@
       <template #cell-name="{ item, value }">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0">
-            <span v-if="item.profilePhoto">
-              <img :src="item.profilePhoto" class="w-10 h-10 rounded-full object-cover" />
+            <span v-if="item.profileImageUrl">
+              <img :src="item.profileImageUrl" class="w-10 h-10 rounded-full object-cover" />
             </span>
             <span v-else class="text-white font-bold text-sm">
               {{ getClientDisplayName(item).charAt(0).toUpperCase() }}
@@ -66,8 +66,8 @@
         >
           <div class="flex items-center gap-4 mb-4">
             <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
-              <span v-if="client.profilePhoto">
-                <img :src="client.profilePhoto" class="w-12 h-12 rounded-full object-cover" />
+              <span v-if="client.profileImageUrl">
+                <img :src="client.profileImageUrl" class="w-12 h-12 rounded-full object-cover" />
               </span>
               <span v-else class="text-white font-bold text-lg">
                 {{ getClientDisplayName(client).charAt(0).toUpperCase() }}
@@ -151,7 +151,7 @@
               <h4 class="font-bold text-white mb-3">Información Personal</h4>
               <div class="flex items-center gap-6">
                 <div class="flex-shrink-0">
-                  <img v-if="selectedClient.profilePhoto" :src="selectedClient.profilePhoto" class="w-20 h-20 rounded-full object-cover border-2 border-slate-600" />
+                  <img v-if="selectedClient.profileImageUrl" :src="selectedClient.profileImageUrl" class="w-20 h-20 rounded-full object-cover border-2 border-slate-600" />
                   <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-3xl font-bold">
                     {{ getClientDisplayName(selectedClient).charAt(0).toUpperCase() }}
                   </div>
@@ -246,16 +246,17 @@
 </template>
 
 <script setup lang="ts">
-import { useUsers, type User } from '~/composables/firestore'
+import { useAthletes, type Athlete } from '~/composables/athletes'
+import { useCoaches } from '~/composables/coaches'
 import DataTable from '~/components/DataTable.vue'
 import { useRouter } from 'vue-router'
 
 const { user } = useAuth()
-const clients = ref<User[]>([])
+const clients = ref<Athlete[]>([])
 const isLoading = ref(true)
 const showAddClientModal = ref(false)
 const isCreatingClient = ref(false)
-const selectedClient = ref<User | null>(null)
+const selectedClient = ref<Athlete | null>(null)
 
 // Table columns configuration
 const tableColumns = [
@@ -291,7 +292,7 @@ const tableColumns = [
 ]
 
 // Helper function to get client display name
-const getClientDisplayName = (client: User): string => {
+const getClientDisplayName = (client: Athlete): string => {
   if (client.firstName && client.lastName) {
     return `${client.firstName} ${client.lastName}`
   }
@@ -321,34 +322,43 @@ const loadClients = async () => {
 
   isLoading.value = true
   try {
-    const { getClientsByCoach } = useUsers()
-    const result = await getClientsByCoach(user.value.uid)
+    // Primero obtener el perfil del coach para obtener su UID personalizado
+    const { getCoachByAuthUID } = useCoaches()
+    const coachResult = await getCoachByAuthUID(user.value.uid)
     
-    if (result.success && result.clients) {
-      console.log('[CLIENTES RAW]', result.clients)
-      // Forzar array plano
-      let rawClients = Array.isArray(result.clients)
-        ? result.clients
-        : Object.values(result.clients)
-      console.log('[CLIENTES ARRAY PLANO]', rawClients)
+    if (!coachResult.success || !coachResult.coach) {
+      console.error('❌ No se pudo obtener el perfil del coach')
+      clients.value = []
+      return
+    }
+    
+    const coachUid = coachResult.coach.uid
+    console.log('🔍 Buscando atletas para coach UID:', coachUid)
+    
+    const { getAthletesByCoach } = useAthletes()
+    const result = await getAthletesByCoach(coachUid)
+    
+    if (result.success && result.athletes) {
+      console.log('[ATLETAS RAW]', result.athletes)
       // Add computed fields for table display
-      const mappedClients = rawClients.map((client: any) => {
-        const name = client.nickname || client.fullName || (client.firstName && client.lastName ? client.firstName + ' ' + client.lastName : client.email || 'Sin nombre')
+      const mappedClients = result.athletes.map((athlete: any) => {
+        const name = athlete.nickname || athlete.fullName || (athlete.firstName && athlete.lastName ? athlete.firstName + ' ' + athlete.lastName : athlete.email || 'Sin nombre')
         return {
-          ...client,
-          id: client.id || client.uid || client.email || name,
+          ...athlete,
+          id: athlete.uid || athlete.email || name,
           name,
           status: 'Activo',
-          assignedWorkouts: Array.isArray(client.assignedWorkouts) ? client.assignedWorkouts : [],
-          location: [client.city, client.country].filter(Boolean).join(', ') || 'No especificada',
-          createdAt: client.createdAt || client.updatedAt || new Date()
+          assignedWorkouts: Array.isArray(athlete.assignedWorkouts) ? athlete.assignedWorkouts : [],
+          location: [athlete.city, athlete.country].filter(Boolean).join(', ') || 'No especificada',
+          createdAt: athlete.createdAt || athlete.updatedAt || new Date()
         }
       })
-      console.log('[CLIENTES TABLA]', mappedClients)
+      console.log('[ATLETAS TABLA]', mappedClients)
       clients.value = []
       await nextTick()
       clients.value = mappedClients
     } else {
+      console.log('❌ No se encontraron atletas o error en la consulta:', result.error)
       clients.value = []
     }
   } catch (error) {
@@ -428,16 +438,16 @@ const handleCreateClient = async (userData: any) => {
   }
 }
 
-const viewClientDetails = (client: User) => {
+const viewClientDetails = (client: Athlete) => {
   selectedClient.value = client
 }
 
-const editClient = (client: User) => {
+const editClient = (client: Athlete) => {
   // TODO: Implement edit client functionality
   console.log('Edit client:', client.fullName)
 }
 
-const deleteClient = async (client: User) => {
+const deleteClient = async (client: Athlete) => {
   if (!confirm(`¿Estás seguro de que quieres eliminar al cliente "${getClientDisplayName(client)}"?`)) {
     return
   }
@@ -458,7 +468,7 @@ const deleteClient = async (client: User) => {
   }
 }
 
-const assignWorkout = (client: User) => {
+const assignWorkout = (client: Athlete) => {
   // TODO: Implement workout assignment modal
   console.log('Assign workout to:', client.fullName)
 }
