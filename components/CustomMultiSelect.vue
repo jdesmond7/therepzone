@@ -28,7 +28,7 @@
             >
               {{ option.label }}
               <button type="button" @click.stop="removeOption(option.value)" class="focus:outline-none hover:cursor-pointer">
-                <svg class="w-3 h-3 text-slate-400 hover:text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M6 14L6"/></svg>
+                <svg class="w-3 h-3 text-slate-400 hover:text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M14 6l-8 8"/></svg>
               </button>
             </span>
             <span
@@ -64,7 +64,7 @@
       >
         <div
           v-if="isOpen"
-          class="fixed z-50 w-full mt-2 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
+          class="fixed bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scrollbar backdrop-blur-sm"
           :style="dropdownStyle"
         >
           <!-- Search input inside dropdown -->
@@ -280,7 +280,12 @@ watch(isOpen, (open) => {
 function updateDropdownPosition() {
   if (!buttonRef.value) return
   const rect = buttonRef.value.getBoundingClientRect()
-  dropdownStyle.value = `z-index: 9999999; position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px;`
+  
+  // Check if we're inside a modal and adjust z-index accordingly
+  const isInsideModal = buttonRef.value.closest('[style*="z-index: 9999"], [style*="z-[9999]"], [class*="z-[9999]"]')
+  const zIndex = isInsideModal ? 10000 : 50
+  
+  dropdownStyle.value = `z-index: ${zIndex}; position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px; background-color: rgb(30 41 59 / 0.95); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(71, 85, 105, 0.5);`
 }
 
 onUnmounted(() => {

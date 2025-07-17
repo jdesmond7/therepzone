@@ -156,7 +156,7 @@
 
     <!-- Create/Edit Exercise Modal -->
     <transition name="modal-fade">
-      <div v-if="showEditModalBg" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div v-if="showEditModalBg" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50" @click="closeEditModal"></div>
         <transition name="modal-slide">
           <div v-if="showEditModalContent && (showCreateModal || editingExercise)" @click.stop class="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -318,7 +318,7 @@
 
     <!-- Exercise Details Modal -->
     <transition name="modal-fade">
-      <div v-if="showDetailsModalBg" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div v-if="showDetailsModalBg" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/50" @click="closeDetailsModal"></div>
         <transition name="modal-slide">
           <div v-if="showDetailsModalContent && selectedExercise" @click.stop class="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -425,7 +425,7 @@
     </transition>
 
     <!-- Fullscreen Image Modal -->
-    <div v-if="fullscreenImage" @click="fullscreenImage = null" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4">
+    <div v-if="fullscreenImage" @click="fullscreenImage = null" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[99999] p-4">
       <div class="relative max-w-full max-h-full">
         <button 
           @click="fullscreenImage = null"

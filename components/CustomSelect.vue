@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" ref="selectContainer" style="z-index: 9999999;">
+  <div class="relative" ref="selectContainer">
     <!-- Main select button -->
     <button
       type="button"
@@ -237,7 +237,12 @@ watch(isOpen, (open) => {
 function updateDropdownPosition() {
   if (!buttonRef.value) return
   const rect = buttonRef.value.getBoundingClientRect()
-  dropdownStyle.value = `z-index: 9999999; position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px; background-color: rgb(30 41 59 / 0.95); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(71, 85, 105, 0.5);`
+  
+  // Check if we're inside a modal and adjust z-index accordingly
+  const isInsideModal = buttonRef.value.closest('[style*="z-index: 9999"], [style*="z-[9999]"], [class*="z-[9999]"]')
+  const zIndex = isInsideModal ? 10000 : 50
+  
+  dropdownStyle.value = `z-index: ${zIndex}; position: fixed; left: ${rect.left}px; top: ${rect.bottom + 4}px; width: ${rect.width}px; background-color: rgb(30 41 59 / 0.95); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(71, 85, 105, 0.5);`
 }
 
 onMounted(() => {
@@ -303,19 +308,19 @@ onMounted(() => {
 /* Ensure dropdowns are always on top */
 .relative {
   position: relative;
-  z-index: 9999999;
+  z-index: 50;
 }
 
 /* Force the dropdown to be above everything */
 .absolute {
   position: absolute !important;
-  z-index: 9999999 !important;
+  z-index: 50 !important;
   isolation: isolate;
 }
 
 /* Additional stacking context for the container */
 .relative[style*="z-index"] {
   position: relative !important;
-  z-index: 9999999 !important;
+  z-index: 50 !important;
 }
 </style> 
