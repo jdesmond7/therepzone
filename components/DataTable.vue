@@ -1,11 +1,85 @@
 <template>
   <div class="space-y-4">
     <!-- Table Controls -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <!-- Left side: Search and Filters -->
-      <div class="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-4 sm:flex-1">
+    <div class="flex flex-col gap-4">
+      <!-- Top row: Controls (Filters and Views) - Mobile first -->
+      <div class="flex flex-col sm:hidden gap-4">
+        <!-- Controls row -->
+        <div class="flex items-center justify-between w-full">
+          <!-- Filter Button (Left) -->
+          <div class="relative">
+            <button
+              @click="toggleFilterMenu"
+              class="w-12 h-12 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg text-white hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
+              title="Filtros"
+            >
+              <UIcon name="i-heroicons-funnel" class="w-5 h-5" />
+            </button>
+            
+            <!-- Filter Menu Dropdown -->
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+              >
+                <div
+                  v-if="showFilterMenu"
+                  class="fixed bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl backdrop-blur-sm z-50 filter-dropdown"
+                  :style="filterDropdownStyle"
+                >
+                  <div class="p-4">
+                    <h3 class="text-sm font-medium text-white mb-3">Filtros de columna</h3>
+                    <div class="space-y-2">
+                      <div
+                        v-for="column in availableColumns"
+                        :key="column.key"
+                        class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer"
+                        @click="toggleColumnFilter(column)"
+                      >
+                        <RoundedCheckbox
+                          :model-value="isColumnFiltered(column.key)"
+                          @update:model-value="toggleColumnFilter(column)"
+                          @click.stop
+                        />
+                        <span class="text-sm text-slate-300">{{ column.label }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </Teleport>
+          </div>
+          
+          <!-- View Toggle (Right) -->
+          <div class="flex items-center gap-2">
+            <button
+              @click="viewMode = 'table'"
+              :class="viewMode === 'table' ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-800 text-slate-400 border-slate-700'"
+              class="w-12 h-12 flex items-center justify-center border rounded-lg hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
+              title="Vista de tabla"
+            >
+              <UIcon name="i-heroicons-table-cells" :class="viewMode === 'table' ? 'w-5 h-5 text-white' : 'w-5 h-5 text-slate-400'" />
+            </button>
+            <button
+              @click="viewMode = 'grid'"
+              :class="viewMode === 'grid' ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-800 text-slate-400 border-slate-700'"
+              class="w-12 h-12 flex items-center justify-center border rounded-lg hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
+              title="Vista de cuadrícula"
+            >
+              <UIcon name="i-heroicons-squares-2x2" :class="viewMode === 'grid' ? 'w-5 h-5 text-white' : 'w-5 h-5 text-slate-400'" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second row: Search - Mobile first -->
+      <div class="flex flex-col sm:hidden gap-4">
         <!-- Search -->
-        <div class="flex-1 max-w-sm">
+        <div class="w-full">
           <AppInput
             v-model="searchTerm"
             placeholder="Buscar..."
@@ -17,39 +91,187 @@
             </template>
           </AppInput>
         </div>
-        
-        <!-- Additional Filters Slot -->
-        <slot name="filters" />
       </div>
 
-      <!-- Right side controls -->
-      <div class="flex items-center gap-2">
-        <!-- Additional Actions Slot -->
-        <slot name="actions" />
-        
-        <!-- View Toggle -->
-        <AppButtonSecondary
-          @click="viewMode = 'table'"
-          :class="viewMode === 'table' ? '!bg-slate-700 !text-white !border-slate-600' : ''"
-          class="!w-12 !h-12 !p-0 !min-w-12 !min-h-12"
-          title="Vista de tabla"
+      <!-- Third row: Actions (Create button, etc.) - Mobile first -->
+      <div class="flex flex-col sm:hidden gap-4">
+        <!-- Actions -->
+        <div class="w-full">
+          <slot name="actions" />
+        </div>
+      </div>
+
+      <!-- Desktop layout -->
+      <div class="hidden sm:flex sm:flex-row sm:items-center sm:justify-between gap-4">
+        <!-- Left side: Search -->
+        <div class="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-4 sm:flex-1">
+          <!-- Search -->
+          <div class="flex-1 max-w-sm">
+            <AppInput
+              v-model="searchTerm"
+              placeholder="Buscar..."
+              @input="handleSearch"
+              class="w-full"
+            >
+              <template #prefix>
+                <UIcon name="i-heroicons-magnifying-glass" class="w-4 h-4 text-slate-400" />
+              </template>
+            </AppInput>
+          </div>
+        </div>
+
+        <!-- Right side controls -->
+        <div class="flex items-center gap-2">
+          <!-- Filter Button -->
+          <div class="relative">
+            <button
+              @click="toggleFilterMenu"
+              class="w-12 h-12 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg text-white hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
+              title="Filtros"
+            >
+              <UIcon name="i-heroicons-funnel" class="w-5 h-5" />
+            </button>
+            
+            <!-- Filter Menu Dropdown -->
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+              >
+                <div
+                  v-if="showFilterMenu"
+                  class="fixed bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl backdrop-blur-sm z-50 filter-dropdown"
+                  :style="filterDropdownStyle"
+                >
+                  <div class="p-4">
+                    <h3 class="text-sm font-medium text-white mb-3">Filtros de columna</h3>
+                    <div class="space-y-2">
+                      <div
+                        v-for="column in availableColumns"
+                        :key="column.key"
+                        class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer"
+                        @click="toggleColumnFilter(column)"
+                      >
+                        <RoundedCheckbox
+                          :model-value="isColumnFiltered(column.key)"
+                          @update:model-value="toggleColumnFilter(column)"
+                          @click.stop
+                        />
+                        <span class="text-sm text-slate-300">{{ column.label }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </Teleport>
+          </div>
+          
+          <!-- View Toggle -->
+          <div class="flex items-center gap-2">
+            <button
+              @click="viewMode = 'table'"
+              :class="viewMode === 'table' ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-800 text-slate-400 border-slate-700'"
+              class="w-12 h-12 flex items-center justify-center border rounded-lg hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
+              title="Vista de tabla"
+            >
+              <UIcon name="i-heroicons-table-cells" :class="viewMode === 'table' ? 'w-5 h-5 text-white' : 'w-5 h-5 text-slate-400'" />
+            </button>
+            <button
+              @click="viewMode = 'grid'"
+              :class="viewMode === 'grid' ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-800 text-slate-400 border-slate-700'"
+              class="w-12 h-12 flex items-center justify-center border rounded-lg hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
+              title="Vista de cuadrícula"
+            >
+              <UIcon name="i-heroicons-squares-2x2" :class="viewMode === 'grid' ? 'w-5 h-5 text-white' : 'w-5 h-5 text-slate-400'" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Actions -->
+      <div class="hidden sm:flex sm:flex-row sm:items-center sm:justify-between gap-4">
+        <!-- Actions -->
+        <div class="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-4 sm:flex-1">
+          <slot name="actions" />
+        </div>
+      </div>
+
+      <!-- Bottom row: Active Filters -->
+      <div v-if="activeFilters.length > 0" class="flex flex-wrap gap-2">
+        <div
+          v-for="filter in activeFilters"
+          :key="filter.columnKey"
+          class="relative"
         >
-          <UIcon name="i-heroicons-table-cells" class="w-5 h-5" />
-        </AppButtonSecondary>
-        <AppButtonSecondary
-          @click="viewMode = 'grid'"
-          :class="viewMode === 'grid' ? '!bg-slate-700 !text-white !border-slate-600' : ''"
-          class="!w-12 !h-12 !p-0 !min-w-12 !min-h-12"
-          title="Vista de cuadrícula"
-        >
-          <UIcon name="i-heroicons-squares-2x2" class="w-5 h-5" />
-        </AppButtonSecondary>
+          <div class="relative">
+            <button
+              @click="toggleFilterDropdown(filter.columnKey)"
+              :data-filter="filter.columnKey"
+              class="flex items-center gap-2 bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 cursor-pointer hover:bg-slate-600/50 transition-colors"
+            >
+              <span class="text-sm text-slate-300">{{ filter.columnLabel }}</span>
+              <span v-if="filter.selectedOptions.length > 0" class="text-xs bg-slate-600 text-white rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
+                {{ filter.selectedOptions.length }}
+              </span>
+              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-slate-400" />
+            </button>
+            
+            <!-- Filter Options Dropdown -->
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+              >
+                <div
+                  v-if="filter.showDropdown"
+                  class="fixed bg-slate-800/95 border border-slate-600 rounded-lg shadow-2xl backdrop-blur-sm z-50"
+                  :style="getFilterDropdownStyle(filter.columnKey)"
+                  @click.stop
+                >
+                  <div class="p-4">
+                    <div class="mb-3">
+                      <h4 class="text-sm font-medium text-white">{{ filter.columnLabel }}</h4>
+                    </div>
+                    
+                    <!-- Filter Options -->
+                    <div class="space-y-2">
+                      <div
+                        v-for="option in getFilterOptions(filter.columnKey)"
+                        :key="option.value"
+                        class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer"
+                        @click.stop="toggleFilterOption(filter.columnKey, option.value)"
+                      >
+                        <RoundedCheckbox
+                          :model-value="isFilterOptionSelected(filter.columnKey, option.value)"
+                          @update:model-value="toggleFilterOption(filter.columnKey, option.value)"
+                          @click.stop
+                          @mousedown.stop
+                        />
+                        <span class="text-sm text-slate-300">{{ option.label }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </Teleport>
+          </div>
+        </div>
       </div>
     </div>
 
+
+
     <!-- Table View -->
     <div v-if="viewMode === 'table'" class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden">
-      <div class="overflow-x-auto">
+      <div :class="filteredData.length === 0 ? '' : 'overflow-x-auto'">
         <table class="w-full">
           <thead class="bg-slate-700/50">
             <tr>
@@ -110,7 +332,7 @@
         <div class="text-6xl mb-4">📋</div>
         <h3 class="text-xl font-bold text-white mb-2">No se encontraron resultados</h3>
         <p class="text-slate-400">
-          {{ searchTerm ? 'Prueba ajustando los filtros de búsqueda' : 'No hay datos disponibles' }}
+          {{ searchTerm || activeFilters.length > 0 ? 'Prueba ajustando los filtros de búsqueda' : 'No hay datos disponibles' }}
         </p>
       </div>
     </div>
@@ -183,6 +405,7 @@
 
 <script setup lang="ts">
 import AppButtonSecondary from '~/components/AppButtonSecondary.vue'
+import RoundedCheckbox from '~/components/RoundedCheckbox.vue'
 
 interface Column {
   key: string
@@ -221,6 +444,15 @@ const sortKey = ref('')
 const sortDirection = ref<'asc' | 'desc'>('asc')
 const viewMode = ref<'table' | 'grid'>('table')
 
+// Filter state
+const showFilterMenu = ref(false)
+const activeFilters = ref<Array<{
+  columnKey: string
+  columnLabel: string
+  selectedOptions: string[]
+  showDropdown: boolean
+}>>([])
+
 // Column resizing state
 const columnWidths = ref<Record<string, string>>({})
 const isResizing = ref<string | null>(null)
@@ -242,6 +474,16 @@ const filteredData = computed(() => {
       })
     })
   }
+  
+  // Apply column filters
+  activeFilters.value.forEach(filter => {
+    if (filter.selectedOptions.length > 0) {
+      filtered = filtered.filter(item => {
+        const value = String(item[filter.columnKey] || '')
+        return filter.selectedOptions.includes(value)
+      })
+    }
+  })
   
   // Apply sorting
   if (sortKey.value && props.sortable) {
@@ -278,6 +520,32 @@ const paginatedData = computed(() => {
   if (!props.showPagination) return filteredData.value
   return filteredData.value.slice(startIndex.value, endIndex.value)
 })
+
+// Filter computed properties
+const availableColumns = computed(() => props.columns)
+
+const isColumnFiltered = (columnKey: string) => {
+  return activeFilters.value.some(filter => filter.columnKey === columnKey)
+}
+
+const isFilterOptionSelected = (columnKey: string, optionValue: string) => {
+  const filter = activeFilters.value.find(f => f.columnKey === columnKey)
+  return filter?.selectedOptions.includes(optionValue) || false
+}
+
+const getFilterOptions = (columnKey: string) => {
+  const column = props.columns.find(col => col.key === columnKey)
+  if (!column) return []
+  
+  // Get unique values for this column
+  const uniqueValues = [...new Set(props.data.map(item => item[columnKey]).filter(val => val != null))]
+  
+  return uniqueValues.map(value => ({
+    value: String(value),
+    label: String(value),
+    count: props.data.filter(item => item[columnKey] === value).length
+  }))
+}
 
 const visiblePages = computed(() => {
   const pages: number[] = []
@@ -384,6 +652,156 @@ watch(() => props.data, () => {
 watch(searchTerm, () => {
   currentPage.value = 1
 })
+
+// Close filter menu when clicking outside
+onMounted(() => {
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement
+    
+    // Close main filter menu if clicking outside
+    if (!target.closest('[title="Filtros"]') && !target.closest('.filter-dropdown')) {
+      showFilterMenu.value = false
+    }
+    
+    // Close individual filter dropdowns if clicking outside
+    // Don't close if clicking on the badge itself or inside the dropdown
+    if (!target.closest('[data-filter]') && !target.closest('.filter-dropdown')) {
+      activeFilters.value.forEach(filter => {
+        filter.showDropdown = false
+      })
+    }
+  })
+})
+
+// Filter methods
+const filterDropdownStyle = ref('')
+
+const toggleFilterMenu = () => {
+  // Close all filter dropdowns when opening the main filter menu
+  activeFilters.value.forEach(filter => {
+    filter.showDropdown = false
+  })
+  
+  showFilterMenu.value = !showFilterMenu.value
+  if (showFilterMenu.value) {
+    nextTick(() => {
+      updateFilterDropdownPosition()
+    })
+  }
+}
+
+const updateFilterDropdownPosition = () => {
+  const button = document.querySelector('[title="Filtros"]') as HTMLElement
+  if (!button) return
+  
+  const rect = button.getBoundingClientRect()
+  const margin = 24
+  const width = 256 // 16rem = 256px
+  const viewportWidth = window.innerWidth
+  
+  // Calculate left position with margin
+  let left = rect.left
+  
+  // Check if dropdown would go beyond right edge
+  if (left + width > viewportWidth - margin) {
+    left = viewportWidth - width - margin
+  }
+  
+  // Ensure minimum margin from left edge
+  if (left < margin) {
+    left = margin
+  }
+  
+  const top = rect.bottom + 8
+  
+  filterDropdownStyle.value = `left: ${left}px; top: ${top}px; width: 16rem;`
+}
+
+const getFilterDropdownStyle = (columnKey: string) => {
+  const button = document.querySelector(`[data-filter="${columnKey}"]`) as HTMLElement
+  if (!button) return ''
+  
+  const rect = button.getBoundingClientRect()
+  const margin = 24
+  const width = 256 // 16rem = 256px
+  const viewportWidth = window.innerWidth
+  
+  // Calculate left position with margin
+  let left = rect.left
+  
+  // Check if dropdown would go beyond right edge
+  if (left + width > viewportWidth - margin) {
+    left = viewportWidth - width - margin
+  }
+  
+  // Ensure minimum margin from left edge
+  if (left < margin) {
+    left = margin
+  }
+  
+  const top = rect.bottom + 8
+  
+  return `left: ${left}px; top: ${top}px; width: 16rem;`
+}
+
+const closeFilterDropdown = (columnKey: string) => {
+  const filter = activeFilters.value.find(f => f.columnKey === columnKey)
+  if (filter) {
+    filter.showDropdown = false
+  }
+}
+
+const toggleColumnFilter = (column: Column) => {
+  const existingFilter = activeFilters.value.find(f => f.columnKey === column.key)
+  
+  if (existingFilter) {
+    // Remove filter
+    activeFilters.value = activeFilters.value.filter(f => f.columnKey !== column.key)
+  } else {
+    // Add filter
+    activeFilters.value.push({
+      columnKey: column.key,
+      columnLabel: column.label,
+      selectedOptions: [],
+      showDropdown: false
+    })
+  }
+}
+
+const toggleFilterDropdown = (columnKey: string) => {
+  const filter = activeFilters.value.find(f => f.columnKey === columnKey)
+  if (filter) {
+    // Close all other dropdowns
+    activeFilters.value.forEach(f => {
+      if (f.columnKey !== columnKey) {
+        f.showDropdown = false
+      }
+    })
+    
+    // Toggle current dropdown (open if closed, close if open)
+    filter.showDropdown = !filter.showDropdown
+  }
+}
+
+
+
+const toggleFilterOption = (columnKey: string, optionValue: string) => {
+  const filter = activeFilters.value.find(f => f.columnKey === columnKey)
+  if (filter) {
+    const index = filter.selectedOptions.indexOf(optionValue)
+    if (index > -1) {
+      filter.selectedOptions.splice(index, 1)
+    } else {
+      filter.selectedOptions.push(optionValue)
+    }
+  }
+}
+
+const removeFilter = (columnKey: string) => {
+  activeFilters.value = activeFilters.value.filter(f => f.columnKey !== columnKey)
+}
+
+
 
 console.log('[DATATABLE DATA]', JSON.parse(JSON.stringify(props.data)))
 </script>

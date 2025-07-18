@@ -12,6 +12,7 @@
         <AppButtonPrimary
           @click="showCreateModal = true"
           icon="i-heroicons-plus"
+          class="w-full sm:w-auto"
         >
           Crear Rutina
         </AppButtonPrimary>

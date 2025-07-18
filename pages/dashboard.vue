@@ -1,7 +1,73 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
-    <!-- Sidebar -->
-    <aside class="fixed top-0 left-0 w-64 h-screen flex flex-col z-30 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col md:flex-row">
+    <!-- Mobile Topbar -->
+    <header class="md:hidden fixed top-0 left-0 w-full z-40 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 h-16">
+      <TheLogo />
+      <button @click="showMobileMenu = true" class="w-10 h-10 flex items-center justify-center border border-white text-white bg-transparent rounded-lg transition-colors hover:bg-white/10 focus:outline-none">
+        <UIcon name="i-heroicons-bars-3" class="w-6 h-6" />
+      </button>
+    </header>
+    
+    <!-- Mobile Menu Drawer -->
+    <transition name="fade">
+      <div v-if="showMobileMenu" class="fixed inset-0 z-50 bg-slate-800 flex flex-col">
+        <div class="bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 h-16">
+          <TheLogo />
+          <button @click="showMobileMenu = false" class="text-white focus:outline-none">
+            <UIcon name="i-heroicons-x-mark" class="w-8 h-8" />
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          <!-- Bienvenida -->
+          <div class="mb-4 bg-slate-700/50 rounded-lg p-3 mt-4">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-slate-300 text-sm">👋 Hola,</span>
+              <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-orange-600 text-white rounded-full">
+                {{ userProfile?.role === 'client' ? 'Atleta' : (userProfile?.role || 'Cliente') }}
+              </span>
+            </div>
+            <div>
+              <span v-if="userProfile" class="text-white font-bold text-lg block max-w-xs break-words">
+                {{ userProfile?.nickname || userProfile?.fullName || userProfile?.email || userProfile?.uid || 'Cliente' }}
+              </span>
+            </div>
+          </div>
+          <!-- Links -->
+          <nav class="flex flex-col gap-2">
+            <button @click="navigate('overview')" :class="navBtnClass('overview')">
+              <UIcon name="i-heroicons-chart-bar" class="w-5 h-5" />
+              Resumen
+            </button>
+            <button @click="navigate('workouts')" :class="navBtnClass('workouts')">
+              <UIcon name="i-heroicons-fire" class="w-5 h-5" />
+              Mis Entrenamientos
+              <span v-if="assignedWorkouts.length > 0" class="ml-auto bg-orange-600 text-white text-xs px-2 py-1 rounded-full">
+                {{ assignedWorkouts.length }}
+              </span>
+            </button>
+            <button @click="navigate('progress')" :class="navBtnClass('progress')">
+              <UIcon name="i-heroicons-chart-pie" class="w-5 h-5" />
+              Mi Progreso
+            </button>
+            <button @click="navigate('exercises')" :class="navBtnClass('exercises')">
+              <UIcon name="i-heroicons-academic-cap" class="w-5 h-5" />
+              Ejercicios
+            </button>
+            <button @click="navigate('profile')" :class="navBtnClass('profile')">
+              <UIcon name="i-heroicons-user" class="w-5 h-5" />
+              Mi Perfil
+            </button>
+          </nav>
+          <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
+            <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex fixed top-0 left-0 w-64 h-screen flex-col z-30 bg-slate-800/50 backdrop-blur-sm border-r border-slate-700">
       <div class="flex-1 flex flex-col">
         <div class="px-4 py-6">
           <TheLogo />
@@ -12,8 +78,8 @@
                 {{ userProfile?.role === 'client' ? 'Atleta' : (userProfile?.role || 'Cliente') }}
               </span>
             </div>
-            <span class="text-white font-bold text-lg block max-w-xs whitespace-pre-line break-words overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-              {{ userProfile?.nickname || userProfile?.fullName || 'Cliente' }}
+            <span v-if="userProfile" class="text-white font-bold text-lg block max-w-xs whitespace-pre-line break-words overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+              {{ userProfile?.nickname || userProfile?.fullName || userProfile?.email || userProfile?.uid || 'Cliente' }}
             </span>
           </div>
         </div>
@@ -21,8 +87,7 @@
         <nav class="px-4 space-y-2">
           <button 
             @click="currentView = 'overview'"
-            :class="currentView === 'overview' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
+            :class="navBtnClass('overview')"
           >
             <UIcon name="i-heroicons-chart-bar" class="w-5 h-5" />
             Resumen
@@ -30,8 +95,7 @@
           
           <button 
             @click="currentView = 'workouts'"
-            :class="currentView === 'workouts' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
+            :class="navBtnClass('workouts')"
           >
             <UIcon name="i-heroicons-fire" class="w-5 h-5" />
             Mis Entrenamientos
@@ -42,8 +106,7 @@
           
           <button 
             @click="currentView = 'progress'"
-            :class="currentView === 'progress' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
+            :class="navBtnClass('progress')"
           >
             <UIcon name="i-heroicons-chart-pie" class="w-5 h-5" />
             Mi Progreso
@@ -51,8 +114,7 @@
           
           <button 
             @click="currentView = 'exercises'"
-            :class="currentView === 'exercises' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
+            :class="navBtnClass('exercises')"
           >
             <UIcon name="i-heroicons-academic-cap" class="w-5 h-5" />
             Ejercicios
@@ -60,8 +122,7 @@
           
           <button 
             @click="currentView = 'profile'"
-            :class="currentView === 'profile' ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium"
+            :class="navBtnClass('profile')"
           >
             <UIcon name="i-heroicons-user" class="w-5 h-5" />
             Mi Perfil
@@ -80,23 +141,17 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col ml-64">
+    <main class="flex-1 flex flex-col md:ml-64 pt-16 md:pt-0">
       <!-- Header -->
       <header class="px-4 py-6 border-b border-slate-700">
-        <div class="flex items-center justify-between">
-          <div class="flex-1">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div class="flex flex-col md:flex-row md:items-center md:gap-4 flex-1">
             <h1 class="text-2xl font-black text-white">{{ currentViewTitle }}</h1>
             <p class="text-slate-400">{{ getCurrentDate() }}</p>
           </div>
-          <div class="flex items-end gap-12">
-            <div class="text-right">
-              <p class="text-white font-semibold text-2xl italic">{{ motivationalPhrase }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-slate-400 text-sm">Racha actual</p>
-              <p class="text-orange-600 font-bold text-xl">{{ stats.streak }} días 🔥</p>
-            </div>
-          </div>
+        </div>
+        <div class="mt-2">
+          <p class="text-orange-500 font-semibold text-lg italic">{{ motivationalPhrase }}</p>
         </div>
       </header>
 
@@ -105,42 +160,46 @@
         <!-- Overview Section -->
         <div v-if="currentView === 'overview'" class="space-y-6">
           <!-- Stats Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Entrenamientos Asignados -->
             <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
-              <div class="flex items-center gap-4">
-                <div class="text-4xl">🎯</div>
+              <div class="flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:gap-4">
+                <div class="text-4xl mb-2 md:mb-0">🎯</div>
                 <div>
-                  <p class="text-2xl font-black text-white">{{ assignedWorkouts.length }}</p>
+                  <p class="text-2xl font-black text-white mb-1 md:mb-0">{{ assignedWorkouts.length }}</p>
                   <p class="text-slate-400 text-sm">Entrenamientos Asignados</p>
                 </div>
               </div>
             </div>
             
+            <!-- Completados -->
             <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
-              <div class="flex items-center gap-4">
-                <div class="text-4xl">✅</div>
+              <div class="flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:gap-4">
+                <div class="text-4xl mb-2 md:mb-0">✅</div>
                 <div>
-                  <p class="text-2xl font-black text-white">{{ stats.completedWorkouts }}</p>
+                  <p class="text-2xl font-black text-white mb-1 md:mb-0">{{ stats.completedWorkouts }}</p>
                   <p class="text-slate-400 text-sm">Completados</p>
                 </div>
               </div>
             </div>
             
+            <!-- Días Seguidos -->
             <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
-              <div class="flex items-center gap-4">
-                <div class="text-4xl">🔥</div>
+              <div class="flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:gap-4">
+                <div class="text-4xl mb-2 md:mb-0">🔥</div>
                 <div>
-                  <p class="text-2xl font-black text-white">{{ stats.streak }}</p>
+                  <p class="text-2xl font-black text-white mb-1 md:mb-0">{{ stats.streak }}</p>
                   <p class="text-slate-400 text-sm">Días Seguidos</p>
                 </div>
               </div>
             </div>
             
+            <!-- Minutos Total -->
             <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
-              <div class="flex items-center gap-4">
-                <div class="text-4xl">⏱️</div>
+              <div class="flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:gap-4">
+                <div class="text-4xl mb-2 md:mb-0">⏱️</div>
                 <div>
-                  <p class="text-2xl font-black text-white">{{ stats.totalMinutes }}</p>
+                  <p class="text-2xl font-black text-white mb-1 md:mb-0">{{ stats.totalMinutes }}</p>
                   <p class="text-slate-400 text-sm">Minutos Total</p>
                 </div>
               </div>
@@ -155,9 +214,11 @@
               <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6">
                 <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   <UIcon name="i-heroicons-calendar-days" class="w-6 h-6 text-blue-500" />
-                  Esta Semana
+                  Progreso Semanal
                 </h3>
-                <div class="grid grid-cols-7 gap-2">
+                
+                <!-- Desktop: Grid de 7 días -->
+                <div class="hidden md:grid grid-cols-7 gap-2">
                   <div 
                     v-for="day in weekDays" 
                     :key="day.date"
@@ -181,6 +242,44 @@
                     </div>
                     <span class="text-sm font-bold">{{ day.day }}</span>
                     <span class="text-xs uppercase">{{ day.weekday }}</span>
+                  </div>
+                </div>
+
+                <!-- Mobile: Scroll horizontal con 3 días visibles -->
+                <div class="md:hidden">
+                  <div 
+                    ref="weekScrollContainer"
+                    class="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+                    style="scroll-behavior: smooth;"
+                  >
+                    <div 
+                      v-for="(day, index) in weekDays" 
+                      :key="day.date"
+                      :class="[
+                        'flex flex-col items-center p-4 rounded-lg transition-colors flex-shrink-0 snap-center min-w-[calc(33.333%-0.25rem)]',
+                        day.isToday ? 'bg-orange-600 text-white' : 'bg-slate-700/50 text-slate-300'
+                      ]"
+                      :style="{ 
+                        transform: day.isToday ? 'scale(1.05)' : 'scale(1)',
+                        boxShadow: day.isToday ? '0 4px 12px rgba(249, 115, 22, 0.3)' : 'none'
+                      }"
+                    >
+                      <div class="mb-2">
+                        <UIcon 
+                          v-if="day.hasWorkout"
+                          name="i-heroicons-check-circle" 
+                          class="w-6 h-6 text-green-500"
+                        />
+                        <UIcon 
+                          v-else-if="day.isToday"
+                          name="i-heroicons-clock" 
+                          class="w-6 h-6 text-white"
+                        />
+                        <div v-else class="w-6 h-6"></div>
+                      </div>
+                      <span class="text-base font-bold mb-1">{{ day.day }}</span>
+                      <span class="text-xs uppercase">{{ day.weekday }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -741,18 +840,18 @@
 import { useUsers, useWorkoutAssignments, useWorkouts, useExercises, type User, type WorkoutAssignment, type Workout, type Exercise } from '~/composables/firestore'
 import { debounce } from 'lodash-es'
 import ProfileView from '~/components/ProfileView.vue'
-import { useUserStore } from '~/stores/user'
-import { storeToRefs } from 'pinia'
+import { useUserRole } from '~/composables/useUserRole'
 
 console.log('🏠 Dashboard script ejecutándose...')
 const { user } = useAuth()
-const userStore = useUserStore()
-const { userProfile, isLoading } = storeToRefs(userStore)
+const { userProfile, isLoading, loadUserProfile } = useUserRole()
 
 // Reactive state
 const currentView = ref('overview')
 const workoutFilter = ref('all')
 const isLoadingDashboard = ref(true)
+const showMobileMenu = ref(false)
+const weekScrollContainer = ref<HTMLElement | null>(null)
 
 // Data
 const assignedWorkouts = ref<(WorkoutAssignment & { workout?: Workout })[]>([])
@@ -879,6 +978,8 @@ const filteredWorkouts = computed(() => {
   return assignedWorkouts.value.filter(w => w.status === workoutFilter.value)
 })
 
+
+
 const weekDays = computed(() => {
   const today = new Date()
   const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()))
@@ -928,7 +1029,7 @@ const loadClientData = async () => {
   isLoadingDashboard.value = true
   try {
     // Load user profile
-    await userStore.loadUserProfile(user.value.uid)
+    await loadUserProfile()
 
     // Load assigned workouts
     const { getClientAssignments } = useWorkoutAssignments()
@@ -1129,6 +1230,41 @@ const logout = async () => {
   }
 }
 
+const navBtnClass = (view: string) => {
+  return [
+    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium',
+    currentView.value === view ? 'bg-orange-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'
+  ]
+}
+
+const navigate = (view: string) => {
+  currentView.value = view
+  showMobileMenu.value = false
+}
+
+// Función para centrar el día actual en el scroll
+const centerTodayInScroll = () => {
+  if (!weekScrollContainer.value) return
+  
+  const todayIndex = weekDays.value.findIndex(day => day.isToday)
+  if (todayIndex === -1) return
+  
+  const container = weekScrollContainer.value
+  const dayWidth = container.scrollWidth / weekDays.value.length
+  const targetScroll = (todayIndex * dayWidth) - (container.clientWidth / 2) + (dayWidth / 2)
+  
+  container.scrollTo({
+    left: Math.max(0, targetScroll),
+    behavior: 'smooth'
+  })
+}
+
+
+
+
+
+
+
 // Lifecycle
 onMounted(async () => {
   console.log('🏠 Dashboard mounted - Usuario llegó al dashboard exitosamente!')
@@ -1141,27 +1277,38 @@ onMounted(async () => {
   
   getRandomMotivationalPhrase()
   if (user.value?.uid) {
-    await userStore.loadUserProfile(user.value.uid)
+    await loadUserProfile()
   }
   await loadClientData()
   loadExercises()
+  
+  // Centrar el día actual después de que el DOM esté listo
+  nextTick(() => {
+    centerTodayInScroll()
+  })
+  
+
 })
 
 // Watch for user changes
 watch(user, (newUser) => {
   if (newUser?.uid) {
-    userStore.loadUserProfile(newUser.uid)
+    loadUserProfile()
     loadClientData()
   }
 }, { immediate: true })
 
 // Watch for user profile changes to ensure loading is disabled
-watch(() => userStore.userProfile, (newProfile) => {
+watch(() => userProfile.value, (newProfile) => {
   if (newProfile) {
     const { setLoading } = useGlobalLoading()
     setLoading(false)
   }
 }, { immediate: true })
+
+
+
+
 
 // Meta
 definePageMeta({
@@ -1175,4 +1322,32 @@ useHead({
     { name: 'description', content: 'Tu panel personal de entrenamientos' }
   ]
 })
-</script> 
+</script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Mejorar la experiencia de scroll en mobile */
+@media (max-width: 768px) {
+  .snap-x {
+    scroll-snap-type: x mandatory;
+  }
+  .snap-center {
+    scroll-snap-align: center;
+  }
+}
+</style> 

@@ -1,40 +1,140 @@
 <template>
-  <div class="min-h-screen bg-slate-900 text-white p-6">
+  <div class="min-h-screen bg-gray-50 p-4">
     <div class="max-w-4xl mx-auto">
-      <h1 class="text-3xl font-bold mb-6">Test de Firebase</h1>
-      
-      <div class="space-y-4">
-        <button @click="testConnection" class="bg-blue-600 px-4 py-2 rounded">
-          Test Conexión
-        </button>
-        
-        <button @click="testReadExercises" class="bg-green-600 px-4 py-2 rounded">
-          Test Leer Ejercicios
-        </button>
-        
-        <button @click="testReadWorkouts" class="bg-yellow-600 px-4 py-2 rounded">
-          Test Leer Rutinas
-        </button>
-        
-        <button @click="testWriteWorkout" class="bg-red-600 px-4 py-2 rounded">
-          Test Escribir Rutina
-        </button>
-        
-        <button @click="testReadUsers" class="bg-orange-600 px-4 py-2 rounded">
-          Test Leer Usuarios
-        </button>
-        
-        <button @click="forceReauth" class="bg-purple-600 px-4 py-2 rounded">
-          Forzar Reautenticación
-        </button>
+      <!-- Header -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">
+          Test de Acceso a Firebase
+        </h1>
+        <p class="text-gray-600">
+          Prueba el acceso a las colecciones de Firebase
+        </p>
       </div>
-      
-      <div v-if="logs.length > 0" class="mt-6 bg-slate-800 p-4 rounded">
-        <h2 class="text-xl font-bold mb-2">Logs:</h2>
-        <div class="space-y-1">
-          <div v-for="(log, index) in logs" :key="index" class="text-sm">
-            <span class="text-slate-400">{{ log.timestamp }}</span>
-            <span :class="log.type === 'error' ? 'text-red-400' : 'text-white'">{{ log.message }}</span>
+
+      <!-- Test Actions -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          Acciones de Prueba
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Test Firebase Access -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-2">
+              Test de Acceso General
+            </h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Prueba el acceso a todas las colecciones
+            </p>
+            <button
+              @click="testAccess"
+              :disabled="isTesting"
+              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <span v-if="isTesting">Probando...</span>
+              <span v-else>Test de Acceso</span>
+            </button>
+          </div>
+
+          <!-- Find Itachi -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-2">
+              Buscar Itachi
+            </h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Busca específicamente a Itachi en la base de datos
+            </p>
+            <button
+              @click="findItachi"
+              :disabled="isFinding"
+              class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <span v-if="isFinding">Buscando...</span>
+              <span v-else>Buscar Itachi</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Results -->
+      <div v-if="testResults" class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          Resultados del Test
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-3 h-3 rounded-full" :class="{
+              'bg-green-500': testResults.success,
+              'bg-red-500': !testResults.success
+            }"></div>
+            <span class="font-medium">
+              {{ testResults.success ? 'Test Exitoso' : 'Test Fallido' }}
+            </span>
+          </div>
+          
+          <div v-if="testResults.success" class="bg-green-50 p-4 rounded-lg">
+            <div class="text-sm text-green-700">
+              <div><strong>Athletes:</strong> {{ testResults.athletesCount }} documentos</div>
+              <div><strong>Coaches:</strong> {{ testResults.coachesCount }} documentos</div>
+              <div><strong>Staff:</strong> {{ testResults.staffCount }} documentos</div>
+            </div>
+            
+            <div v-if="testResults.athletes && testResults.athletes.length > 0" class="mt-4">
+              <h4 class="font-medium text-green-800 mb-2">Athletes encontrados:</h4>
+              <div class="space-y-1">
+                <div v-for="athlete in testResults.athletes" :key="athlete.uid" class="text-xs text-green-700">
+                  • {{ athlete.fullName }} ({{ athlete.uid }}) - {{ athlete.email }}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="!testResults.success" class="bg-red-50 p-4 rounded-lg">
+            <div class="text-red-700">
+              {{ testResults.error }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itachi Results -->
+      <div v-if="itachiResults" class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          Resultados de Búsqueda de Itachi
+        </h2>
+        
+        <div class="space-y-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-3 h-3 rounded-full" :class="{
+              'bg-green-500': itachiResults.success,
+              'bg-red-500': !itachiResults.success
+            }"></div>
+            <span class="font-medium">
+              {{ itachiResults.success ? 'Búsqueda Exitosa' : 'Búsqueda Fallida' }}
+            </span>
+          </div>
+          
+          <div v-if="itachiResults.success && itachiResults.found" class="bg-green-50 p-4 rounded-lg">
+            <div class="text-sm text-green-700">
+              <div><strong>Colección:</strong> {{ itachiResults.collection }}</div>
+              <div><strong>UID:</strong> {{ itachiResults.data.uid }}</div>
+              <div><strong>Nombre:</strong> {{ itachiResults.data.fullName }}</div>
+              <div><strong>Email:</strong> {{ itachiResults.data.email }}</div>
+              <div><strong>Rol:</strong> {{ itachiResults.data.role }}</div>
+            </div>
+          </div>
+          
+          <div v-if="itachiResults.success && !itachiResults.found" class="bg-yellow-50 p-4 rounded-lg">
+            <div class="text-yellow-700">
+              {{ itachiResults.message }}
+            </div>
+          </div>
+          
+          <div v-if="!itachiResults.success" class="bg-red-50 p-4 rounded-lg">
+            <div class="text-red-700">
+              {{ itachiResults.error }}
+            </div>
           </div>
         </div>
       </div>
@@ -43,211 +143,46 @@
 </template>
 
 <script setup lang="ts">
-import { getFirebaseDb, getFirebaseAuth } from '~/composables/firebase'
-import { collection, getDocs, addDoc, doc, getDoc } from 'firebase/firestore'
+import { ref } from 'vue'
+import { testFirebaseAccess, findItachi as findItachiUtil } from '~/utils/test-firebase-access'
 
-const logs = ref<Array<{timestamp: string, type: 'info' | 'error' | 'success', message: string}>>([])
+// State
+const isTesting = ref(false)
+const isFinding = ref(false)
+const testResults = ref<any>(null)
+const itachiResults = ref<any>(null)
 
-const addLog = (type: 'info' | 'error' | 'success', message: string) => {
-  logs.value.push({
-    timestamp: new Date().toLocaleTimeString(),
-    type,
-    message
-  })
-}
-
-const testConnection = () => {
-  addLog('info', '🔄 Probando conexión a Firebase...')
-  
-  const auth = getFirebaseAuth()
-  const db = getFirebaseDb()
-  
-  if (auth) {
-    addLog('success', '✅ Firebase Auth conectado')
-    
-    // Check if user is authenticated
-    if (auth.currentUser) {
-      addLog('success', `✅ Usuario autenticado: ${auth.currentUser.email}`)
-      addLog('info', `UID: ${auth.currentUser.uid}`)
-    } else {
-      addLog('error', '❌ Usuario NO autenticado en Firebase Auth')
-    }
-  } else {
-    addLog('error', '❌ Firebase Auth no conectado')
-  }
-  
-  if (db) {
-    addLog('success', '✅ Firebase Firestore conectado')
-  } else {
-    addLog('error', '❌ Firebase Firestore no conectado')
-  }
-  
-  // Check Nuxt Auth state
-  const { user, isLoggedIn } = useAuth()
-  addLog('info', `Nuxt Auth - isLoggedIn: ${isLoggedIn.value}`)
-  addLog('info', `Nuxt Auth - user: ${user.value ? 'Presente' : 'No presente'}`)
-  
-  if (user.value) {
-    addLog('success', `Nuxt Auth - Email: ${user.value.email}`)
-    addLog('info', `Nuxt Auth - UID: ${user.value.uid}`)
-  }
-}
-
-const testReadExercises = async () => {
-  addLog('info', '🔄 Probando lectura de ejercicios...')
-  
+// Test Firebase access
+const testAccess = async () => {
+  isTesting.value = true
   try {
-    const db = getFirebaseDb()
-    if (!db) {
-      addLog('error', '❌ No hay conexión a Firestore')
-      return
+    const result = await testFirebaseAccess()
+    testResults.value = result
+  } catch (error) {
+    console.error('Error testing access:', error)
+    testResults.value = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
-    
-    const exercisesCollection = collection(db, 'exercises')
-    const querySnapshot = await getDocs(exercisesCollection)
-    
-    addLog('success', `✅ Ejercicios leídos: ${querySnapshot.size} documentos`)
-  } catch (error: any) {
-    addLog('error', `❌ Error leyendo ejercicios: ${error.message}`)
+  } finally {
+    isTesting.value = false
   }
 }
 
-const testReadWorkouts = async () => {
-  addLog('info', '🔄 Probando lectura de rutinas...')
-  
+// Find Itachi
+const findItachi = async () => {
+  isFinding.value = true
   try {
-    const db = getFirebaseDb()
-    if (!db) {
-      addLog('error', '❌ No hay conexión a Firestore')
-      return
+    const result = await findItachiUtil()
+    itachiResults.value = result
+  } catch (error) {
+    console.error('Error finding Itachi:', error)
+    itachiResults.value = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
-    
-    const auth = getFirebaseAuth()
-    if (!auth?.currentUser) {
-      addLog('error', '❌ No hay usuario autenticado en Firebase Auth')
-      return
-    }
-    
-    addLog('info', `Usuario autenticado: ${auth.currentUser.email}`)
-    addLog('info', `UID: ${auth.currentUser.uid}`)
-    
-    const workoutsCollection = collection(db, 'workouts')
-    const querySnapshot = await getDocs(workoutsCollection)
-    
-    addLog('success', `✅ Rutinas leídas: ${querySnapshot.size} documentos`)
-    
-    // Try to read a specific workout if any exist
-    if (querySnapshot.size > 0) {
-      const firstDoc = querySnapshot.docs[0]
-      addLog('info', `Primera rutina: ${firstDoc.id}`)
-      
-      // Try to get the specific document
-      const docRef = doc(db, 'workouts', firstDoc.id)
-      const docSnap = await getDoc(docRef)
-      
-      if (docSnap.exists()) {
-        addLog('success', `✅ Documento específico leído: ${docSnap.data().title || 'Sin título'}`)
-      } else {
-        addLog('error', '❌ Documento específico no existe')
-      }
-    }
-  } catch (error: any) {
-    addLog('error', `❌ Error leyendo rutinas: ${error.message}`)
-    addLog('error', `Código: ${error.code}`)
-  }
-}
-
-const testWriteWorkout = async () => {
-  addLog('info', '🔄 Probando escritura de rutina...')
-  
-  try {
-    const db = getFirebaseDb()
-    if (!db) {
-      addLog('error', '❌ No hay conexión a Firestore')
-      return
-    }
-    
-    const { user } = useAuth()
-    if (!user.value) {
-      addLog('error', '❌ No hay usuario autenticado en Nuxt Auth')
-      return
-    }
-    
-    addLog('info', `Usuario autenticado: ${user.value.email}`)
-    addLog('info', `UID: ${user.value.uid}`)
-    
-    const workoutsCollection = collection(db, 'workouts')
-    const testWorkout = {
-      title: 'Test Workout',
-      description: 'Test workout for migration',
-      createdBy: user.value.uid,
-      createdAt: new Date(),
-      regionWorking: ['test']
-    }
-    
-    const docRef = await addDoc(workoutsCollection, testWorkout)
-    addLog('success', `✅ Rutina creada: ${docRef.id}`)
-  } catch (error: any) {
-    addLog('error', `❌ Error creando rutina: ${error.message}`)
-  }
-}
-
-const forceReauth = async () => {
-  addLog('info', '🔄 Forzando reautenticación...')
-  
-  // Prompt for credentials
-  const email = prompt('Ingresa tu email:')
-  const password = prompt('Ingresa tu contraseña:')
-  
-  if (!email || !password) {
-    addLog('error', '❌ Credenciales no proporcionadas')
-    return
-  }
-  
-  try {
-    const { login } = useAuth()
-    const result = await login(email, password, true)
-    
-    if (result.success) {
-      addLog('success', '✅ Reautenticación exitosa')
-      // Wait a moment and test connection again
-      setTimeout(() => {
-        testConnection()
-      }, 1000)
-    } else {
-      addLog('error', `❌ Error en reautenticación: ${result.error}`)
-    }
-  } catch (error: any) {
-    addLog('error', `❌ Error forzando reautenticación: ${error.message}`)
-  }
-}
-
-const testReadUsers = async () => {
-  addLog('info', '🔄 Probando lectura de usuarios...')
-  
-  try {
-    const db = getFirebaseDb()
-    if (!db) {
-      addLog('error', '❌ No hay conexión a Firestore')
-      return
-    }
-    
-    const auth = getFirebaseAuth()
-    if (!auth?.currentUser) {
-      addLog('error', '❌ No hay usuario autenticado en Firebase Auth')
-      return
-    }
-    
-    addLog('info', `Usuario autenticado: ${auth.currentUser.email}`)
-    addLog('info', `UID: ${auth.currentUser.uid}`)
-    
-    const usersCollection = collection(db, 'users')
-    const querySnapshot = await getDocs(usersCollection)
-    
-    addLog('success', `✅ Usuarios leídos: ${querySnapshot.size} documentos`)
-  } catch (error: any) {
-    addLog('error', `❌ Error leyendo usuarios: ${error.message}`)
-    addLog('error', `Código: ${error.code}`)
+  } finally {
+    isFinding.value = false
   }
 }
 </script> 

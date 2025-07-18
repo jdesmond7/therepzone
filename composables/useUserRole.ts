@@ -1,6 +1,7 @@
 // Composable for user role management
 import { useCoaches } from './coaches'
 import { useAthletes } from './athletes'
+import { useStaff } from './staff'
 
 export const useUserRole = () => {
   const { user } = useAuth()
@@ -22,8 +23,13 @@ export const useUserRole = () => {
   })
   const isAdmin = computed(() => {
     const role = userProfile.value?.role
-    console.log('🔍 [useUserRole] isAdmin check - role:', role, 'result:', role === 'admin')
-    return role === 'admin'
+    console.log('🔍 [useUserRole] isAdmin check - role:', role, 'result:', role === 'admin' || role === 'staff')
+    return role === 'admin' || role === 'staff'
+  })
+  const isStaff = computed(() => {
+    const role = userProfile.value?.role
+    console.log('🔍 [useUserRole] isStaff check - role:', role, 'result:', role === 'staff')
+    return role === 'staff'
   })
 
   // Load user profile from the appropriate collection
@@ -56,7 +62,24 @@ export const useUserRole = () => {
         return
       }
       
-      // If not found in coaches, try athletes collection
+      // If not found in coaches, try staff collection
+      const { getStaffByAuthUID } = useStaff()
+      const staffResult = await getStaffByAuthUID(user.value.uid)
+      
+      if (staffResult.success && staffResult.staff) {
+        console.log('✅ [useUserRole] Staff encontrado:', staffResult.staff)
+        console.log('📊 [useUserRole] Datos del staff:', {
+          uid: staffResult.staff.uid,
+          fullName: staffResult.staff.fullName,
+          email: staffResult.staff.email,
+          role: staffResult.staff.role
+        })
+        userProfile.value = staffResult.staff
+        setProfileLoaded(true)
+        return
+      }
+      
+      // If not found in staff, try athletes collection
       const { getAthleteByAuthUID } = useAthletes()
       const athleteResult = await getAthleteByAuthUID(user.value.uid)
       
@@ -73,8 +96,7 @@ export const useUserRole = () => {
         return
       }
       
-      // If not found in athletes, try admins collection (future implementation)
-      // For now, we'll assume it's not found
+      // If not found in any collection
       console.log('❌ [useUserRole] Usuario no encontrado en ninguna colección')
       userProfile.value = null
       setProfileLoaded(false)
@@ -99,8 +121,8 @@ export const useUserRole = () => {
       return '/coach/dashboard'
     }
     if (isAdmin.value) {
-      console.log('🎯 [useUserRole] Returning /admin/dashboard for admin')
-      return '/admin/dashboard'
+      console.log('🎯 [useUserRole] Returning /staff/dashboard for admin/staff')
+      return '/staff/dashboard'
     }
     console.log('🎯 [useUserRole] Returning /dashboard for client/athlete')
     return '/dashboard' // Default client/athlete dashboard
@@ -138,6 +160,7 @@ export const useUserRole = () => {
     isClient,
     isCoach,
     isAdmin,
+    isStaff,
     loadUserProfile,
     ensureProfileLoaded,
     getDashboardRoute,

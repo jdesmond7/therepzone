@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // Skip middleware during SSR
   if (process.server) return
   
-  const protectedRoutes = ['/dashboard', '/coach/dashboard', '/admin/dashboard', '/complete-profile']
+  const protectedRoutes = ['/dashboard', '/coach/dashboard', '/staff/dashboard', '/admin/dashboard', '/complete-profile']
   const isDashboardRoute = protectedRoutes.some(route => to.path.startsWith(route))
   
   // Early return for public routes - no middleware logic needed

@@ -2,80 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Colección de coaches
-    match /coaches/{coachId} {
-      // Permitir creación si el usuario está autenticado y el authUid coincide
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
-      // El propio coach puede leer y escribir sus datos
-      allow read, write: if isAuthenticated() && (request.auth.uid == coachId || request.auth.uid == resource.data.authUid);
-      // Cualquier usuario autenticado puede leer (temporal para pruebas)
-      allow read: if isAuthenticated();
-    }
-
-    // Colección de atletas (antes users)
-    match /athletes/{athleteId} {
-      // Permitir creación si el usuario está autenticado y el authUid coincide
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
-      // El propio atleta puede leer y escribir sus datos
-      allow read, write: if isAuthenticated() && (request.auth.uid == athleteId || request.auth.uid == resource.data.authUid);
-      // Cualquier usuario autenticado puede leer (temporal para pruebas)
-      allow read: if isAuthenticated();
-    }
-
-    // Colección de admins
-    match /admins/{adminId} {
-      // Permitir creación si el usuario está autenticado y el authUid coincide
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
-      // El propio admin puede leer y escribir sus datos
-      allow read, write: if isAuthenticated() && (request.auth.uid == adminId || request.auth.uid == resource.data.authUid);
-      // Cualquier usuario autenticado puede leer (temporal para pruebas)
-      allow read: if isAuthenticated();
-    }
-
-    // Colección de usuarios (mantener para compatibilidad temporal)
-    match /users/{userId} {
-      // Permitir creación si el usuario está autenticado y el userId coincide con su authUid
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.authUid;
-      // Permitir lectura y escritura si es el propietario
-      allow read, write: if isAuthenticated() && (request.auth.uid == userId || request.auth.uid == resource.data.authUid);
-      // Permitir lectura general para usuarios autenticados (temporal para pruebas)
-      allow read: if isAuthenticated();
-    }
-
-    // Ejercicios
-    match /exercises/{exerciseId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated(); // simplificado para pruebas
-    }
-
-    // Workouts
-    match /workouts/{workoutId} {
-      allow read, write: if isAuthenticated(); // simplificado para pruebas
-    }
-
-    // Asignaciones de workouts
-    match /workoutAssignments/{assignmentId} {
-      allow read, write: if isAuthenticated(); // simplificado para pruebas
-    }
-
-    // Logs de workouts
-    match /workoutLogs/{logId} {
-      allow read, write: if isAuthenticated(); // simplificado para pruebas
-    }
-
-    // Denegar todo lo demás por defecto
+    
+    // TEMPORAL: Reglas completamente abiertas para pruebas
+    // ⚠️ ADVERTENCIA: Solo usar para desarrollo/testing
+    // TODO: Restaurar reglas de seguridad después de la migración
+    
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 } 

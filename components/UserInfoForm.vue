@@ -270,15 +270,18 @@
             </AppButtonSecondary>
           </div>
         </div>
-        <div v-else class="relative inline-block">
+        <div v-else class="relative inline-block group">
           <img 
             :src="selectedImage" 
             alt="Preview" 
-            class="w-60 h-60 rounded-full object-cover cursor-pointer group"
+            class="w-45 h-45 rounded-full object-cover cursor-pointer"
+          />
+          <!-- Hover overlay with trash icon -->
+          <div 
+            class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center cursor-pointer"
             @click="removeImage"
             title="Haz clic para eliminar la imagen"
-          />
-          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+          >
             <UIcon name="i-heroicons-trash" class="w-8 h-8 text-white" />
           </div>
         </div>

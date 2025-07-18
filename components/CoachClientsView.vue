@@ -12,6 +12,7 @@
         <AppButtonPrimary
           @click="showAddClientModal = true"
           icon="i-heroicons-plus"
+          class="w-full sm:w-auto"
         >
           Agregar Cliente
         </AppButtonPrimary>
