@@ -9,9 +9,10 @@
           <!-- Filter Button (Left) -->
           <div class="relative">
             <button
-              @click="toggleFilterMenu"
+              @click="toggleFilterMenu('mobile')"
               class="w-12 h-12 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg text-white hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
               title="Filtros"
+              data-filter-button="mobile"
             >
               <UIcon name="i-heroicons-funnel" class="w-5 h-5" />
             </button>
@@ -130,9 +131,10 @@
           <!-- Filter Button -->
           <div class="relative">
             <button
-              @click="toggleFilterMenu"
+              @click="toggleFilterMenu('desktop')"
               class="w-12 h-12 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg text-white hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent transition-all duration-200"
               title="Filtros"
+              data-filter-button="desktop"
             >
               <UIcon name="i-heroicons-funnel" class="w-5 h-5" />
             </button>
@@ -477,6 +479,19 @@ const filteredData = computed(() => {
     if (filter.selectedOptions.length > 0) {
       filtered = filtered.filter(item => {
         const value = String(item[filter.columnKey] || '')
+        
+        // Special handling for muscle columns
+        if (filter.columnKey === 'musculosPrimarios' || filter.columnKey === 'musculosSecundarios') {
+          const muscles = value.split(',').map(muscle => 
+            muscle.trim().charAt(0).toUpperCase() + muscle.trim().slice(1).toLowerCase()
+          )
+          // Check if any of the selected muscles are in this item's muscles
+          return filter.selectedOptions.some(selectedMuscle => 
+            muscles.includes(selectedMuscle)
+          )
+        }
+        
+        // Regular filtering for other columns
         return filter.selectedOptions.includes(value)
       })
     }
@@ -534,14 +549,53 @@ const getFilterOptions = (columnKey: string) => {
   const column = props.columns.find(col => col.key === columnKey)
   if (!column) return []
   
-  // Get unique values for this column
+  // Special handling for muscle columns - split into individual muscles
+  if (columnKey === 'musculosPrimarios' || columnKey === 'musculosSecundarios') {
+    const allMuscles = new Set<string>()
+    
+    // Collect all muscles from all exercises
+    props.data.forEach(item => {
+      const muscleValue = item[columnKey]
+      if (muscleValue) {
+        const muscles = String(muscleValue).split(',').map(muscle => 
+          muscle.trim().charAt(0).toUpperCase() + muscle.trim().slice(1).toLowerCase()
+        )
+        muscles.forEach(muscle => allMuscles.add(muscle))
+      }
+    })
+    
+    // Return individual muscles as options
+    return Array.from(allMuscles).sort().map(muscle => ({
+      value: muscle,
+      label: muscle,
+      count: props.data.filter(item => {
+        const muscleValue = item[columnKey]
+        if (!muscleValue) return false
+        const muscles = String(muscleValue).split(',').map(m => 
+          m.trim().charAt(0).toUpperCase() + m.trim().slice(1).toLowerCase()
+        )
+        return muscles.includes(muscle)
+      }).length
+    }))
+  }
+  
+  // Get unique values for other columns
   const uniqueValues = [...new Set(props.data.map(item => item[columnKey]).filter(val => val != null))]
   
-  return uniqueValues.map(value => ({
-    value: String(value),
-    label: String(value),
-    count: props.data.filter(item => item[columnKey] === value).length
-  }))
+  return uniqueValues.map(value => {
+    let label = String(value)
+    
+    // Apply TitleCase for specific columns
+    if (['dificultad', 'regionTrabajada', 'creado'].includes(columnKey)) {
+      label = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
+    }
+    
+    return {
+      value: String(value),
+      label: label,
+      count: props.data.filter(item => item[columnKey] === value).length
+    }
+  })
 }
 
 const visiblePages = computed(() => {
@@ -656,7 +710,7 @@ onMounted(() => {
     const target = event.target as HTMLElement
     
     // Close main filter menu if clicking outside
-    if (!target.closest('[title="Filtros"]') && !target.closest('.filter-dropdown')) {
+    if (!target.closest('[data-filter-button]') && !target.closest('.filter-dropdown')) {
       showFilterMenu.value = false
     }
     
@@ -673,7 +727,7 @@ onMounted(() => {
 // Filter methods
 const filterDropdownStyle = ref('')
 
-const toggleFilterMenu = () => {
+const toggleFilterMenu = (type: 'mobile' | 'desktop') => {
   // Close all filter dropdowns when opening the main filter menu
   activeFilters.value.forEach(filter => {
     filter.showDropdown = false
@@ -682,13 +736,13 @@ const toggleFilterMenu = () => {
   showFilterMenu.value = !showFilterMenu.value
   if (showFilterMenu.value) {
     nextTick(() => {
-      updateFilterDropdownPosition()
+      updateFilterDropdownPosition(type)
     })
   }
 }
 
-const updateFilterDropdownPosition = () => {
-  const button = document.querySelector('[title="Filtros"]') as HTMLElement
+const updateFilterDropdownPosition = (type: 'mobile' | 'desktop') => {
+  const button = document.querySelector(`[data-filter-button="${type}"]`) as HTMLElement
   if (!button) return
   
   const rect = button.getBoundingClientRect()
