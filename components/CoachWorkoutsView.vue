@@ -129,166 +129,176 @@
     </div>
 
     <!-- Create Modal (Simplified) -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white">Crear Nueva Rutina</h3>
-          <button 
-            @click="showCreateModal = false"
-            class="text-slate-400 hover:text-white"
-          >
-            <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
-          </button>
-        </div>
-
-        <div class="space-y-4">
-          <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-1">Nombre de la Rutina</label>
-            <input
-              v-model="workoutForm.title"
-              type="text"
-              class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="Ej: Rutina de Pecho y Tríceps"
-            />
-          </div>
-
-          <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-1">Descripción</label>
-            <textarea
-              v-model="workoutForm.description"
-              rows="3"
-              class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 resize-none"
-              placeholder="Describe la rutina..."
-            ></textarea>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                              <label class="block text-sm font-medium text-slate-400 mb-1">Región Trabajada</label>
-              <select
-                v-model="workoutForm.regionWorking"
-                multiple
-                class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
+    <div v-if="showCreateModalBg" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50" @click="closeCreateModal"></div>
+      <transition name="modal-slide">
+        <div v-if="showCreateModalContent && showCreateModal" @click.stop class="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-3xl font-bold text-white">Crear Nueva Rutina</h3>
+              <button 
+                @click="closeCreateModal"
+                class="text-slate-400 hover:text-white cursor-pointer"
               >
-                <option value="tren superior">Tren Superior</option>
-                <option value="tren inferior">Tren Inferior</option>
-                <option value="core">Core</option>
-                <option value="full body">Full Body</option>
-              </select>
-            </div>
-
-            <div>
-                              <label class="block text-sm font-medium text-slate-400 mb-1">Dificultad</label>
-              <select
-                v-model="workoutForm.difficulty"
-                class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
-              >
-                <option value="">Seleccionar dificultad</option>
-                <option value="principiante">Principiante</option>
-                <option value="intermedio">Intermedio</option>
-                <option value="avanzado">Avanzado</option>
-              </select>
-            </div>
-
-            <div>
-                              <label class="block text-sm font-medium text-slate-400 mb-1">Duración (min)</label>
-              <input
-                v-model.number="workoutForm.estimatedDuration"
-                type="number"
-                min="10"
-                max="180"
-                class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="30"
-              />
-            </div>
-          </div>
-
-          <div class="flex gap-4 pt-4">
-            <button 
-              @click="saveWorkout"
-              :disabled="isSaving"
-              class="flex-1 h-12 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold px-4 rounded-lg transition-colors"
-            >
-              {{ isSaving ? 'Guardando...' : 'Crear Rutina' }}
-            </button>
-                          <button 
-                @click="showCreateModal = false"
-                class="flex-1 h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-4 rounded-lg transition-colors bg-transparent"
-              >
-                Cancelar
+                <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
               </button>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Nombre de la Rutina</label>
+                <input
+                  v-model="workoutForm.title"
+                  type="text"
+                  class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                  placeholder="Ej: Rutina de Pecho y Tríceps"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Descripción</label>
+                <textarea
+                  v-model="workoutForm.description"
+                  rows="3"
+                  class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-600 resize-none"
+                  placeholder="Describe la rutina..."
+                ></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Región Trabajada</label>
+                  <select
+                    v-model="workoutForm.regionWorking"
+                    multiple
+                    class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
+                  >
+                    <option value="tren superior">Tren Superior</option>
+                    <option value="tren inferior">Tren Inferior</option>
+                    <option value="core">Core</option>
+                    <option value="full body">Full Body</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Dificultad</label>
+                  <select
+                    v-model="workoutForm.difficulty"
+                    class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
+                  >
+                    <option value="">Seleccionar dificultad</option>
+                    <option value="principiante">Principiante</option>
+                    <option value="intermedio">Intermedio</option>
+                    <option value="avanzado">Avanzado</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-400 mb-1">Duración (min)</label>
+                  <input
+                    v-model.number="workoutForm.estimatedDuration"
+                    type="number"
+                    min="10"
+                    max="180"
+                    class="w-full h-12 px-4 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-600"
+                    placeholder="30"
+                  />
+                </div>
+              </div>
+
+              <div class="flex gap-4 pt-4">
+                <button 
+                  @click="saveWorkout"
+                  :disabled="isSaving"
+                  class="flex-1 h-12 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold px-4 rounded-lg transition-colors"
+                >
+                  {{ isSaving ? 'Guardando...' : 'Crear Rutina' }}
+                </button>
+                <button 
+                  @click="closeCreateModal"
+                  class="flex-1 h-12 border border-slate-600 text-slate-400 hover:text-orange-400 hover:border-orange-400 font-bold px-4 rounded-lg transition-colors bg-transparent"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </transition>
     </div>
 
     <!-- Workout Details Modal -->
-    <div v-if="selectedWorkout" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white">{{ selectedWorkout.title }}</h3>
-          <button 
-            @click="selectedWorkout = null"
-            class="text-slate-400 hover:text-white cursor-pointer"
-          >
-            <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
-          </button>
-        </div>
-
-        <div class="space-y-6">
-          <div class="flex items-center gap-4">
-            <span 
-              :class="{
-                'bg-green-500/20 text-green-400': selectedWorkout.difficulty === 'principiante',
-                'bg-yellow-500/20 text-yellow-400': selectedWorkout.difficulty === 'intermedio',
-                'bg-red-500/20 text-red-400': selectedWorkout.difficulty === 'avanzado'
-              }"
-              class="px-3 py-1 rounded-full text-sm font-medium"
-            >
-              {{ selectedWorkout.difficulty }}
-            </span>
-            <div class="flex flex-wrap gap-1">
-              <span 
-                v-for="region in selectedWorkout.regionWorking" 
-                :key="region"
-                class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium"
+    <div v-if="showDetailsModalBg" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50" @click="closeDetailsModal"></div>
+      <transition name="modal-slide">
+        <div v-if="showDetailsModalContent && selectedWorkout" @click.stop class="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-3xl font-bold text-white">{{ selectedWorkout.title }}</h3>
+              <button 
+                @click="closeDetailsModal"
+                class="text-slate-400 hover:text-white cursor-pointer"
               >
-                {{ region }}
-              </span>
+                <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+              </button>
             </div>
-            <span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
-              {{ selectedWorkout.estimatedDuration }} min
-            </span>
-          </div>
 
-          <div>
-            <p class="text-slate-400 mb-2">Descripción:</p>
-            <p class="text-white">{{ selectedWorkout.description }}</p>
-          </div>
+            <div class="space-y-6">
+              <div class="flex items-center gap-4">
+                <span 
+                  :class="{
+                    'bg-green-500/20 text-green-400': selectedWorkout.difficulty === 'principiante',
+                    'bg-yellow-500/20 text-yellow-400': selectedWorkout.difficulty === 'intermedio',
+                    'bg-red-500/20 text-red-400': selectedWorkout.difficulty === 'avanzado'
+                  }"
+                  class="px-3 py-1 rounded-full text-sm font-medium"
+                >
+                  {{ selectedWorkout.difficulty }}
+                </span>
+                <div class="flex flex-wrap gap-1">
+                  <span 
+                    v-for="region in selectedWorkout.regionWorking" 
+                    :key="region"
+                    class="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-medium"
+                  >
+                    {{ region }}
+                  </span>
+                </div>
+                <span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
+                  {{ selectedWorkout.estimatedDuration }} min
+                </span>
+              </div>
 
-          <div>
-            <p class="text-slate-400 mb-2">Ejercicios ({{ selectedWorkout.exercises.length }}):</p>
-            <p class="text-slate-300 text-sm">
-              Funcionalidad completa de ejercicios próximamente...
-            </p>
-          </div>
+              <div>
+                <p class="text-slate-400 mb-2">Descripción:</p>
+                <p class="text-white">{{ selectedWorkout.description }}</p>
+              </div>
 
-          <div class="flex gap-4">
-            <button 
-              @click="editWorkout(selectedWorkout)"
-                                class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 h-12 rounded-lg transition-colors"
-            >
-              Editar Rutina
-            </button>
-            <button 
-              @click="deleteWorkout(selectedWorkout)"
-                                class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 h-12 rounded-lg transition-colors"
-            >
-              Eliminar
-            </button>
+              <div>
+                <p class="text-slate-400 mb-2">Ejercicios ({{ selectedWorkout.exercises.length }}):</p>
+                <p class="text-slate-300 text-sm">
+                  Funcionalidad completa de ejercicios próximamente...
+                </p>
+              </div>
+
+              <div class="flex gap-4">
+                <button 
+                  @click="editWorkout(selectedWorkout)"
+                  class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6 h-12 rounded-lg transition-colors"
+                >
+                  Editar Rutina
+                </button>
+                <button 
+                  @click="deleteWorkout(selectedWorkout)"
+                  class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 h-12 rounded-lg transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -303,6 +313,12 @@ const isLoading = ref(true)
 const showCreateModal = ref(false)
 const selectedWorkout = ref<Workout | null>(null)
 const isSaving = ref(false)
+
+// Modal animation states
+const showCreateModalBg = ref(false)
+const showCreateModalContent = ref(false)
+const showDetailsModalBg = ref(false)
+const showDetailsModalContent = ref(false)
 
 // Table columns configuration
 const tableColumns = [
@@ -463,6 +479,10 @@ const saveWorkout = async () => {
 
 const viewWorkout = (workout: Workout) => {
   selectedWorkout.value = workout
+  showDetailsModalBg.value = true
+  setTimeout(() => {
+    showDetailsModalContent.value = true
+  }, 150)
 }
 
 const editWorkout = (workout: Workout) => {
@@ -491,6 +511,37 @@ const deleteWorkout = async (workout: Workout) => {
   }
 }
 
+// Modal animation methods
+const closeCreateModal = () => {
+  showCreateModalContent.value = false
+  setTimeout(() => {
+    showCreateModal.value = false
+  }, 350)
+}
+
+const closeDetailsModal = () => {
+  showDetailsModalContent.value = false
+  setTimeout(() => {
+    selectedWorkout.value = null
+    showDetailsModalBg.value = false
+  }, 350)
+}
+
+// Watcher for modal animations
+watch(showCreateModal, (show) => {
+  if (show) {
+    showCreateModalBg.value = true
+    setTimeout(() => {
+      showCreateModalContent.value = true
+    }, 150)
+  } else {
+    showCreateModalContent.value = false
+    setTimeout(() => {
+      showCreateModalBg.value = false
+    }, 350)
+  }
+})
+
 onMounted(() => {
   loadWorkouts()
 })
@@ -503,4 +554,30 @@ watch(
   },
   { immediate: true }
 )
-</script> 
+</script>
+
+<style scoped>
+.modal-fade-enter-active, .modal-fade-leave-active {
+  transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-fade-enter-from, .modal-fade-leave-to {
+  opacity: 0;
+}
+.modal-fade-enter-to, .modal-fade-leave-from {
+  opacity: 1;
+}
+.modal-slide-enter-active {
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-slide-leave-active {
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-slide-enter-from {
+  transform: translateY(-60vh);
+  opacity: 0;
+}
+.modal-slide-leave-to {
+  transform: translateY(-60vh);
+  opacity: 0;
+}
+</style> 

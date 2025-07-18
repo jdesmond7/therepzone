@@ -1,8 +1,10 @@
 <template>
-  <div class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-black text-white mb-2">{{ title }}</h2>
-      <p class="text-slate-400">{{ subtitle }}</p>
+  <div :class="[
+    hideContainer ? '' : 'bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8'
+  ]">
+    <div v-if="!hideTitle || !hideSubtitle" class="text-center mb-8">
+      <h2 v-if="!hideTitle" class="text-3xl font-black text-white mb-2">{{ title }}</h2>
+      <p v-if="!hideSubtitle" class="text-slate-400">{{ subtitle }}</p>
     </div>
 
     <form @submit.prevent="handleSubmit" class="space-y-6">
@@ -351,6 +353,9 @@ interface Props {
   submitButtonText?: string
   showEmailField?: boolean
   showCancelButton?: boolean
+  hideTitle?: boolean
+  hideSubtitle?: boolean
+  hideContainer?: boolean
   initialData?: Partial<UserFormData>
 }
 
@@ -360,6 +365,9 @@ const props = withDefaults(defineProps<Props>(), {
   submitButtonText: 'Continuar',
   showEmailField: false,
   showCancelButton: false,
+  hideTitle: false,
+  hideSubtitle: false,
+  hideContainer: false,
   initialData: () => ({})
 })
 

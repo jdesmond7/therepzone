@@ -58,7 +58,7 @@
               Perfil
             </button>
           </nav>
-          <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
+          <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors font-medium cursor-pointer">
             <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
             Cerrar Sesión
           </button>
@@ -115,7 +115,7 @@
         </nav>
       </div>
       <div class="px-4 mb-6 mt-auto">
-        <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
+        <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors font-medium cursor-pointer">
           <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
           Cerrar Sesión
         </button>
@@ -212,18 +212,21 @@
               <AppButtonPrimary
                 @click="currentView = 'workouts'"
                 fullWidth
+                class="cursor-pointer"
               >
                 Crear Rutina
               </AppButtonPrimary>
               <AppButtonSecondary
                 @click="currentView = 'exercises'"
                 fullWidth
+                class="cursor-pointer"
               >
                 Añadir Ejercicio
               </AppButtonSecondary>
               <AppButtonSecondary
                 @click="currentView = 'clients'"
                 fullWidth
+                class="cursor-pointer"
               >
                 Ver Clientes
               </AppButtonSecondary>
@@ -488,7 +491,7 @@ const showMobileMenu = ref(false)
 
 function navBtnClass(view: string) {
   return [
-    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium',
+    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium cursor-pointer',
     currentView.value === view
       ? 'bg-orange-600 text-white'
       : 'text-slate-300 hover:text-white hover:bg-slate-700'

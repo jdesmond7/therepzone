@@ -74,50 +74,7 @@ export const migrateItachiToStaff = async () => {
   }
 }
 
-// Function to check if Itachi exists as athlete
-export const checkItachiExists = async () => {
-  try {
-    console.log('🔍 Checking if Itachi exists as athlete...')
-    
-    const db = getFirebaseDb()
-    if (!db) {
-      throw new Error('Firebase not initialized')
-    }
 
-    const athleteId = 'itachi_uchiha_pUlgJ'
-    const athleteRef = doc(db, 'athletes', athleteId)
-    const athleteSnap = await getDoc(athleteRef)
-    
-    if (athleteSnap.exists()) {
-      const athleteData = athleteSnap.data()
-      console.log(`✅ Itachi found as athlete:`, {
-        uid: athleteId,
-        fullName: athleteData.fullName,
-        email: athleteData.email,
-        role: athleteData.role
-      })
-      return {
-        success: true,
-        exists: true,
-        athlete: { ...athleteData, uid: athleteId }
-      }
-    } else {
-      console.log(`❌ Itachi not found as athlete with ID: ${athleteId}`)
-      return {
-        success: true,
-        exists: false,
-        athleteId
-      }
-    }
-    
-  } catch (error) {
-    console.error('❌ Error checking Itachi:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
-  }
-}
 
 // Function to check if Itachi exists as staff
 export const checkItachiAsStaff = async () => {

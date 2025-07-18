@@ -122,6 +122,11 @@
 
         <!-- Right side controls -->
         <div class="flex items-center gap-2">
+          <!-- Create Button (Desktop only) -->
+          <div class="hidden sm:block">
+            <slot name="actions" />
+          </div>
+          
           <!-- Filter Button -->
           <div class="relative">
             <button
@@ -189,14 +194,6 @@
               <UIcon name="i-heroicons-squares-2x2" :class="viewMode === 'grid' ? 'w-5 h-5 text-white' : 'w-5 h-5 text-slate-400'" />
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- Desktop Actions -->
-      <div class="hidden sm:flex sm:flex-row sm:items-center sm:justify-between gap-4">
-        <!-- Actions -->
-        <div class="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:gap-4 sm:flex-1">
-          <slot name="actions" />
         </div>
       </div>
 

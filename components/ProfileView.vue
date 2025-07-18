@@ -29,36 +29,39 @@
               class="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center overflow-hidden"
               :class="{ 
                 'cursor-pointer transition-all duration-200': isEditingProfile,
-                'group': !isEditingProfile && profileData.profileImageUrl
+                'group': isEditingProfile && profileData.profileImageUrl
               }"
-              @click="isEditingProfile ? triggerImageUpload() : null"
             >
               <img 
                 v-if="profileData.profileImageUrl" 
                 :src="profileData.profileImageUrl" 
                 alt="Profile" 
                 class="w-full h-full object-cover"
+                :class="{ 'cursor-pointer': isEditingProfile }"
+                @click="isEditingProfile ? triggerImageUpload() : null"
               />
-              <UIcon v-else name="i-heroicons-user" class="w-16 h-16 text-white" />
+              <UIcon 
+                v-else 
+                name="i-heroicons-user" 
+                class="w-16 h-16 text-white transition-colors duration-200"
+                :class="{ 
+                  'cursor-pointer hover:text-orange-200': isEditingProfile 
+                }"
+                @click="isEditingProfile ? triggerImageUpload() : null"
+              />
               
-              <!-- Hover overlay for delete (when not editing and has image) -->
+              <!-- Hover overlay for delete (only when editing and has image) -->
               <div 
-                v-if="!isEditingProfile && profileData.profileImageUrl"
-                class="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+                v-if="isEditingProfile && profileData.profileImageUrl"
+                class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center cursor-pointer"
                 @click="handleDeleteImage"
+                title="Haz clic para eliminar la imagen"
               >
                 <UIcon name="i-heroicons-trash" class="w-8 h-8 text-white" />
               </div>
             </div>
             
-            <!-- Camera button (when editing) -->
-            <button 
-              v-if="isEditingProfile"
-              @click="triggerImageUpload"
-              class="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-600 hover:bg-orange-700 rounded-full flex items-center justify-center transition-colors"
-            >
-              <UIcon name="i-heroicons-camera" class="w-4 h-4 text-white" />
-            </button>
+
             
             <input 
               ref="imageInput"
@@ -394,115 +397,117 @@
             </button>
           </div>
         </AppCard>
-      </div>
 
-      <!-- Credentials Section -->
-      <AppCard>
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-semibold text-white">Credenciales y Certificaciones</h3>
-          <div class="flex gap-2">
-            <AppButtonSecondary v-if="isEditingCredentials" @click="handleCredentialsCancel">
-              Cancelar
-            </AppButtonSecondary>
-            <AppButtonPrimary 
-              v-if="isEditingCredentials" 
-              @click="handleCredentialsSave"
-              :disabled="!hasCredentialsChanges"
-            >
-              Guardar
-            </AppButtonPrimary>
-            <AppButtonSecondary v-else @click="handleCredentialsEdit">
-              Editar
-            </AppButtonSecondary>
+        <!-- Credentials Card (moved here) -->
+        <AppCard>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-white">Credenciales y Certificaciones</h3>
+            <div class="flex gap-2">
+              <AppButtonSecondary v-if="isEditingCredentials" @click="handleCredentialsCancel">
+                Cancelar
+              </AppButtonSecondary>
+              <AppButtonPrimary 
+                v-if="isEditingCredentials" 
+                @click="handleCredentialsSave"
+                :disabled="!hasCredentialsChanges"
+              >
+                Guardar
+              </AppButtonPrimary>
+              <AppButtonSecondary v-else @click="handleCredentialsEdit">
+                Editar
+              </AppButtonSecondary>
+            </div>
           </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div 
-            v-for="(credential, index) in profileData.credentials" 
-            :key="index"
-            class="bg-slate-600/50 rounded-lg p-4 border border-slate-500"
-          >
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex-1">
-                <div v-if="!isEditingCredentials" class="font-medium text-white mb-1">{{ credential.name }}</div>
-                <AppInput 
-                  v-else
-                  v-model="credential.name"
-                  placeholder="Nombre de la credencial"
-                />
-                
-                <div v-if="!isEditingCredentials" class="text-slate-400 text-sm mb-2">{{ credential.issuer }}</div>
-                <AppInput 
-                  v-else
-                  v-model="credential.issuer"
-                  placeholder="Institución emisora"
-                />
-                
-                <div v-if="!isEditingCredentials" class="text-slate-400 text-xs">{{ credential.date }}</div>
-                <AppInput 
-                  v-else
-                  v-model="credential.date"
-                  type="date"
-                />
+          
+          <div class="space-y-4">
+            <div 
+              v-for="(credential, index) in profileData.credentials" 
+              :key="index"
+              class="p-3 bg-slate-600/50 rounded-lg"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div v-if="!isEditingCredentials" class="font-medium text-white">{{ credential.name }}</div>
+                  <AppInput 
+                    v-else
+                    v-model="credential.name"
+                    placeholder="Nombre de la credencial"
+                  />
+                  
+                  <div v-if="!isEditingCredentials" class="text-slate-400 text-sm">{{ credential.issuer }}</div>
+                  <AppInput 
+                    v-else
+                    v-model="credential.issuer"
+                    placeholder="Institución emisora"
+                  />
+                  
+                  <div v-if="!isEditingCredentials" class="text-slate-400 text-sm">{{ credential.date }}</div>
+                  <AppInput 
+                    v-else
+                    v-model="credential.date"
+                    type="date"
+                  />
+                </div>
+                <div class="flex gap-1">
+                  <button 
+                    v-if="isEditingCredentials"
+                    @click="uploadCredentialFileHandler(index)"
+                    class="text-blue-400 hover:text-blue-300"
+                    title="Subir archivo"
+                  >
+                    <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
+                  </button>
+                  <button 
+                    v-if="isEditingCredentials"
+                    @click="removeCredential(index)"
+                    class="text-red-400 hover:text-red-300"
+                    title="Eliminar"
+                  >
+                    <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               
-              <div class="flex gap-2">
-                <button 
-                  v-if="isEditingCredentials"
-                  @click="uploadCredentialFileHandler(index)"
-                  class="text-blue-400 hover:text-blue-300"
-                  title="Subir archivo"
-                >
-                  <UIcon name="i-heroicons-arrow-up-tray" class="w-4 h-4" />
-                </button>
-                <button 
-                  v-if="isEditingCredentials"
-                  @click="removeCredential(index)"
-                  class="text-red-400 hover:text-red-300"
-                  title="Eliminar"
-                >
-                  <UIcon name="i-heroicons-trash" class="w-4 h-4" />
-                </button>
+              <!-- File preview -->
+              <div v-if="credential.fileUrl" class="mt-2">
+                <div class="flex items-center gap-2 p-2 bg-slate-500/50 rounded">
+                  <UIcon name="i-heroicons-document" class="w-3 h-3 text-slate-400" />
+                  <span class="text-slate-300 text-xs flex-1 truncate">{{ credential.fileName || 'Documento' }}</span>
+                  <a 
+                    :href="credential.fileUrl" 
+                    target="_blank"
+                    class="text-orange-400 hover:text-orange-300"
+                  >
+                    <UIcon name="i-heroicons-eye" class="w-3 h-3" />
+                  </a>
+                </div>
               </div>
             </div>
             
-            <!-- File preview -->
-            <div v-if="credential.fileUrl" class="mt-3">
-              <div class="flex items-center gap-2 p-2 bg-slate-500/50 rounded">
-                <UIcon name="i-heroicons-document" class="w-4 h-4 text-slate-400" />
-                <span class="text-slate-300 text-sm flex-1 truncate">{{ credential.fileName || 'Documento' }}</span>
-                <a 
-                  :href="credential.fileUrl" 
-                  target="_blank"
-                  class="text-orange-400 hover:text-orange-300"
-                >
-                  <UIcon name="i-heroicons-eye" class="w-4 h-4" />
-                </a>
-              </div>
+            <div v-if="profileData.credentials.length === 0" class="text-slate-400 text-center py-4">
+              No hay credenciales agregadas
             </div>
+            
+            <button 
+              v-if="isEditingCredentials"
+              @click="addCredential"
+              class="w-full mt-4 p-3 border-2 border-dashed border-slate-500 rounded-lg text-slate-400 hover:text-slate-300 hover:border-slate-400 transition-colors"
+            >
+              <UIcon name="i-heroicons-plus" class="w-5 h-5 mx-auto mb-1" />
+              Agregar credencial
+            </button>
           </div>
-          
-          <div v-if="profileData.credentials.length === 0" class="md:col-span-2 lg:col-span-3 text-slate-400 text-center py-8">
-            No hay credenciales agregadas
-          </div>
-          
-          <button 
-            v-if="isEditingCredentials"
-            @click="addCredential"
-            class="md:col-span-2 lg:col-span-3 w-full mt-4 p-4 border-2 border-dashed border-slate-500 rounded-lg text-slate-400 hover:text-slate-300 hover:border-slate-400 transition-colors"
-          >
-            <UIcon name="i-heroicons-plus" class="w-5 h-5 mx-auto mb-1" />
-            Agregar credencial
-          </button>
-        </div>
-      </AppCard>
+        </AppCard>
+      </div>
+
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useFirebaseStorage } from '~/composables/firebase-storage'
+import { toast } from 'vue3-toastify'
 import AppCard from '~/components/AppCard.vue'
 import CustomSelect from '~/components/CustomSelect.vue'
 import AppInput from '~/components/AppInput.vue'
@@ -826,8 +831,10 @@ const saveProfile = async () => {
     
     if (result.success) {
       console.log('✅ Perfil guardado exitosamente')
+      toast.success('Los cambios se guardaron correctamente. ¡Tu información está al día!')
     } else {
       console.error('❌ Error al guardar perfil:', result.error)
+      toast.error('Error al guardar los cambios. Inténtalo de nuevo.')
     }
   } catch (error) {
     console.error('❌ Error saving profile:', error)
@@ -855,18 +862,10 @@ const handleImageUpload = async (event: Event) => {
   }
 }
 
-const handleDeleteImage = async () => {
-  try {
-    // Clear the image URL
-    profileData.profileImageUrl = ''
-    
-    // Save the change to Firestore
-    await saveProfile()
-    
-    console.log('✅ Imagen de perfil eliminada exitosamente')
-  } catch (error) {
-    console.error('Error deleting profile image:', error)
-  }
+const handleDeleteImage = () => {
+  // Clear the image URL locally (don't save to Firestore yet)
+  profileData.profileImageUrl = ''
+  console.log('🗑️ Imagen de perfil marcada para eliminación (cambios pendientes)')
 }
 
 const addEducation = () => {

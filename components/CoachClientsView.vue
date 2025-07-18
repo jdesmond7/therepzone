@@ -14,7 +14,7 @@
           icon="i-heroicons-plus"
           class="w-full sm:w-auto"
         >
-          Agregar Cliente
+          Crear Nuevo Atleta
         </AppButtonPrimary>
       </template>
       <!-- Custom cell templates -->
@@ -118,131 +118,149 @@
     </div>
 
     <!-- Add Client Modal -->
-    <div v-if="showAddClientModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <UserInfoForm
-          title="Agregar Nuevo Cliente"
-          subtitle="Completa la información del cliente para agregarlo a tu programa"
-          submit-button-text="Crear Cliente"
-          show-email-field
-          show-cancel-button
-          @submit="handleCreateClient"
-          @cancel="showAddClientModal = false"
-        />
-      </div>
-    </div>
-
-    <!-- Client Details Modal con animación -->
-    <transition name="modal-fade">
-      <div v-if="selectedClient" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-white">Detalles del Cliente</h3>
-            <button 
-              @click="selectedClient = null"
-              class="text-slate-400 hover:text-white"
-            >
-              <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
-            </button>
-          </div>
-
-          <div class="space-y-6">
-            <!-- Client Info -->
-            <div class="bg-slate-700/50 rounded-lg p-4">
-              <h4 class="font-bold text-white mb-3">Información Personal</h4>
-              <div class="flex items-center gap-6">
-                <div class="flex-shrink-0">
-                  <img v-if="selectedClient.profileImageUrl" :src="selectedClient.profileImageUrl" class="w-20 h-20 rounded-full object-cover border-2 border-slate-600" />
-                  <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-3xl font-bold">
-                    {{ getClientDisplayName(selectedClient).charAt(0).toUpperCase() }}
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <div class="flex flex-col gap-1">
-                    <span class="text-xl font-bold text-white">{{ getClientDisplayName(selectedClient) }}</span>
-                    <span v-if="selectedClient.nickname" class="text-orange-400 font-medium">{{ selectedClient.nickname }}</span>
-                  </div>
-                  <div class="flex items-center gap-4 mt-2">
-                    <span class="text-slate-300 text-sm flex items-center gap-1">
-                      <UIcon name="i-heroicons-envelope" class="w-4 h-4" />
-                      {{ selectedClient.email }}
-                    </span>
-                    <span v-if="selectedClient.phone" class="text-slate-300 text-sm flex items-center gap-1">
-                      <UIcon name="i-heroicons-phone" class="w-4 h-4" />
-                      {{ selectedClient.phone }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Ver Perfil Completo Button -->
-              <div class="mt-4">
-                <AppButtonSecondary
-                  @click="viewFullProfile(selectedClient)"
-                  fullWidth
-                >
-                  Ver Perfil Completo
-                </AppButtonSecondary>
-              </div>
+    <div v-if="showAddClientModalBg" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50" @click="closeAddClientModal"></div>
+      <transition name="modal-slide">
+        <div v-if="showAddClientModalContent && showAddClientModal" @click.stop class="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-3xl font-bold text-white">Nuevo Atleta</h3>
+              <button 
+                @click="closeAddClientModal"
+                class="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+              </button>
             </div>
-
-            <!-- Assigned Workouts -->
-            <div class="bg-slate-700/50 rounded-lg p-4">
-              <h4 class="font-bold text-white mb-3">Rutinas Asignadas</h4>
-              
-              <!-- Current Day Container -->
-              <div class="bg-slate-600/15 rounded-lg p-4 mb-4 border border-slate-600">
-                <div class="flex items-center justify-between mb-3">
-                  <h5 class="font-semibold text-orange-400">{{ getCurrentDayName() }}</h5>
-                  <span class="text-slate-400 text-sm">Día Actual</span>
-                </div>
-                
-                <div v-if="getCurrentDayWorkout(selectedClient)" class="mb-3">
-                  <div class="bg-slate-700/50 rounded-lg p-3">
-                    <p class="text-white font-medium">{{ getCurrentDayWorkout(selectedClient).title }}</p>
-                    <p class="text-slate-400 text-sm">{{ getCurrentDayWorkout(selectedClient).description }}</p>
-                  </div>
-                </div>
-                <p v-else class="text-slate-400 mb-3">No hay rutina asignada para hoy</p>
-                
-                <AppButtonSecondary
-                  v-if="selectedClient"
-                  @click="goToAssignRoutine(selectedClient)"
-                  fullWidth
-                >
-                  Asignar Rutina
-                </AppButtonSecondary>
-              </div>
-              
-              <!-- Other Assigned Workouts -->
-              <div v-if="selectedClient.assignedWorkouts.length > 0" class="space-y-2">
-                <div 
-                  v-for="workoutId in selectedClient.assignedWorkouts" 
-                  :key="workoutId"
-                  class="bg-slate-600/50 rounded-lg p-3"
-                >
-                  <p class="text-white font-medium">Rutina ID: {{ workoutId }}</p>
-                  <p class="text-slate-400 text-sm">Estado: Pendiente</p>
-                </div>
-              </div>
-              
-              <!-- Programming Button -->
-              <div class="mt-4">
-                <AppButtonPrimary
-                  v-if="selectedClient"
-                  @click="goToProgramming(selectedClient)"
-                  fullWidth
-                >
-                  {{ hasWeeklyProgramming(selectedClient) ? 'Editar Programación' : 'Crear Programación' }}
-                </AppButtonPrimary>
-              </div>
+            <div class="flex-1">
+              <UserInfoForm
+                submit-button-text="Crear Cliente"
+                show-email-field
+                show-cancel-button
+                hide-title
+                hide-subtitle
+                hide-container
+                @submit="handleCreateClient"
+                @cancel="closeAddClientModal"
+              />
             </div>
-
-
           </div>
         </div>
-      </div>
-    </transition>
+      </transition>
+    </div>
+
+    <!-- Client Details Modal -->
+    <div v-if="showDetailsModalBg" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50" @click="closeDetailsModal"></div>
+      <transition name="modal-slide">
+        <div v-if="showDetailsModalContent && selectedClient" @click.stop class="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-3xl font-bold text-white">Detalles del Cliente</h3>
+              <button 
+                @click="closeDetailsModal"
+                class="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <UIcon name="i-heroicons-x-mark" class="w-6 h-6" />
+              </button>
+            </div>
+
+            <div class="space-y-6">
+              <!-- Client Info -->
+              <div class="bg-slate-700/50 rounded-lg p-4">
+                <h4 class="font-bold text-white mb-3">Información Personal</h4>
+                <div class="flex items-center gap-6">
+                  <div class="flex-shrink-0">
+                    <img v-if="selectedClient.profileImageUrl" :src="selectedClient.profileImageUrl" class="w-20 h-20 rounded-full object-cover border-2 border-slate-600" />
+                    <div v-else class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-3xl font-bold">
+                      {{ getClientDisplayName(selectedClient).charAt(0).toUpperCase() }}
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex flex-col gap-1">
+                      <span class="text-xl font-bold text-white">{{ getClientDisplayName(selectedClient) }}</span>
+                      <span v-if="selectedClient.nickname" class="text-orange-400 font-medium">{{ selectedClient.nickname }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 mt-2">
+                      <span class="text-slate-300 text-sm flex items-center gap-1">
+                        <UIcon name="i-heroicons-envelope" class="w-4 h-4" />
+                        {{ selectedClient.email }}
+                      </span>
+                      <span v-if="selectedClient.phone" class="text-slate-300 text-sm flex items-center gap-1">
+                        <UIcon name="i-heroicons-phone" class="w-4 h-4" />
+                        {{ selectedClient.phone }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Ver Perfil Completo Button -->
+                <div class="mt-4">
+                  <AppButtonSecondary
+                    @click="viewFullProfile(selectedClient)"
+                    fullWidth
+                  >
+                    Ver Perfil Completo
+                  </AppButtonSecondary>
+                </div>
+              </div>
+
+              <!-- Assigned Workouts -->
+              <div class="bg-slate-700/50 rounded-lg p-4">
+                <h4 class="font-bold text-white mb-3">Rutinas Asignadas</h4>
+                
+                <!-- Current Day Container -->
+                <div class="bg-slate-600/15 rounded-lg p-4 mb-4 border border-slate-600">
+                  <div class="flex items-center justify-between mb-3">
+                    <h5 class="font-semibold text-orange-400">{{ getCurrentDayName() }}</h5>
+                    <span class="text-slate-400 text-sm">Día Actual</span>
+                  </div>
+                  
+                  <div v-if="getCurrentDayWorkout(selectedClient)" class="mb-3">
+                    <div class="bg-slate-700/50 rounded-lg p-3">
+                      <p class="text-white font-medium">{{ getCurrentDayWorkout(selectedClient).title }}</p>
+                      <p class="text-slate-400 text-sm">{{ getCurrentDayWorkout(selectedClient).description }}</p>
+                    </div>
+                  </div>
+                  <p v-else class="text-slate-400 mb-3">No hay rutina asignada para hoy</p>
+                  
+                  <AppButtonSecondary
+                    v-if="selectedClient"
+                    @click="goToAssignRoutine(selectedClient)"
+                    fullWidth
+                  >
+                    Asignar Rutina
+                  </AppButtonSecondary>
+                </div>
+                
+                <!-- Other Assigned Workouts -->
+                <div v-if="selectedClient.assignedWorkouts.length > 0" class="space-y-2">
+                  <div 
+                    v-for="workoutId in selectedClient.assignedWorkouts" 
+                    :key="workoutId"
+                    class="bg-slate-600/50 rounded-lg p-3"
+                  >
+                    <p class="text-white font-medium">Rutina ID: {{ workoutId }}</p>
+                    <p class="text-slate-400 text-sm">Estado: Pendiente</p>
+                  </div>
+                </div>
+                
+                <!-- Programming Button -->
+                <div class="mt-4">
+                  <AppButtonPrimary
+                    v-if="selectedClient"
+                    @click="goToProgramming(selectedClient)"
+                    fullWidth
+                  >
+                    {{ hasWeeklyProgramming(selectedClient) ? 'Editar Programación' : 'Crear Programación' }}
+                  </AppButtonPrimary>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
   </div>
 </template>
 
@@ -258,6 +276,12 @@ const isLoading = ref(true)
 const showAddClientModal = ref(false)
 const isCreatingClient = ref(false)
 const selectedClient = ref<Athlete | null>(null)
+
+// Modal animation states
+const showAddClientModalBg = ref(false)
+const showAddClientModalContent = ref(false)
+const showDetailsModalBg = ref(false)
+const showDetailsModalContent = ref(false)
 
 // Table columns configuration
 const tableColumns = [
@@ -441,6 +465,10 @@ const handleCreateClient = async (userData: any) => {
 
 const viewClientDetails = (client: Athlete) => {
   selectedClient.value = client
+  showDetailsModalBg.value = true
+  setTimeout(() => {
+    showDetailsModalContent.value = true
+  }, 150)
 }
 
 const editClient = (client: Athlete) => {
@@ -507,6 +535,37 @@ function viewFullProfile(client: any) {
   console.log('View full profile for client:', client.id)
 }
 
+// Modal animation methods
+const closeAddClientModal = () => {
+  showAddClientModalContent.value = false
+  setTimeout(() => {
+    showAddClientModal.value = false
+  }, 350)
+}
+
+const closeDetailsModal = () => {
+  showDetailsModalContent.value = false
+  setTimeout(() => {
+    selectedClient.value = null
+    showDetailsModalBg.value = false
+  }, 350)
+}
+
+// Watcher for modal animations
+watch(showAddClientModal, (show) => {
+  if (show) {
+    showAddClientModalBg.value = true
+    setTimeout(() => {
+      showAddClientModalContent.value = true
+    }, 150)
+  } else {
+    showAddClientModalContent.value = false
+    setTimeout(() => {
+      showAddClientModalBg.value = false
+    }, 350)
+  }
+})
+
 onMounted(() => {
   loadClients()
 })
@@ -519,4 +578,21 @@ watch(
   },
   { immediate: true }
 )
-</script> 
+</script>
+
+<style scoped>
+.modal-slide-enter-active {
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-slide-leave-active {
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-slide-enter-from {
+  transform: translateY(-60vh);
+  opacity: 0;
+}
+.modal-slide-leave-to {
+  transform: translateY(-60vh);
+  opacity: 0;
+}
+</style> 

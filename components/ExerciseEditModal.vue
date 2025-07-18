@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
           <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-white">
+            <h3 class="text-3xl font-bold text-white">
               {{ editing ? 'Editar Ejercicio' : 'Crear Nuevo Ejercicio' }}
             </h3>
             <button 

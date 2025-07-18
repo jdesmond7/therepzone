@@ -51,10 +51,10 @@
               Ejercicios
             </button>
           </nav>
-          <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
-            <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
-            Cerrar Sesión
-          </button>
+                  <button @click="logout" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors font-medium cursor-pointer">
+          <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
+          Cerrar Sesión
+        </button>
         </div>
       </div>
     </transition>
@@ -195,21 +195,21 @@
               <div class="space-y-3">
                 <button 
                   @click="currentView = 'coaches'"
-                  class="w-full flex items-center gap-3 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left"
+                  class="w-full flex items-center gap-3 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left cursor-pointer"
                 >
                   <UIcon name="i-heroicons-user-group" class="w-5 h-5 text-blue-500" />
                   <span class="text-white">Gestionar Coaches</span>
                 </button>
                 <button 
                   @click="currentView = 'athletes'"
-                  class="w-full flex items-center gap-3 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left"
+                  class="w-full flex items-center gap-3 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left cursor-pointer"
                 >
                   <UIcon name="i-heroicons-users" class="w-5 h-5 text-green-500" />
                   <span class="text-white">Gestionar Atletas</span>
                 </button>
                 <button 
                   @click="currentView = 'exercises'"
-                  class="w-full flex items-center gap-3 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left"
+                  class="w-full flex items-center gap-3 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left cursor-pointer"
                 >
                   <UIcon name="i-heroicons-academic-cap" class="w-5 h-5 text-purple-500" />
                   <span class="text-white">Gestionar Ejercicios</span>
@@ -477,7 +477,7 @@ const logout = async () => {
 
 const navBtnClass = (view: string) => {
   return [
-    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium',
+    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium cursor-pointer',
     currentView.value === view ? 'bg-purple-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'
   ]
 }

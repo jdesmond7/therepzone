@@ -8,5 +8,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     position: 'top-right',
     transition: 'slide',
     transitionDuration: 100,
+    toastClassName: 'rounded-xl',
+    bodyClassName: 'rounded-xl',
   } as ToastContainerOptions)
 }) 
