@@ -520,7 +520,7 @@ import { useCountryCitySelect } from '~/composables/useCountryCitySelect'
 
 const { user } = useAuth()
 const { uploadProfileImage, uploadCredentialFile } = useFirebaseStorage()
-const { getCoachById, getCoachByAuthUID, updateCoach } = useCoaches()
+const { getCoachByAuthUID, updateCoach } = useCoaches()
 
 
 
@@ -603,7 +603,7 @@ const profileData = reactive({
   firstName: '',
   lastName: '',
   nickname: '',
-  presentationTitle: 'Fitness Coach',
+  presentationTitle: 'Coach',
   phone: '',
   email: '',
   profileImageUrl: '',
@@ -781,24 +781,6 @@ const saveProfile = async () => {
   if (!user.value?.uid) return
   
   try {
-    console.log('🔄 Guardando perfil...')
-    console.log('📝 Datos a guardar:', {
-      firstName: profileData.firstName,
-      lastName: profileData.lastName,
-      fullName: profileData.fullName,
-      nickname: profileData.nickname,
-      phone: profileData.phone,
-      email: profileData.email,
-      presentationTitle: profileData.presentationTitle
-    })
-    
-    // First get the coach to find the correct document ID
-    const coachResult = await getCoachByAuthUID(user.value.uid)
-    if (!coachResult.success || !coachResult.coach) {
-      console.error('❌ No se pudo encontrar el coach para guardar')
-      return
-    }
-    
     const updateData = {
       firstName: profileData.firstName,
       lastName: profileData.lastName,
@@ -823,21 +805,17 @@ const saveProfile = async () => {
       credentials: profileData.credentials
     }
     
-    console.log('💾 Actualizando coach con ID:', coachResult.coach.uid)
-    console.log('📊 Datos de actualización:', updateData)
-    
-    // Save to coaches collection using the coach's document ID
-    const result = await updateCoach(coachResult.coach.uid, updateData)
+    // Save to coaches collection using the coach's UID
+    const result = await updateCoach(profileData.uid, updateData)
     
     if (result.success) {
-      console.log('✅ Perfil guardado exitosamente')
       toast.success('Los cambios se guardaron correctamente. ¡Tu información está al día!')
     } else {
-      console.error('❌ Error al guardar perfil:', result.error)
+      console.error('Error al guardar perfil:', result.error)
       toast.error('Error al guardar los cambios. Inténtalo de nuevo.')
     }
   } catch (error) {
-    console.error('❌ Error saving profile:', error)
+    console.error('Error saving profile:', error)
   }
 }
 
@@ -851,7 +829,7 @@ const handleImageUpload = async (event: Event) => {
     const file = target.files[0]
     
     try {
-      const result = await uploadProfileImage(file, user.value?.uid || 'profile', profileData.fullName || 'Coach')
+      const result = await uploadProfileImage(file, user.value?.uid || 'profile', profileData.fullName || 'Athlete')
       if (result.success) {
         profileData.profileImageUrl = result.url!
         console.log('✅ Imagen de perfil subida exitosamente')
@@ -929,12 +907,11 @@ const validateUid = async () => {
   
   try {
     // Check if UID already exists in coaches collection
-    const { getCoachById } = useCoaches()
-    const result = await getCoachById(profileData.uid)
+    const result = await getCoachByAuthUID(profileData.uid)
     
     if (result.success && result.coach) {
-      // If found and it's not the current user, show error
-      if (result.coach.uid !== user.value?.uid) {
+      // If found and it's not the current coach, show error
+      if (result.coach.uid !== profileData.uid) {
         uidError.value = 'Este User ID ya está en uso'
       } else {
         uidError.value = ''
@@ -1182,25 +1159,17 @@ const handleCredentialsCancel = () => {
 
 // Load profile data
 const loadProfile = async () => {
-  console.log('🔄 Cargando perfil del coach...')
-  console.log('👤 User UID:', user.value?.uid)
-  
   if (!user.value?.uid) {
-    console.log('❌ No hay usuario autenticado')
+    console.log('No hay usuario autenticado')
     return
   }
   
   try {
-    console.log('🔍 Buscando coach por auth UID:', user.value.uid)
     const result = await getCoachByAuthUID(user.value.uid)
     
-    console.log('📊 Resultado de búsqueda:', result)
-    
     if (result.success && result.coach) {
-      console.log('✅ Coach encontrado:', result.coach)
-      
       // Merge coach data with profile data
-      const fullName = result.coach.fullName || `${result.coach.firstName} ${result.coach.lastName}`.trim()
+      const fullName = result.coach.fullName || `${result.coach.firstName || ''} ${result.coach.lastName || ''}`.trim()
       const nameParts = fullName.split(' ')
       const firstName = nameParts[0] || ''
       const lastName = nameParts.slice(1).join(' ') || ''
@@ -1210,7 +1179,7 @@ const loadProfile = async () => {
         firstName: result.coach.firstName || firstName,
         lastName: result.coach.lastName || lastName,
         nickname: result.coach.nickname || '',
-        presentationTitle: result.coach.presentationTitle || 'Fitness Coach',
+        presentationTitle: result.coach.presentationTitle || 'Coach',
         email: result.coach.email,
         phone: result.coach.phone || '',
         profileImageUrl: result.coach.profileImageUrl || '',
@@ -1231,29 +1200,24 @@ const loadProfile = async () => {
         credentials: result.coach.credentials || []
       }
       
-      console.log('📝 Datos a asignar:', updatedData)
       Object.assign(profileData, updatedData)
-      console.log('✅ Perfil cargado exitosamente')
     } else {
-      console.log('❌ No se pudo cargar el coach:', result.error)
+      console.error('No se pudo cargar el coach:', result.error)
     }
   } catch (error) {
-    console.error('❌ Error loading profile:', error)
+    console.error('Error loading profile:', error)
   }
 }
 
 // Watch for user authentication
 watch(() => user.value?.uid, (newUid) => {
   if (newUid) {
-    console.log('👤 Usuario autenticado, cargando perfil...')
     loadProfile()
   }
 }, { immediate: true })
 
 onMounted(() => {
-  console.log('🚀 Componente montado')
   if (user.value?.uid) {
-    console.log('👤 Usuario ya autenticado en onMounted')
     loadProfile()
   }
 })

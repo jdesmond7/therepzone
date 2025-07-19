@@ -60,6 +60,11 @@ export const getFirebaseDb = () => {
   return firebase?.db || null
 }
 
+export const getFirebaseApp = () => {
+  const firebase = initFirebase()
+  return firebase?.app || null
+}
+
 // Firebase Auth functions
 export const useAuth = () => {
   const user = ref<User | null>(null)
@@ -166,7 +171,7 @@ export const useAuth = () => {
     }
   }
 
-  const register = async (email: string, password: string, fullName?: string, role: 'client' | 'coach' = 'client') => {
+  const register = async (email: string, password: string, fullName?: string, role: 'athlete' | 'coach' = 'athlete') => {
     if (!process.client) return { success: false, error: 'Not available on server' }
     
     try {

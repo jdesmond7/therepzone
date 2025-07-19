@@ -73,25 +73,6 @@
         </form>
 
         <div class="mt-6 text-center space-y-3">
-          <!-- Emergency stop loading button -->
-          <AppButtonPrimary
-            @click="handleEmergencyStop" 
-            fullWidth
-            class="bg-yellow-600 hover:bg-yellow-700 h-12"
-          >
-            🛑 Parar Loading de Emergencia
-          </AppButtonPrimary>
-          
-          <!-- Logout button for testing (only visible when authenticated) -->
-          <AppButtonDestructive
-            v-if="user" 
-            @click="handleLogout" 
-            fullWidth
-            class="h-12"
-          >
-            🚪 Cerrar Sesión (Para Testing)
-          </AppButtonDestructive>
-          
           <p class="text-slate-400">
             ¿No tienes cuenta? 
             <NuxtLink to="/register" class="text-orange-600 hover:text-orange-500 font-bold">
@@ -108,6 +89,11 @@
 </template>
 
 <script setup lang="ts">
+import TheLogo from '~/components/shared/TheLogo.vue'
+import AppInput from '~/components/shared/AppInput.vue'
+import AppButtonPrimary from '~/components/shared/AppButtonPrimary.vue'
+import PasswordInput from '~/components/shared/PasswordInput.vue'
+
 // Login page for THEREPZONE
 const email = ref('')
 const password = ref('')
@@ -125,29 +111,13 @@ if (process.client) {
 
 import { useUserRole } from '~/composables/useUserRole'
 import { useUserStore } from '~/stores/user'
+import { navigateTo } from '#app'
 
 const { login, logout, user } = useAuth()
 const { getDashboardRoute, ensureProfileLoaded, clearUserProfile: clearUserRoleProfile } = useUserRole()
 const userStore = useUserStore()
 
-const handleLogout = async () => {
-  console.log('🚪 Cerrando sesión...')
-  await logout()
-  clearUserRoleProfile() // Limpia el composable
-  userStore.clearUserProfile() // Limpia el store Pinia
-  console.log('✅ Sesión cerrada')
-}
 
-const handleEmergencyStop = () => {
-  console.log('🛑 PARADA DE EMERGENCIA: Desactivando loading global')
-  const { setLoading } = useGlobalLoading()
-  setLoading(false)
-  
-  // Clear all redirect-related flags
-  localStorage.removeItem('therepzone_remember_me')
-  localStorage.removeItem('therepzone_redirecting')
-  console.log('🧹 Limpiando todos los flags de redirección y preferencias')
-}
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -166,15 +136,45 @@ const handleLogin = async () => {
     
     if (result.success) {
       console.log('✅ Login exitoso, iniciando redirección...')
-      isLoading.value = false
+      
+      // Activar loading global inmediatamente
+      console.log('🎯 Activando loading global: ¡Bienvenido de vuelta!')
       setLoading(true, '¡Bienvenido de vuelta!')
-      // Esperar a que el perfil esté cargado y redirigir según el rol
+      
+      // Pequeño delay para que el usuario vea la transición
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Desactivar el loading del botón para mostrar el loading global
+      isLoading.value = false
+      
+      // Guardar flags de redirección
+      if (process.client) {
+        localStorage.setItem('therepzone_redirecting', 'true')
+        localStorage.setItem('therepzone_login_process', 'true')
+        console.log('🏷️ Flags de redirección guardados')
+      }
+      
+      // Pequeña pausa para mostrar el mensaje de bienvenida
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Cargar el perfil del usuario para determinar la ruta correcta
+      console.log('🎯 Cambiando mensaje de loading: Preparando tu dashboard...')
+      setLoading(true, 'Preparando tu dashboard...')
       await ensureProfileLoaded()
+      
+      // Obtener la ruta del dashboard basada en el rol
       const dashboardRoute = getDashboardRoute()
-      setTimeout(() => {
-        console.log('🚀 Redirigiendo manualmente al dashboard correcto...')
-        window.location.href = dashboardRoute
-      }, 1500)
+      console.log('🚀 Redirigiendo al dashboard:', dashboardRoute)
+      
+      // Mensaje final antes de la redirección
+      console.log('🎯 Mensaje final de loading: ¡Listo! Redirigiendo...')
+      setLoading(true, '¡Listo! Redirigiendo...')
+      
+      // Pequeña pausa para mostrar el mensaje final
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Usar navigateTo para una transición más suave
+      await navigateTo(dashboardRoute)
     } else {
       console.log('❌ Login falló:', result.error)
       errorMessage.value = getErrorMessage(result.error, result.code)

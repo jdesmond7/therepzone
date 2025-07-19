@@ -3,12 +3,61 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // TEMPORAL: Reglas completamente abiertas para pruebas
-    // ⚠️ ADVERTENCIA: Solo usar para desarrollo/testing
-    // TODO: Restaurar reglas de seguridad después de la migración
+    // TEMPORARY: Completely permissive rules for testing migration
+    // TODO: Restore strict rules after migration is complete
     
+    // Allow read and write access to all collections for testing (no auth required)
     match /{document=**} {
       allow read, write: if true;
     }
+    
+    // NOTE: These specific rules are commented out for testing
+    // Users collection - users can read/write their own data
+    // match /users/{userId} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId;
+    //   
+    //   // Coaches can read their clients' data
+    //   match /clients/{clientId} {
+    //     allow read, write: if request.auth != null && 
+    //       (request.auth.uid == clientId || 
+    //        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach');
+    //   }
+    // }
+    
+    // Exercises collection - authenticated users can read, coaches can create/edit
+    // match /exercises/{exerciseId} {
+    //   allow read: if request.auth != null;
+    //   allow write: if request.auth != null && 
+    //     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coach', 'staff'];
+    // }
+    
+    // Workouts collection - authenticated users can read, coaches can create/edit
+    // match /workouts/{workoutId} {
+    //   allow read: if request.auth != null;
+    //   allow write: if request.auth != null && 
+    //     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['coach', 'staff'];
+    // }
+    
+    // Workout assignments - clients can read their own, coaches can manage
+    // match /workoutAssignments/{assignmentId} {
+    //   allow read: if request.auth != null && 
+    //     (resource.data.clientId == request.auth.uid || 
+    //      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach');
+    //   allow write: if request.auth != null && 
+    //     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach';
+    // }
+    
+    // Workout logs - clients can read/write their own, coaches can read their clients'
+    // match /workoutLogs/{logId} {
+    //   allow read, write: if request.auth != null && 
+    //     (resource.data.clientId == request.auth.uid || 
+    //      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach');
+    // }
+    
+    // Staff collection - only staff can access
+    // match /staff/{staffId} {
+    //   allow read, write: if request.auth != null && 
+    //     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
+    // }
   }
 } 

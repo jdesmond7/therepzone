@@ -1,119 +1,88 @@
-// Database cleanup and setup utilities for THEREPZONE
-import { useExercises, type Exercise } from '~/composables/firestore'
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
+// Script to clean the Firebase database and remove all test data
 import { getFirebaseDb } from '~/composables/firebase'
-import { serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
 
-// Pull-ups exercise data with correct structure
-export const pullUpsExercise: Omit<Exercise, 'id' | 'createdAt'> = {
-  title: "Pull-ups",
-  description: "Ejercicio de tracción que trabaja la espalda y los brazos usando el peso corporal", 
-  photo: "", // Will be set when image is uploaded
-  category: "pull", 
-  difficulty: "intermedio",
-  createdBy: "coach",
-  instructions: [
-    "Cuelga de la barra con un agarre prono, manos a la altura de los hombros",
-    "Activa el core y los omóplatos", 
-    "Tira del cuerpo hacia arriba hasta que la barbilla pase la barra",
-    "Baja lentamente hasta la posición inicial y repite"
-  ],
-  muscleGroups: [
-    "dorsales",
-    "bíceps", 
-    "trapecio",
-    "romboides",
-    "deltoides posteriores"
-  ],
-  progressions: [],
-  regressions: []
-}
-
-// Function to delete all existing exercises
-export const clearAllExercises = async () => {
+export async function cleanDatabase() {
   try {
-    console.log('🧹 Iniciando limpieza de ejercicios...')
+    console.log('🧹 Iniciando limpieza de la base de datos...')
     
     const db = getFirebaseDb()
     if (!db) {
-      throw new Error('Firestore no está disponible')
+      throw new Error('Firebase not initialized')
     }
-    
-    const exercisesCollection = collection(db, 'exercises')
-    const querySnapshot = await getDocs(exercisesCollection)
-    
-    console.log(`📋 Encontrados ${querySnapshot.docs.length} ejercicios para eliminar`)
-    
-    const deletePromises = querySnapshot.docs.map(exerciseDoc => {
-      console.log(`🗑️ Eliminando ejercicio: ${exerciseDoc.id}`)
-      return deleteDoc(doc(db, 'exercises', exerciseDoc.id))
-    })
-    
-    await Promise.all(deletePromises)
-    
-    console.log('✅ Todos los ejercicios eliminados exitosamente')
-    return { success: true, deletedCount: querySnapshot.docs.length }
-    
-  } catch (error) {
-    console.error('❌ Error limpiando ejercicios:', error)
-    return { success: false, error }
-  }
-}
 
-// Function to create the Pull-ups exercise
-export const createPullUpsExercise = async () => {
-  try {
-    console.log('🏗️ Creando ejercicio Pull-ups...')
-    
-    const { createExercise } = useExercises()
-    
-    // Don't add serverTimestamp here - let the createExercise function handle it
-    const exerciseData = pullUpsExercise
-    
-    console.log('📝 Datos del Pull-ups:', exerciseData)
-    
-    const result = await createExercise(exerciseData)
-    
-    if (result.success) {
-      console.log('✅ Pull-ups creado exitosamente con ID:', result.id)
-      return { success: true, id: result.id }
-    } else {
-      console.error('❌ Error creando Pull-ups:', result.error)
-      return { success: false, error: result.error }
-    }
-    
-  } catch (error) {
-    console.error('❌ Error inesperado creando Pull-ups:', error)
-    return { success: false, error }
-  }
-}
+    console.log('✅ Firebase inicializado correctamente')
 
-// Function to clean and setup database
-export const cleanAndSetupDatabase = async () => {
-  try {
-    console.log('🚀 Iniciando limpieza y configuración de la base de datos...')
+    // Collections to clean
+    const collectionsToClean = [
+      'athletes',
+      'coaches', 
+      'staff',
+      'exercises',
+      'workouts',
+      'workoutAssignments',
+      'workoutLogs',
+      'test'
+    ]
+
+    let totalDeleted = 0
+
+    for (const collectionName of collectionsToClean) {
+      console.log(`\n🗑️ Limpiando colección: ${collectionName}`)
+      
+      try {
+        const snapshot = await getDocs(collection(db, collectionName))
+        console.log(`📊 Encontrados ${snapshot.size} documentos en ${collectionName}`)
+        
+        if (snapshot.size === 0) {
+          console.log(`✅ Colección ${collectionName} ya está vacía`)
+          continue
+        }
+
+        // Delete all documents in the collection
+        const deletePromises = snapshot.docs.map(async (docSnapshot) => {
+          try {
+            await deleteDoc(doc(db, collectionName, docSnapshot.id))
+            console.log(`🗑️ Eliminado: ${collectionName}/${docSnapshot.id}`)
+            return 1
+          } catch (error) {
+            console.error(`❌ Error eliminando ${collectionName}/${docSnapshot.id}:`, error)
+            return 0
+          }
+        })
+
+        const deletedCount = await Promise.all(deletePromises)
+        const successfulDeletes = deletedCount.reduce((sum: number, count: number) => sum + count, 0)
+        
+        totalDeleted += successfulDeletes
+        console.log(`✅ ${successfulDeletes} documentos eliminados de ${collectionName}`)
+        
+      } catch (error) {
+        console.error(`❌ Error accediendo a colección ${collectionName}:`, error)
+      }
+    }
+
+    console.log('\n' + '='.repeat(50))
+    console.log('🎉 LIMPIEZA COMPLETADA EXITOSAMENTE')
+    console.log('='.repeat(50))
+    console.log(`🗑️ Total de documentos eliminados: ${totalDeleted}`)
+    console.log('✅ Base de datos limpia y lista para la migración')
+    console.log('🔗 Proyecto: therepzone1')
     
-    // Step 1: Clear all existing exercises
-    const clearResult = await clearAllExercises()
-    if (!clearResult.success) {
-      throw new Error(`Error en limpieza: ${clearResult.error}`)
+    return {
+      success: true,
+      documentsDeleted: totalDeleted
     }
     
-    // Step 2: Create Pull-ups exercise
-    const pullUpsResult = await createPullUpsExercise()
-    if (!pullUpsResult.success) {
-      throw new Error(`Error creando Pull-ups: ${pullUpsResult.error}`)
-    }
+  } catch (error: any) {
+    console.error('❌ Error durante la limpieza:')
+    console.error('Error:', error.message)
+    console.error('Code:', error.code)
     
-    console.log('🎉 Base de datos limpiada y configurada exitosamente!')
-    return { 
-      success: true, 
-      cleared: clearResult.deletedCount,
-      pullUpsId: pullUpsResult.id
+    return {
+      success: false,
+      error: error.message,
+      code: error.code
     }
-    
-  } catch (error) {
-    console.error('❌ Error en configuración de la base de datos:', error)
-    return { success: false, error }
   }
 } 

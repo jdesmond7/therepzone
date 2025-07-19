@@ -1,38 +1,35 @@
 <template>
-  <div v-if="isLoading" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-    <!-- Background overlay -->
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-    
+  <!-- Loading overlay with The Repzone design -->
+  <div v-if="isLoading" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900">
     <!-- Loading content -->
-    <div class="relative z-10 text-center">
+    <div class="text-center">
       <!-- Logo -->
-      <div class="mb-8">
-        <TheLogo />
-      </div>
-      
-      <!-- Loading dots animation -->
-      <div class="mb-6">
-        <div class="flex justify-center items-center space-x-2">
-          <div class="w-4 h-4 bg-orange-600 rounded-full animate-bounce"></div>
-          <div class="w-4 h-4 bg-orange-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-          <div class="w-4 h-4 bg-orange-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+      <div class="flex items-center justify-center mb-8">
+        <div class="flex items-center gap-3">
+          <!-- Orange square with RZ -->
+          <div class="w-12 h-12 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center">
+            <span class="text-white font-black text-lg">RZ</span>
+          </div>
+          <!-- THEREPZONE text -->
+          <span class="text-2xl font-black text-white tracking-tight">
+            THE<span class="text-orange-600">REP</span>ZONE
+          </span>
         </div>
       </div>
       
-      <!-- Loading message -->
-      <div class="space-y-4">
-        <h2 class="text-xl font-bold text-white">{{ loadingMessage }}</h2>
-        <p class="text-slate-400 text-sm">Esto solo tomará un momento...</p>
-        
-        <!-- Emergency navigation button (only appears after delay) -->
-        <div v-if="showEmergencyButton" class="mt-4">
-          <button 
-            @click="forceNavigateToDashboard"
-            class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
-          >
-            🚀 IR AL DASHBOARD AHORA
-          </button>
-        </div>
+      <!-- Loading dots -->
+      <div class="flex justify-center items-center space-x-2 mb-6">
+        <div class="w-3 h-3 bg-orange-500 rounded-full animate-bounce"></div>
+        <div class="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+        <div class="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+      </div>
+      
+      <!-- Welcome text -->
+      <div class="text-white text-center">
+        <h2 class="text-2xl font-bold mb-2">💪💪💪</h2>
+        <h2 class="text-2xl font-bold mb-6">¡Hey, bienvenido de vuelta!</h2>
+        <p class="text-base text-gray-400">Estamos cargando tus datos y progresos.</p>
+        <p class="text-base text-gray-400">Dame solo un par de segundos</p>
       </div>
     </div>
   </div>
@@ -40,44 +37,14 @@
 
 <script setup lang="ts">
 const { isLoading, loadingMessage } = useGlobalLoading()
-const showEmergencyButton = ref(false)
 
-// Watch for loading state changes
-watch(isLoading, (newValue) => {
-  if (newValue) {
-    console.log('🔄 Loading global activado:', loadingMessage.value)
-    // Reset emergency button state
-    showEmergencyButton.value = false
-    
-    // Only show emergency button for dashboard messages after a delay
-    if (loadingMessage.value.includes('dashboard')) {
-      console.log('⏰ Configurando botón de emergencia para aparecer en 4 segundos')
-      setTimeout(() => {
-        // Only show if still loading and message still contains dashboard
-        if (isLoading.value && loadingMessage.value.includes('dashboard')) {
-          console.log('🚨 Mostrando botón de emergencia')
-          showEmergencyButton.value = true
-        }
-      }, 4000) // 4 seconds delay
-    }
-  } else {
-    // Reset emergency button when loading stops
-    showEmergencyButton.value = false
-  }
-}, { immediate: true })
+// Debug logs
+console.log('🎯 [GlobalLoading] Component mounted, isLoading:', isLoading.value, 'message:', loadingMessage.value)
 
-// Emergency navigation function
-const forceNavigateToDashboard = () => {
-  console.log('🚀 NAVEGACIÓN FORZADA: Yendo al dashboard')
-  const { setLoading } = useGlobalLoading()
-  
-  // Clear all redirect flags
-  localStorage.removeItem('therepzone_redirecting')
-  console.log('🧹 Limpiando todos los flags de redirección')
-  
-  setLoading(false)
-  window.location.href = '/dashboard'
-}
+// Watch for immediate changes
+watchEffect(() => {
+  console.log('🎯 [GlobalLoading] WatchEffect triggered - isLoading:', isLoading.value, 'message:', loadingMessage.value)
+})
 </script>
 
 <style scoped>

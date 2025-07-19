@@ -41,7 +41,7 @@ export interface User {
   firstName: string
   lastName: string
   email: string
-  role: 'client' | 'coach' | 'admin'
+  role: 'athlete' | 'coach' | 'admin'
   gymId?: string
   profileImageUrl?: string
   createdAt: Timestamp
@@ -218,10 +218,10 @@ export const useUsers = () => {
 
   const getClientsByCoach = async (coachId: string) => {
     try {
-      const q = query(usersCollection, where('coachId', '==', coachId), where('role', '==', 'client'))
-      const querySnapshot = await getDocs(q)
-      const clients = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
-      return { success: true, clients }
+          const q = query(usersCollection, where('coachId', '==', coachId), where('role', '==', 'athlete'))
+    const querySnapshot = await getDocs(q)
+    const athletes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
+    return { success: true, athletes }
     } catch (error) {
       console.error('Error getting clients:', error)
       return { success: false, error }
@@ -297,18 +297,18 @@ export const useUsers = () => {
   const updateCoachClientCount = async (coachId: string) => {
     try {
       // Contar clientes actuales del coach
-      const q = query(usersCollection, where('coachId', '==', coachId), where('role', '==', 'client'))
+      const q = query(usersCollection, where('coachId', '==', coachId), where('role', '==', 'athlete'))
       const querySnapshot = await getDocs(q)
-      const currentClients = querySnapshot.size
+      const currentAthletes = querySnapshot.size
       
       // Actualizar el contador en el documento del coach
       const coachDocRef = doc(getDb(), 'users', coachId)
       await updateDoc(coachDocRef, {
-        currentClients: currentClients,
+        currentAthletes: currentAthletes,
         updatedAt: serverTimestamp()
       })
       
-      return { success: true, count: currentClients }
+      return { success: true, count: currentAthletes }
     } catch (error) {
       console.error('Error updating coach client count:', error)
       return { success: false, error }
@@ -319,12 +319,12 @@ export const useUsers = () => {
     try {
       const q = query(
         usersCollection, 
-        where('role', '==', 'client'),
+        where('role', '==', 'athlete'),
         where('coachId', '==', null)
       )
       const querySnapshot = await getDocs(q)
-      const clients = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
-      return { success: true, clients }
+      const athletes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
+      return { success: true, athletes }
     } catch (error) {
       console.error('Error getting clients without coach:', error)
       return { success: false, error }
@@ -407,15 +407,41 @@ export const useExercises = () => {
       const db = getDb()
       const exercisesCollection = collection(db, 'exercises')
       
-      let q = query(exercisesCollection, orderBy('title'))
+      let q
       if (category) {
         q = query(exercisesCollection, where('category', '==', category), orderBy('title'))
+      } else {
+        q = query(exercisesCollection)
       }
+      
       const querySnapshot = await getDocs(q)
       const exercises = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exercise))
+      
+      // Sort exercises by title in memory if no category filter
+      if (!category) {
+        exercises.sort((a, b) => a.title.localeCompare(b.title))
+      }
+      
       return { success: true, exercises }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting exercises:', error)
+      
+      // If it's an index error, try without ordering
+      if (error.code === 'failed-precondition' || error.code === 'unimplemented') {
+        try {
+          const db = getDb()
+          const exercisesCollection = collection(db, 'exercises')
+          const q = query(exercisesCollection)
+          const querySnapshot = await getDocs(q)
+          const exercises = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exercise))
+          exercises.sort((a, b) => a.title.localeCompare(b.title))
+          return { success: true, exercises }
+        } catch (retryError) {
+          console.error('Error in retry:', retryError)
+          return { success: false, error: retryError }
+        }
+      }
+      
       return { success: false, error }
     }
   }

@@ -200,10 +200,10 @@
 <script setup lang="ts">
 import { useUsers, useWorkouts } from '~/composables/firestore'
 import { useUserStore } from '~/stores/user'
-import CustomSelect from '~/components/CustomSelect.vue'
-import AppInput from '~/components/AppInput.vue'
-import AppTextarea from '~/components/AppTextarea.vue'
-import DatePickerInput from '~/components/DatePickerInput.vue'
+import CustomSelect from '~/components/shared/CustomSelect.vue'
+import AppInput from '~/components/shared/AppInput.vue'
+import AppTextarea from '~/components/shared/AppTextarea.vue'
+import DatePickerInput from '~/components/shared/DatePickerInput.vue'
 
 const userStore = useUserStore()
 const { user } = useAuth()

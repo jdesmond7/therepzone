@@ -5,6 +5,20 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const protectedRoutes = ['/dashboard', '/coach/dashboard', '/staff/dashboard', '/admin/dashboard', '/complete-profile']
   const isDashboardRoute = protectedRoutes.some(route => to.path.startsWith(route))
   
+  // Helper function to safely disable loading (respects redirect flag)
+  const safeSetLoading = (loading: boolean, message?: string) => {
+    const { setLoading } = useGlobalLoading()
+    const isRedirecting = localStorage.getItem('therepzone_redirecting') === 'true'
+    const isLoginProcess = localStorage.getItem('therepzone_login_process') === 'true'
+    
+    // Only disable loading if not in a redirect or login process
+    if (!loading || (!isRedirecting && !isLoginProcess)) {
+      setLoading(loading, message)
+    } else {
+      console.log('🛡️ Middleware: Respetando loading durante redirección/login')
+    }
+  }
+  
   // Early return for public routes - no middleware logic needed
   if (!isDashboardRoute) {
     console.log('🌍 Middleware: Ruta pública, saltando middleware:', to.path)
@@ -26,15 +40,42 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const isSameSession = sessionStorage.getItem('therepzone_current_path') === to.path
   
   if (hasCompletedAuthFlow && isSameSession) {
-    console.log('✅ Middleware: Usuario ya completó flujo de auth en esta sesión, saltando')
+    console.log('✅ Middleware: Usuario ya completó flujo de auth en esta sesión, verificando rol...')
+    
+    // Even if auth flow is completed, we need to verify the user is on the correct dashboard
+    const { user, isLoggedIn } = useAuth()
+    const { userProfile, getDashboardRoute, ensureProfileLoaded, isCoach, isAdmin, isAthlete } = useUserRole()
+    
+    if (isLoggedIn.value && userProfile.value) {
+      const correctRoute = getDashboardRoute()
+      console.log('🎯 Middleware: Verificando ruta correcta:', correctRoute, 'vs actual:', to.path)
+      
+                // If user is not on the correct dashboard, redirect
+      if (to.path === '/athlets/dashboard' && isCoach.value) {
+        console.log('🚫 Coach en dashboard de atletas - REDIRIGIENDO')
+        return navigateTo('/coach/dashboard')
+      }
+      
+      if (to.path === '/coach/dashboard' && isAthlete.value) {
+        console.log('🚫 Atleta en dashboard de coaches - REDIRIGIENDO')
+        return navigateTo('/athlets/dashboard')
+      }
+      
+      // Additional check: if user is on /athlets/dashboard but we can't determine role yet,
+      // wait a bit and check again
+      if (to.path === '/athlets/dashboard' && !isCoach.value && !isAthlete.value && !isAdmin.value) {
+        console.log('⏳ Rol no determinado aún, esperando...')
+        // This will be handled by the dashboard page itself
+      }
+    }
+    
     // Ensure loading is disabled for completed auth flow
-    const { setLoading } = useGlobalLoading()
-    setLoading(false)
+    safeSetLoading(false)
     return
   }
   
     const { user, isLoggedIn } = useAuth()
-    const { userProfile, getDashboardRoute, ensureProfileLoaded } = useUserRole()
+    const { userProfile, getDashboardRoute, ensureProfileLoaded, isCoach, isAdmin, isAthlete } = useUserRole()
     const { setLoading, authChecked, profileLoaded } = useGlobalLoading()
     
     console.log('🛡️ Middleware: Verificando acceso a:', to.path)
@@ -61,7 +102,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // Safety timeout to ensure loading doesn't stay forever
       const safetyTimeout = setTimeout(() => {
         console.log('⚠️ Safety timeout: desactivando loading después de 8 segundos')
-        setLoading(false)
+        safeSetLoading(false)
       }, 8000)
       
       // Wait for Firebase to check auth state (max 2 seconds)
@@ -93,7 +134,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         sessionStorage.removeItem('therepzone_current_path')
         
         clearTimeout(safetyTimeout)
-        setLoading(false)
+        safeSetLoading(false)
         return navigateTo('/login')
       }
       
@@ -109,7 +150,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           // Disable loading after a short delay to let the page render
           setTimeout(() => {
             clearTimeout(safetyTimeout)
-            setLoading(false)
+            safeSetLoading(false)
           }, 100)
           return
         }
@@ -123,13 +164,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           console.log('✅ Perfil ya cargado, continuando...')
         }
         
-        // Check if user profile is complete (only for clients accessing dashboards)
-        if (userProfile.value?.role === 'client' && !userProfile.value?.profileCompleted) {
-          console.log('⚠️ Perfil de cliente incompleto, redirigiendo a completar perfil')
+        // Check if user profile is complete (only for athletes accessing dashboards)
+        if (userProfile.value?.role === 'athlete' && !userProfile.value?.profileCompleted) {
+          console.log('⚠️ Perfil de atleta incompleto, redirigiendo a completar perfil')
           setLoading(true, 'Perfil incompleto, redirigiendo...')
           setTimeout(() => {
             clearTimeout(safetyTimeout)
-            setLoading(false)
+            safeSetLoading(false)
           }, 100)
           return navigateTo('/complete-profile')
         }
@@ -137,6 +178,36 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         // Get the correct dashboard route based on user profile
         const correctRoute = getDashboardRoute()
         console.log('🎯 Dashboard correcto para usuario:', correctRoute)
+        console.log('🎯 Ruta actual:', to.path)
+        console.log('📊 Perfil del usuario:', {
+          role: userProfile.value?.role,
+          isCoach: isCoach.value,
+          isAdmin: isAdmin.value,
+          isAthlete: isAthlete.value,
+          fullName: userProfile.value?.fullName,
+          email: userProfile.value?.email
+        })
+        
+        // Verificar si el usuario está intentando acceder a un dashboard incorrecto
+        if (to.path === '/dashboard' && isCoach.value) {
+          console.log('🚫 Coach intentando acceder al dashboard de atletas - REDIRIGIENDO')
+          setLoading(true, 'Redirigiendo a tu dashboard...')
+          setTimeout(() => {
+            clearTimeout(safetyTimeout)
+            safeSetLoading(false)
+          }, 100)
+          return navigateTo('/coach/dashboard')
+        }
+        
+        if (to.path === '/coach/dashboard' && isAthlete.value) {
+          console.log('🚫 Atleta intentando acceder al dashboard de coaches - REDIRIGIENDO')
+          setLoading(true, 'Redirigiendo a tu dashboard...')
+          setTimeout(() => {
+            clearTimeout(safetyTimeout)
+            safeSetLoading(false)
+          }, 100)
+          return navigateTo('/dashboard')
+        }
         
         // If user is not on the correct dashboard, redirect
         if (to.path !== correctRoute && !to.path.startsWith(correctRoute)) {
@@ -144,7 +215,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           setLoading(true, 'Preparando tu dashboard...')
           setTimeout(() => {
             clearTimeout(safetyTimeout)
-            setLoading(false)
+            safeSetLoading(false)
           }, 100)
           return navigateTo(correctRoute)
         }
@@ -156,16 +227,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         sessionStorage.setItem('therepzone_auth_completed', 'true')
         sessionStorage.setItem('therepzone_current_path', to.path)
         
-        // Clear any remaining redirect flags and disable loading immediately
-        console.log('🔄 Limpiando flags y desactivando loading')
+        // Clear redirect flags but KEEP loading active for dashboard to finish loading
+        console.log('🔄 Limpiando flags de redirección, manteniendo loading para dashboard')
         localStorage.removeItem('therepzone_redirecting')
+        localStorage.removeItem('therepzone_login_process')
         clearTimeout(safetyTimeout)
-        setLoading(false)
         
-        // Additional safety: ensure loading is disabled after a short delay
-        setTimeout(() => {
-          setLoading(false)
-        }, 500)
+        // Don't disable loading here - let the dashboard page handle it
+        // The dashboard will call setLoading(false) when it's fully loaded
+        console.log('⏳ Loading mantenido activo para que dashboard termine de cargar')
         
       } catch (error) {
         console.error('❌ Error loading profile:', error)
@@ -173,7 +243,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         setLoading(true, 'Redirigiendo a dashboard...')
         setTimeout(() => {
           clearTimeout(safetyTimeout)
-          setLoading(false)
+          safeSetLoading(false)
         }, 100)
         if (to.path !== '/dashboard') {
           return navigateTo('/dashboard')
@@ -181,7 +251,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           // If already on dashboard but had error, just disable loading
           setTimeout(() => {
             clearTimeout(safetyTimeout)
-            setLoading(false)
+            safeSetLoading(false)
           }, 100)
         }
       }

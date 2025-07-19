@@ -60,5 +60,15 @@ export default defineNuxtConfig({
   experimental: {
     payloadExtraction: false,
     viewTransition: false
+  },
+  
+  // Auto-import components
+  components: {
+    dirs: [
+      '~/components',
+      '~/components/shared',
+      '~/components/coach',
+      '~/components/athlete'
+    ]
   }
 })

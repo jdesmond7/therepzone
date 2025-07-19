@@ -256,7 +256,7 @@
 
         <!-- Profile Section -->
         <div v-else-if="currentView === 'profile'" class="-mx-4 -my-6">
-          <ProfileView />
+          <CoachProfileView />
         </div>
 
         <!-- Other Views Placeholder -->
@@ -278,9 +278,12 @@ import { useUserStore } from '~/stores/user'
 import { useAuth } from '~/composables/firebase'
 import { useCoaches } from '~/composables/coaches'
 import { useAthletes } from '~/composables/athletes'
-import CoachClientsView from '~/components/CoachClientsView.vue'
-import CoachProgrammingView from '~/components/CoachProgrammingView.vue'
-import ProfileView from '~/components/ProfileView.vue'
+import TheLogo from '~/components/shared/TheLogo.vue'
+import AppButtonPrimary from '~/components/shared/AppButtonPrimary.vue'
+import AppButtonSecondary from '~/components/shared/AppButtonSecondary.vue'
+import CoachClientsView from '~/components/coach/CoachClientsView.vue'
+import CoachProgrammingView from '~/components/coach/CoachProgrammingView.vue'
+import CoachProfileView from '~/components/coach/CoachProfileView.vue'
 
 const currentView = ref('overview')
 const userStore = useUserStore()
@@ -362,6 +365,15 @@ const getCurrentDate = () => {
 const firebaseLogout = ref<any>(null)
 
 onMounted(async () => {
+  console.log('🎯 [Dashboard] onMounted iniciado - DASHBOARD SE ESTÁ CARGANDO')
+  
+  // Immediate emergency disable after 3 seconds
+  setTimeout(() => {
+    console.log('🚨 [Dashboard] EMERGENCY: Forzando desactivación de loading después de 3 segundos')
+    const { forceDisableLoading } = useGlobalLoading()
+    forceDisableLoading()
+  }, 3000)
+  
   try {
     const { logout } = useAuth()
     firebaseLogout.value = logout
@@ -369,18 +381,42 @@ onMounted(async () => {
     // Initialize motivational phrase
     getRandomMotivationalPhrase()
     
+    // Safety timeout to ensure loading doesn't stay forever
+    const safetyTimeout = setTimeout(() => {
+      console.log('⚠️ [Dashboard] Safety timeout: dashboard tardó más de 10 segundos, desactivando loading')
+      const { forceDisableLoading } = useGlobalLoading()
+      forceDisableLoading()
+    }, 10000)
+    
+    console.log('🔄 [Dashboard] Iniciando loadStats...')
     // Load stats
     await loadStats()
+    
+    // Clear safety timeout if stats loaded successfully
+    clearTimeout(safetyTimeout)
+    console.log('✅ [Dashboard] onMounted completado exitosamente')
+    
   } catch (error) {
-    console.error('Error initializing coach dashboard:', error)
+    console.error('❌ [Dashboard] Error initializing coach dashboard:', error)
+    // Ensure loading is disabled even if there's an error
+    const { forceDisableLoading } = useGlobalLoading()
+    forceDisableLoading()
+    console.log('✅ [Dashboard] forceDisableLoading() llamado después de error en onMounted')
   }
 })
 
 const loadStats = async () => {
+  console.log('🔄 [Dashboard] loadStats iniciado')
   const uid = coachProfile.value?.uid || user.value?.uid
-  if (!uid) return
+  if (!uid) {
+    console.log('⚠️ [Dashboard] No UID disponible, desactivando loading')
+    const { setLoading } = useGlobalLoading()
+    setLoading(false)
+    return
+  }
 
   try {
+    console.log('🔄 [Dashboard] Cargando clientes...')
     // Load client count - usar el UID personalizado del coach
     const coachUid = coachProfile.value?.uid
     if (coachUid) {
@@ -392,6 +428,7 @@ const loadStats = async () => {
       }
     }
 
+    console.log('🔄 [Dashboard] Cargando rutinas...')
     // Load workout count
     const { getWorkoutsByCoach } = useWorkouts()
     const workoutsResult = await getWorkoutsByCoach(uid)
@@ -399,14 +436,27 @@ const loadStats = async () => {
       workoutCount.value = workoutsResult.workouts?.length || 0
     }
 
+    console.log('🔄 [Dashboard] Cargando ejercicios...')
     // Load exercise count (all exercises for now)
     const { getExercises } = useExercises()
     const exercisesResult = await getExercises()
     if (exercisesResult.success) {
       exerciseCount.value = exercisesResult.exercises?.length || 0
     }
+    
+    // Dashboard fully loaded - disable global loading
+    console.log('✅ [Dashboard] Dashboard completamente cargado, desactivando loading global')
+    const { forceDisableLoading } = useGlobalLoading()
+    forceDisableLoading()
+    console.log('✅ [Dashboard] forceDisableLoading() llamado')
+    
   } catch (error) {
-    console.error('Error loading stats:', error)
+    console.error('❌ [Dashboard] Error loading stats:', error)
+    // Even if there's an error, disable loading to prevent infinite loading
+    console.log('⚠️ [Dashboard] Error cargando stats, pero desactivando loading para evitar bloqueo')
+    const { forceDisableLoading } = useGlobalLoading()
+    forceDisableLoading()
+    console.log('✅ [Dashboard] forceDisableLoading() llamado después de error')
   }
 }
 
@@ -511,6 +561,8 @@ const getCoachUid = () => {
     return null
   }
 }
+
+
 </script>
 
 <style scoped>

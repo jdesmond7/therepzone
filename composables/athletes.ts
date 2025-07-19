@@ -9,9 +9,10 @@ export interface Athlete {
   email: string
   phone?: string
   profileImageUrl?: string
-  role: 'client'
+  role: 'athlete'
   
   // Personal information
+  nickname?: string
   gender?: 'masculino' | 'femenino' | 'otro'
   birthDate?: string
   hometown?: string
@@ -196,7 +197,7 @@ export const useAthletes = () => {
       // Generate custom UID for the athlete
       const { generateUniqueCustomUid } = await import('~/utils/custom-uid-generator')
       const customUid = await generateUniqueCustomUid({
-        role: 'client',
+        role: 'athlete',
         firstName: athleteData.firstName,
         lastName: athleteData.lastName,
         authUid: athleteData.authUid || ''
@@ -205,7 +206,7 @@ export const useAthletes = () => {
       const athleteDoc = {
         ...athleteData,
         fullName: athleteData.fullName || `${athleteData.firstName} ${athleteData.lastName}`.trim(),
-        role: 'client' as const,
+        role: 'athlete' as const,
         assignedWorkouts: athleteData.assignedWorkouts || [],
         profileCompleted: athleteData.profileCompleted || false,
         // Campos adicionales del perfil

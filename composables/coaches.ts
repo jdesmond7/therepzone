@@ -161,7 +161,12 @@ export const useCoaches = () => {
       if (!coachesSnapshot.empty) {
         const coachDoc = coachesSnapshot.docs[0]
         const coachData = coachDoc.data() as Coach
-        console.log('✅ [useCoaches] Coach encontrado por auth UID:', coachData)
+        console.log('✅ [useCoaches] Coach encontrado por auth UID:', {
+          uid: coachDoc.id,
+          role: coachData.role,
+          email: coachData.email,
+          fullName: coachData.fullName
+        })
         return { success: true, coach: { ...coachData, uid: coachDoc.id } }
       } else {
         console.log('❌ [useCoaches] Coach no encontrado por auth UID:', authUID)
@@ -194,6 +199,12 @@ export const useCoaches = () => {
   // Create new coach
   const createCoach = async (coachData: CreateCoachData): Promise<{ success: boolean; coachId?: string; error?: string }> => {
     try {
+      console.log('🔄 [useCoaches] Creating coach with data:', {
+        uid: coachData.uid,
+        email: coachData.email,
+        authUid: coachData.authUid
+      })
+      
       const coachDoc = {
         ...coachData,
         fullName: coachData.fullName || `${coachData.firstName} ${coachData.lastName}`.trim(),
@@ -213,9 +224,17 @@ export const useCoaches = () => {
         updatedAt: serverTimestamp()
       }
       
+      console.log('📝 [useCoaches] Final coach document:', {
+        uid: coachDoc.uid,
+        role: coachDoc.role,
+        email: coachDoc.email,
+        authUid: coachDoc.authUid
+      })
+      
       // Usar setDoc con el UID personalizado en lugar de addDoc
       const docRef = doc(getDb(), 'coaches', coachData.uid)
       await setDoc(docRef, coachDoc)
+      console.log('✅ [useCoaches] Coach created successfully in Firestore')
       return { success: true, coachId: coachData.uid }
     } catch (error) {
       console.error('Error creating coach:', error)

@@ -74,7 +74,7 @@ const handleProfileSubmit = async (userData: any) => {
       pendingRegistration.value.email,
       pendingRegistration.value.password,
       undefined,
-      pendingRegistration.value.userRole as 'client' | 'coach'
+      pendingRegistration.value.userRole as 'athlete' | 'coach'
     )
     if (!result.success) {
       setLoading(false)
@@ -133,6 +133,7 @@ const handleProfileSubmit = async (userData: any) => {
         phone: userData.phone,
         profileImageUrl: profilePhotoUrl || userData.profilePhoto || '',
         authUid: result.user.uid,
+        role: 'coach',
         // Campos adicionales del perfil
         nickname: userData.nickname,
         birthDate: userData.birthDate,
@@ -144,10 +145,19 @@ const handleProfileSubmit = async (userData: any) => {
         profileCompleted: true
       }
       
+      console.log('🔄 [complete-profile] Creating coach with data:', {
+        uid: customUid,
+        role: 'coach',
+        email: pendingRegistration.value.email,
+        authUid: result.user.uid
+      })
+      
       const createResult = await createCoach(coachData)
       if (!createResult.success) {
         throw new Error('Error creating coach in Firestore: ' + createResult.error)
       }
+      
+      console.log('✅ [complete-profile] Coach created successfully with role: coach')
     } else {
       // Para atletas, usar la colección athletes
       const { useAthletes } = await import('~/composables/athletes')
@@ -161,6 +171,7 @@ const handleProfileSubmit = async (userData: any) => {
         phone: userData.phone,
         profileImageUrl: profilePhotoUrl || userData.profilePhoto || '',
         authUid: result.user.uid,
+        role: 'athlete',
         // Campos adicionales del perfil
         nickname: userData.nickname,
         birthDate: userData.birthDate,
@@ -184,16 +195,24 @@ const handleProfileSubmit = async (userData: any) => {
     
     // 4. Marcar sesión como completada para evitar redirección al login
     sessionStorage.setItem('therepzone_auth_completed', 'true')
-    // Cargar el perfil actualizado para obtener el rol correcto
-    const { useUserRole } = await import('~/composables/useUserRole')
-    const { loadUserProfile, getDashboardRoute } = useUserRole()
-    await loadUserProfile()
-    const dashboardRoute = getDashboardRoute()
+    
+    // 5. Determinar la ruta correcta basada en el rol del registro
+    let dashboardRoute = '/athlets/dashboard' // default
+    if (pendingRegistration.value.userRole === 'coach') {
+      dashboardRoute = '/coach/dashboard'
+      console.log('🎯 [complete-profile] Coach registrado - redirigiendo a:', dashboardRoute)
+    } else {
+      dashboardRoute = '/athlets/dashboard'
+      console.log('🎯 [complete-profile] Atleta registrado - redirigiendo a:', dashboardRoute)
+    }
+    
     sessionStorage.setItem('therepzone_current_path', dashboardRoute)
-    // 5. Mostrar mensaje de éxito y redirigir
+    
+    // 6. Mostrar mensaje de éxito y redirigir
     setLoading(true, '¡Perfil completado! Redirigiendo...')
     setTimeout(async () => {
       setLoading(false)
+      console.log('🚀 [complete-profile] Navegando a:', dashboardRoute)
       await navigateTo(dashboardRoute)
     }, 1500)
   } catch (error: any) {

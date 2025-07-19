@@ -305,7 +305,7 @@
 
 <script setup lang="ts">
 import { useWorkouts, type Workout } from '~/composables/firestore'
-import DataTable from '~/components/DataTable.vue'
+import DataTable from '~/components/shared/DataTable.vue'
 
 const { user } = useAuth()
 const workouts = ref<Workout[]>([])

@@ -359,6 +359,7 @@
 </template>
 
 <script setup lang="ts">
+import TheLogo from '~/components/shared/TheLogo.vue'
 import { useUserRole } from '~/composables/useUserRole'
 import { useStaff } from '~/composables/staff'
 

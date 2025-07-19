@@ -41,9 +41,9 @@
 
 <script setup lang="ts">
 import { ref, watch, defineProps, defineEmits, onUnmounted } from 'vue'
-import RoundedCheckbox from '~/components/RoundedCheckbox.vue'
-import AppButtonPrimary from '~/components/AppButtonPrimary.vue'
-import AppButtonSecondary from '~/components/AppButtonSecondary.vue'
+import RoundedCheckbox from '~/components/shared/RoundedCheckbox.vue'
+import AppButtonPrimary from '~/components/shared/AppButtonPrimary.vue'
+import AppButtonSecondary from '~/components/shared/AppButtonSecondary.vue'
 
 const props = defineProps({
   show: Boolean

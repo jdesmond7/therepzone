@@ -11,10 +11,10 @@ export const useUserRole = () => {
   const isLoading = ref(false)
 
   // Computed properties for role checking
-  const isClient = computed(() => {
+  const isAthlete = computed(() => {
     const role = userProfile.value?.role
-    console.log('🔍 [useUserRole] isClient check - role:', role, 'result:', role === 'client')
-    return role === 'client'
+    console.log('🔍 [useUserRole] isAthlete check - role:', role, 'result:', role === 'athlete')
+    return role === 'athlete'
   })
   const isCoach = computed(() => {
     const role = userProfile.value?.role
@@ -114,7 +114,8 @@ export const useUserRole = () => {
   const getDashboardRoute = () => {
     console.log('🎯 [useUserRole] getDashboardRoute called')
     console.log('📊 [useUserRole] Current userProfile:', userProfile.value)
-    console.log('🔍 [useUserRole] Role checks - isCoach:', isCoach.value, 'isAdmin:', isAdmin.value, 'isClient:', isClient.value)
+    console.log('🔍 [useUserRole] Role checks - isCoach:', isCoach.value, 'isAdmin:', isAdmin.value, 'isAthlete:', isAthlete.value)
+    console.log('🔍 [useUserRole] User role from profile:', userProfile.value?.role)
     
     if (isCoach.value) {
       console.log('🎯 [useUserRole] Returning /coach/dashboard for coach')
@@ -124,8 +125,8 @@ export const useUserRole = () => {
       console.log('🎯 [useUserRole] Returning /staff/dashboard for admin/staff')
       return '/staff/dashboard'
     }
-    console.log('🎯 [useUserRole] Returning /dashboard for client/athlete')
-    return '/dashboard' // Default client/athlete dashboard
+    console.log('🎯 [useUserRole] Returning /athlets/dashboard for athlete')
+    return '/athlets/dashboard' // Default client/athlete dashboard
   }
 
   // Watch for user changes
@@ -157,7 +158,7 @@ export const useUserRole = () => {
   return {
     userProfile: readonly(userProfile),
     isLoading: readonly(isLoading),
-    isClient,
+    isAthlete,
     isCoach,
     isAdmin,
     isStaff,

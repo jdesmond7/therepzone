@@ -220,6 +220,7 @@
 </template>
 
 <script setup lang="ts">
+import AppInput from '~/components/shared/AppInput.vue'
 import { useFirebaseStorage } from '~/composables/firebase-storage'
 
 const { user } = useAuth()
@@ -234,7 +235,7 @@ const isLoading = ref(true)
 // Profile data
 const profileData = reactive({
   fullName: '',
-  role: 'coach' as 'client' | 'coach' | 'admin',
+  role: 'coach' as 'athlete' | 'coach' | 'admin',
   department: 'Fitness Department',
   staffId: '',
   phone: '',

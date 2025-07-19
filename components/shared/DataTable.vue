@@ -270,7 +270,6 @@
 
     <!-- Table View -->
     <div v-if="viewMode === 'table'" class="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden">
-
       <div :class="filteredData.length === 0 ? '' : 'overflow-x-auto'">
         <table class="w-full">
           <thead class="bg-slate-700/50">
@@ -404,8 +403,8 @@
 </template>
 
 <script setup lang="ts">
-import AppButtonSecondary from '~/components/AppButtonSecondary.vue'
-import RoundedCheckbox from '~/components/RoundedCheckbox.vue'
+import AppButtonSecondary from '~/components/shared/AppButtonSecondary.vue'
+import RoundedCheckbox from '~/components/shared/RoundedCheckbox.vue'
 
 interface Column {
   key: string

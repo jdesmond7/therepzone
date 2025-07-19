@@ -6,17 +6,21 @@ const globalProfileLoaded = ref(false)
 
 export const useGlobalLoading = () => {
   const setLoading = (loading: boolean, message = 'Cargando...') => {
+    console.log('🎯 [useGlobalLoading] setLoading called:', loading, message)
     globalIsLoading.value = loading
     globalLoadingMessage.value = message
+    console.log('🎯 [useGlobalLoading] State updated - isLoading:', globalIsLoading.value, 'message:', globalLoadingMessage.value)
     
-    // Safety: automatically disable loading when user reaches dashboard
-    if (process.client && loading && message.includes('dashboard')) {
+    // Safety: automatically disable loading after a timeout
+    if (process.client && loading) {
+      console.log('🛡️ [useGlobalLoading] Configurando timeout de seguridad de 3 segundos')
       setTimeout(() => {
-        if (window.location.pathname === '/dashboard' && globalIsLoading.value) {
-          console.log('🛡️ Safety: Desactivando loading automáticamente en dashboard')
+        if (globalIsLoading.value) {
+          console.log('🛡️ [useGlobalLoading] Safety timeout: Desactivando loading después de 3 segundos')
           globalIsLoading.value = false
+          globalLoadingMessage.value = 'Cargando...'
         }
-      }, 2000) // 2 seconds delay
+      }, 3000) // 3 seconds safety timeout
     }
   }
 
@@ -26,6 +30,12 @@ export const useGlobalLoading = () => {
 
   const setProfileLoaded = (loaded: boolean) => {
     globalProfileLoaded.value = loaded
+  }
+
+  const forceDisableLoading = () => {
+    console.log('🛡️ [useGlobalLoading] Force disabling loading')
+    globalIsLoading.value = false
+    globalLoadingMessage.value = 'Cargando...'
   }
 
   const isReadyForDashboard = computed(() => {
@@ -40,6 +50,7 @@ export const useGlobalLoading = () => {
     isReadyForDashboard,
     setLoading,
     setAuthChecked,
-    setProfileLoaded
+    setProfileLoaded,
+    forceDisableLoading
   }
 } 

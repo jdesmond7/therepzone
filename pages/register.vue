@@ -171,6 +171,13 @@
 </template>
 
 <script setup lang="ts">
+import TheLogo from '~/components/shared/TheLogo.vue'
+import AppInput from '~/components/shared/AppInput.vue'
+import AppButtonPrimary from '~/components/shared/AppButtonPrimary.vue'
+import PasswordInput from '~/components/shared/PasswordInput.vue'
+import Tabs from '~/components/shared/Tabs.vue'
+import TermsModal from '~/components/shared/TermsModal.vue'
+
 // Register page for THEREPZONE
 const email = ref('')
 const password = ref('')
@@ -187,8 +194,6 @@ const userRole = computed(() => {
 
 const { register } = useAuth()
 
-import TermsModal from '~/components/TermsModal.vue'
-import Tabs from '~/components/Tabs.vue'
 import { Timestamp } from 'firebase/firestore'
 
 const showTermsModal = ref(false)

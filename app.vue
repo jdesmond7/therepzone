@@ -9,6 +9,9 @@
 </template>
 
 <script setup lang="ts">
+// Debug: Log when app mounts
+console.log('🎯 [App.vue] App component mounted')
+
 // Main app component for THEREPZONE
 useHead({
   titleTemplate: '%s | THEREPZONE',

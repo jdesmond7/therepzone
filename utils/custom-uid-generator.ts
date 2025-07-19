@@ -1,11 +1,11 @@
 /**
  * Generates custom UIDs for coaches and clients
- * Format: firstName(primer nombre completo)_lastName(primer apellido completo)_5digitosUID
+ * Format: firstName(primer nombre)_lastName(primer apellido)_5digitosUID
  * Example: juan_perez_12345, maria_garcia_67890
  */
 
 export interface CustomUidData {
-  role: 'client' | 'coach'
+  role: 'athlete' | 'coach'
   firstName: string
   lastName: string
   authUid: string // Original Firebase Auth UID
@@ -14,32 +14,37 @@ export interface CustomUidData {
 export function generateCustomUid(data: CustomUidData): string {
   const { firstName, lastName, authUid } = data
   
-  // Clean and normalize firstName (primer nombre completo)
+  console.log('🔄 [generateCustomUid] Input data:', { firstName, lastName, authUid })
+  
+  // Clean and normalize firstName (primer nombre)
   const cleanFirstName = firstName
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[^a-z0-9]/g, '') // Remove special characters
-    .split(' ')[0] // Primer nombre completo
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters but keep spaces
+    .trim()
+    .split(' ')[0] // Solo el primer nombre
   
-  // Clean and normalize lastName (primer apellido completo)
+  // Clean and normalize lastName (primer apellido)
   const cleanLastName = lastName
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[^a-z0-9]/g, '') // Remove special characters
-    .split(' ')[0] // Primer apellido completo
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters but keep spaces
+    .trim()
+    .split(' ')[0] // Solo el primer apellido
   
-  // Get first 5 digits from authUid
-  const first5Digits = authUid.slice(0, 5)
+  // Get last 5 digits from authUid
+  const last5Digits = authUid.slice(-5)
   
   // Generate custom UID
-  const customUid = `${cleanFirstName}_${cleanLastName}_${first5Digits}`
+  const customUid = `${cleanFirstName}_${cleanLastName}_${last5Digits}`
   
-  console.log(`🆔 Generated custom UID: ${customUid}`)
-  console.log(`   First Name: ${firstName} → ${cleanFirstName}`)
-  console.log(`   Last Name: ${lastName} → ${cleanLastName}`)
-  console.log(`   Auth UID: ${authUid} → ${first5Digits}`)
+  console.log(`🆔 [generateCustomUid] Generated custom UID: ${customUid}`)
+  console.log(`   First Name: "${firstName}" → "${cleanFirstName}"`)
+  console.log(`   Last Name: "${lastName}" → "${cleanLastName}"`)
+  console.log(`   Auth UID: "${authUid}" → "${last5Digits}"`)
+  console.log(`   Final UID: "${customUid}"`)
   
   return customUid
 }
@@ -75,7 +80,7 @@ export function parseCustomUid(uid: string): { firstName: string, lastName: stri
 /**
  * Checks if a custom UID already exists in Firestore
  */
-export async function checkCustomUidExists(customUid: string, role: 'client' | 'coach'): Promise<boolean> {
+export async function checkCustomUidExists(customUid: string, role: 'athlete' | 'coach'): Promise<boolean> {
   try {
     const { getFirebaseDb } = await import('~/composables/firebase')
     const { doc, getDoc } = await import('firebase/firestore')
@@ -117,18 +122,20 @@ export async function generateUniqueCustomUid(data: CustomUidData): Promise<stri
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]/g, '')
-      .split(' ')[0] // Primer nombre completo
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters but keep spaces
+      .trim()
+      .split(' ')[0] // Solo el primer nombre
     
     const cleanLastName = lastName
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]/g, '')
-      .split(' ')[0] // Primer apellido completo
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters but keep spaces
+      .trim()
+      .split(' ')[0] // Solo el primer apellido
     
-    const first5Digits = authUid.slice(0, 5)
-    customUid = `${cleanFirstName}_${cleanLastName}_${randomSuffix}${first5Digits.slice(-2)}`
+    const last5Digits = authUid.slice(-5)
+    customUid = `${cleanFirstName}_${cleanLastName}_${randomSuffix}${last5Digits.slice(-2)}`
   }
   
   if (attempts >= maxAttempts) {

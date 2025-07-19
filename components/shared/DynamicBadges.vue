@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import CustomTooltip from '~/components/CustomTooltip.vue'
+import CustomTooltip from './CustomTooltip.vue'
 
 interface Props {
   items: string[]

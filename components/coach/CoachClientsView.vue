@@ -267,7 +267,7 @@
 <script setup lang="ts">
 import { useAthletes, type Athlete } from '~/composables/athletes'
 import { useCoaches } from '~/composables/coaches'
-import DataTable from '~/components/DataTable.vue'
+import DataTable from '~/components/shared/DataTable.vue'
 import { useRouter } from 'vue-router'
 
 const { user } = useAuth()
@@ -431,7 +431,7 @@ const handleCreateClient = async (userData: any) => {
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
-      role: 'client',
+              role: 'athlete',
       assignedWorkouts: [],
       coachId: user.value.uid,
       // Información adicional del perfil

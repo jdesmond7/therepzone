@@ -79,6 +79,10 @@
 </template>
 
 <script setup lang="ts">
+import TheLogo from '~/components/shared/TheLogo.vue'
+import AppButtonPrimary from '~/components/shared/AppButtonPrimary.vue'
+import AppButtonSecondary from '~/components/shared/AppButtonSecondary.vue'
+
 // Landing page for THEREPZONE
 useHead({
   title: 'THEREPZONE - Registra tus Entrenamientos',

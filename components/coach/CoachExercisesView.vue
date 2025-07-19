@@ -448,15 +448,15 @@
 <script setup lang="ts">
 import { useExercises, type Exercise } from '~/composables/firestore'
 import { useFirebaseStorage } from '~/composables/firebase-storage'
-import ExerciseEditModal from '~/components/ExerciseEditModal.vue'
-import DataTable from '~/components/DataTable.vue'
+import ExerciseEditModal from '~/components/shared/ExerciseEditModal.vue'
+import DataTable from '~/components/shared/DataTable.vue'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.css'
-import AppInput from '~/components/AppInput.vue'
-import CustomMultiSelect from '~/components/CustomMultiSelect.vue'
-import AppTextarea from './AppTextarea.vue'
-import CustomTooltip from '~/components/CustomTooltip.vue'
-import DynamicBadges from '~/components/DynamicBadges.vue'
+import AppInput from '~/components/shared/AppInput.vue'
+import CustomMultiSelect from '~/components/shared/CustomMultiSelect.vue'
+import AppTextarea from '~/components/shared/AppTextarea.vue'
+import CustomTooltip from '~/components/shared/CustomTooltip.vue'
+import DynamicBadges from '~/components/shared/DynamicBadges.vue'
 
 const { user } = useAuth()
 const exercises = ref<Exercise[]>([])
